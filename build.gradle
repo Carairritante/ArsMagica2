@@ -17,6 +17,29 @@ repositories {
     maven { url = uri('https://maven.cleanroommc.com') }
 }
 dependencies { implementation fileTree(dir: 'libs', include: ['*.jar']) }
+
+sourceSets {
+    verification { java.srcDir 'tools/verification' }
+}
+dependencies {
+    verificationImplementation 'org.ow2.asm:asm:9.9'
+    verificationImplementation 'org.ow2.asm:asm-tree:9.9'
+}
+tasks.register('verifyMaintenanceJar') {
+    group = 'verification'
+    description = 'Check the maintenance hooks in the reobfuscated Java 8 mod.'
+    dependsOn tasks.named('reobfJar'), tasks.named('verificationClasses')
+    doLast {
+        ['VerifyLightningJar', 'VerifySolarLunarTierJar'].each { verifier ->
+            javaexec {
+                classpath = sourceSets.verification.runtimeClasspath
+                mainClass = verifier
+                args tasks.named('jar', Jar).get().archiveFile.get().asFile.absolutePath
+            }
+        }
+    }
+}
+tasks.named('check') { dependsOn tasks.named('verifyMaintenanceJar') }
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
 tasks.named('deobfuscateMergedJarToSrg') {
     accessTransformerFiles.from('src/main/resources/META-INF/arsmagica2_at.cfg')

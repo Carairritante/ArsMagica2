@@ -2,7 +2,7 @@
 
 Registro: 31 de outubro de 2026.
 
-## Artefato publicado
+## JAR de teste anterior ao CI
 
 Arquivo: `AM2.5-LTS-1.6.11-LE-CR2.jar`.
 
@@ -14,12 +14,22 @@ SHA-256:
 
 Esse hash corresponde ao JAR preparado no trabalho anterior e ao arquivo ativo
 conferido na instância de teste. A versão que bloqueava Bless foi descartada pelo
-mantenedor e não é o artefato desta release.
+mantenedor e não é o artefato registrado abaixo.
 
 O arquivo foi produzido por patches incrementais sobre um JAR existente. As fontes
 da manutenção foram recuperadas e publicadas sobre a base LE 1.6.11; não houve uma
 nova compilação completa/reobfuscação do projeto pelo Gradle nesta publicação.
 Portanto, não se afirma uma reconstrução byte a byte do JAR a partir deste checkout.
+
+## Builds automáticos
+
+O Actions agora compila este checkout com Gradle 8.8 e RetroFuturaGradle 1.4.9,
+usando os mapeamentos incorporados ao Forge 1.7.10 original. A tarefa `build`
+inclui os dois verificadores estruturais deste repositório sobre o JAR reobfuscado.
+O JAR e seu `SHA256SUMS` ficam na seção Artifacts de cada execução bem-sucedida,
+em arquivos separados sem ZIP externo, por 14 dias.
+Esses builds possuem seu próprio checksum e ainda precisam de validação no jogo;
+os testes anteriores descritos nesta página se referem ao JAR incremental acima.
 
 ## Verificações repetidas antes da publicação
 
