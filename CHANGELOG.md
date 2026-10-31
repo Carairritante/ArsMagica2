@@ -1,5 +1,15 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR4 — 2026-10-31
+
+- Pontos Silver livres compram somente talentos, conforme a regra escolhida
+  pelo mantenedor; formas, componentes e modificadores Silver não podem ser
+  comprados no Oculus com esse saldo.
+- A regra vale também no tratamento do pedido de compra no servidor.
+- Descobertas e recompensas que ensinam habilidades diretamente continuam funcionando.
+- O Oculus informa que habilidades Silver sem compra dependem de descobertas
+  ou recompensas especiais. Conhecimentos já salvos não são removidos.
+
 ## 1.6.11-LE-CR3 — 2026-10-31
 
 - Corrigida a leitura do quarto saldo de pontos (Silver) no pacote de sincronização

@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR3
+## Versão de manutenção 1.6.11-LE-CR4
 
 Fork mantido por [Carairritante](https://github.com/Carairritante), com participação
 substancial do **OpenAI Codex** na investigação, implementação, verificações e
@@ -16,6 +16,7 @@ a licença e os créditos originais foram preservados.
 - [Participação da IA e autoria original](AI_DISCLOSURE.md)
 - [Verificações e limites da validação](docs/VALIDACAO-CR2.md)
 - [Validação da sincronização e dos pontos Silver na CR3](docs/VALIDACAO-CR3.md)
+- [Validação das compras de talentos na CR4](docs/VALIDACAO-CR4.md)
 - [Ferramentas de verificação](tools/verification/README.md)
 
 Esta manutenção inclui proteções para Lunar, AoE e Zone, progressão gradual de
@@ -24,8 +25,11 @@ de partículas e limite de **128 blocos para o percurso da Wave**, preservando s
 largura. Bless permanece habilitado.
 
 A CR3 corrige a leitura dos pontos **Silver (cinza)** recebidos do servidor e
-acrescenta seu contador abaixo do contador vermelho no Oculus. Os pontos podem
-ser gastos normalmente nas habilidades Silver, respeitando a árvore e os pré-requisitos.
+acrescenta seu contador abaixo do contador vermelho no Oculus. Na CR4, pontos
+Silver livres compram **somente talentos**, respeitando a árvore e os pré-requisitos.
+Magias, formas e modificadores Silver dependem de descobertas ou recompensas
+especiais; o bloqueio de compra vale na interface e no servidor.
+Habilidades já aprendidas em versões anteriores são preservadas.
 
 O Actions compila o código desta branch a cada push e pull request. Nas execuções
 concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o

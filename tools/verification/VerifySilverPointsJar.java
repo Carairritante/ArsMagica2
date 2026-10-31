@@ -9,7 +9,12 @@ public final class VerifySilverPointsJar {
   try(JarFile jar=new JarFile(args[0])) {
    ClassNode data=read(jar,"am2/playerextensions/SkillData.class");
    ClassNode gui=read(jar,"am2/guis/GuiSkillTrees.class");
-   boolean packet=false,counter=false;
+   boolean packet=false,counter=false,purchasePacket=false,purchaseUI=false;
+   for(MethodNode m:data.methods)for(AbstractInsnNode i:m.instructions.toArray())
+    if(i instanceof MethodInsnNode && ((MethodInsnNode)i).name.equals("canPurchaseWithPoints")){
+     if(m.name.equals("handlePacketData"))purchasePacket=true;
+     if(m.name.equals("getLearnState"))purchaseUI=true;
+    }
    for(MethodNode m:data.methods) if(m.name.equals("handlePacketData"))
     for(AbstractInsnNode i:m.instructions.toArray()) if(silver(i)) {
      AbstractInsnNode next=next(i);
@@ -23,7 +28,8 @@ public final class VerifySilverPointsJar {
     }
    if(!packet)throw new IllegalStateException("Client does not read Silver points from sync packet");
    if(!counter)throw new IllegalStateException("Oculus does not read the Silver counter");
-   System.out.println("Verified: Silver points sync field and Oculus counter.");
+   if(!purchasePacket||!purchaseUI)throw new IllegalStateException("Purchase policy missing from UI or server packet handler");
+   System.out.println("Verified: Silver sync, Oculus counter, and purchase policy hooks in UI and server.");
   }
  }
  static boolean silver(AbstractInsnNode i) {

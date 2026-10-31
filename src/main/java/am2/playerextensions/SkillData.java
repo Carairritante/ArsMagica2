@@ -329,6 +329,11 @@ public class SkillData implements IExtendedEntityProperties, ISkillData{
 			case SPELL_LEARNED:
 				int id = rdr.getInt();
 				int type = rdr.getInt();
+				// Discovery and orb rewards call learn directly; this path is an Oculus purchase.
+				if (!entity.worldObj.isRemote && !canPurchaseWithPoints(SkillManager.instance.getSkill(id))){
+					setFullSync();
+					break;
+				}
 				learn(id, type);
 				if (!entity.worldObj.isRemote)
 					forceSync();
@@ -546,6 +551,12 @@ public class SkillData implements IExtendedEntityProperties, ISkillData{
 		this.setFullSync();
 	}
 
+	private boolean canPurchaseWithPoints(ISkillTreeEntry part){
+		if (part == null) return false;
+		if (SkillTreeManager.instance.getSkillPointTypeForPart(part) != SkillPointTypes.SILVER) return true;
+		return !(part instanceof ISpellShape) && !(part instanceof ISpellComponent) && !(part instanceof ISpellModifier);
+	}
+
 	private boolean RecursivePrerequisiteCheck(SkillData sk, SkillTreeEntry entry){
 		for (SkillTreeEntry prereq : entry.prerequisites){
 			if (prereq.enabled){
@@ -568,6 +579,9 @@ public class SkillData implements IExtendedEntityProperties, ISkillData{
 
 		if (sk.isEntryKnown(entry)){
 			return LearnStates.LEARNED;
+		}
+		if (!canPurchaseWithPoints(entry.registeredItem)){
+			return LearnStates.CANNOT_LEARN;
 		}
 
 		SkillPointTypes pointType = SkillTreeManager.instance.getSkillPointTypeForPart(entry.registeredItem);

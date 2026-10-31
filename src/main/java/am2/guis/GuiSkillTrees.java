@@ -218,6 +218,12 @@ public class GuiSkillTrees extends GuiScreen{
 			//else fr = Minecraft.getMinecraft().standardGalacticFontRenderer;
 			text.add(s);
 			SkillPointTypes type = SkillTreeManager.instance.getSkillPointTypeForPart(hoveredItem.registeredItem);
+			if (type == SkillPointTypes.SILVER && state != LearnStates.LEARNED
+					&& (hoveredItem.registeredItem instanceof am2.api.spell.component.interfaces.ISpellShape
+					|| hoveredItem.registeredItem instanceof ISpellComponent
+					|| hoveredItem.registeredItem instanceof am2.api.spell.component.interfaces.ISpellModifier)){
+				text.add(StatCollector.translateToLocal("am2.gui.silverDiscoveryOnly"));
+			}
 
 			if (hoveredItem.registeredItem instanceof ISpellComponent){
 				EnumSet<Affinity> aff = ((ISpellComponent)hoveredItem.registeredItem).getAffinity();
