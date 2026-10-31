@@ -1,5 +1,13 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR5 — 2026-10-31
+
+- Novo evento de servidor `WorldFusionEvent` permite estender o ritual de World
+  Fusion, interceptando sua execução e informando uma conclusão alternativa.
+- Sem uma extensão que trate o evento, a execução original permanece igual.
+- O evento permite validar pré-requisitos e materiais extras antes de consumir
+  os reagentes normais. Compras Silver continuam limitadas a talentos.
+
 ## 1.6.11-LE-CR4 — 2026-10-31
 
 - Pontos Silver livres compram somente talentos, conforme a regra escolhida

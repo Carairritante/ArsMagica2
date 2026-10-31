@@ -44,6 +44,10 @@ public class ManaLink implements ISpellComponent, IRitualInteraction {
 	@Override
 	public boolean applyEffectBlock(ItemStack stack, World world, int blockx, int blocky, int blockz, int blockFace, double impactX, double impactY, double impactZ, EntityLivingBase caster){
 		if (world.getBlock(blockx, blocky, blockz) == Blocks.emerald_block){
+			if (!world.isRemote){
+				am2.api.events.WorldFusionEvent event = new am2.api.events.WorldFusionEvent(world, caster, this, blockx, blocky, blockz);
+				if (net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(event)) return event.completed;
+			}
 			ItemStack[] reagents = RitualShapeHelper.instance.checkForRitual(this, world, blockx, blocky, blockz);
 			if (reagents != null){
 				if (!world.isRemote){
