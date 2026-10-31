@@ -22,11 +22,16 @@ Solar/Lunar, limites de conjuração para Lightning Strike, Explosion e Dig, red
 de partículas e limite de **128 blocos para o percurso da Wave**, preservando sua
 largura. Bless permanece habilitado.
 
-O JAR disponibilizado é o arquivo de teste já preparado e instalado anteriormente,
-conferido por SHA-256. Ele foi produzido por patches incrementais; não é apresentado
-como resultado de uma nova compilação completa deste checkout. Use uma cópia do
-modpack e instale a mesma versão no cliente e no servidor para validar o conjunto.
-Os testes disponíveis não garantem ausência de travamentos em todas as combinações.
+O Actions compila o código desta branch a cada push e pull request. Nas execuções
+concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o
+arquivo **SHA256SUMS**, separadamente e sem ZIP externo, por 14 dias.
+O checksum identifica o arquivo daquela execução; o hash do JAR de teste anterior,
+registrado em `docs/VALIDACAO-CR2.md`, pertence a outro artefato.
+Use uma cópia do modpack para validar o novo build no cliente e no servidor.
+
+Para compilar localmente, use JDK 17 para executar o Gradle e JDK 8 para o mod:
+`./gradlew build`. A compilação usa Gradle 8.8 e RetroFuturaGradle 1.4.9,
+preservando os nomes de métodos e campos fornecidos pelo Forge original.
 
 ### Pull requests
 

@@ -1,120 +1,37 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        maven {
-            name = "gt6-maven"
-            url = "https://gregtech.mechaenetia.com/"
-        }
-        maven {
-            name = "gtnh"
-            url = "http://jenkins.usrv.eu:8081/nexus/content/groups/public/"
-        }
-        maven {
-            name = "sonatype"
-            url = "https://oss.sonatype.org/content/repositories/snapshots/"
-        }
-    }
-    dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2.11'
-    }
+plugins {
+    id 'java-library'
+    id 'com.gtnewhorizons.retrofuturagradle' version '1.4.9'
 }
-
-repositories {
-	maven {
-		name = "gt"
-		url = "https://gregtech.mechaenetia.com/"
-	}
-}
-
-apply plugin: 'forge'
-
-version = "1.6.11-LE"
-group= "am2" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "AM2.5-LTS"
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
+group = 'am2'
+version = '1.6.11-LE-CR2'
+base { archivesName = 'AM2.5-LTS' }
+java { toolchain { languageVersion = JavaLanguageVersion.of(8) } }
 minecraft {
-    version = "1.7.10-10.13.4.1614-1.7.10"
-    runDir = "run"
-    //mappings = "stable_12"  //uncomment this line to use newest Forge mappings. Needs a lot of rework.
+    mcVersion = '1.7.10'
+    // Preserve the names used by the original ForgeGradle 1.2 sources and APIs.
+    useForgeEmbeddedMappings = true
 }
-
-jar {
-	manifest {
-		attributes 'FMLCorePlugin' : 'net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixLoaderMagicka'
-		attributes 'FMLCorePluginContainsFMLMod' : 'true'
-        attributes 'FMLAT': 'arsmagica2_at.cfg'
-	}
+repositories {
+    mavenCentral()
+    maven { url = uri('https://nexus.gtnewhorizons.com/repository/public/') }
+    maven { url = uri('https://maven.cleanroommc.com') }
 }
-
-task devJar(type: Jar) {
-	manifest {
-		attributes 'FMLCorePlugin' : 'net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixLoaderMagicka'
-		attributes 'FMLCorePluginContainsFMLMod' : 'true'
-        attributes 'FMLAT': 'arsmagica2_at.cfg'
-	}
-	classifier = 'dev'
-	from sourceSets.main.output
+dependencies { implementation fileTree(dir: 'libs', include: ['*.jar']) }
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.named('deobfuscateMergedJarToSrg') {
+    accessTransformerFiles.from('src/main/resources/META-INF/arsmagica2_at.cfg')
 }
-
-task sourceJar(type: Jar) {
-	manifest {}
-	classifier = 'sources'
-	from sourceSets.main.allSource
-}
-
-reobf {
-}
-
-artifacts {
-	archives devJar, sourceJar
-}
-
-dependencies {
-}
-
-processResources
-{
-    // this will ensure that this task is redone when the versions change.
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    // replace stuff in mcmod.info, nothing else
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-
-        // replace version and mcversion
-        expand (
-                'version': project.version,
-                'mcversion': project.minecraft.version
+tasks.named('jar', Jar) {
+    manifest {
+        attributes(
+            'FMLCorePlugin': 'net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixLoaderMagicka',
+            'FMLCorePluginContainsFMLMod': 'true',
+            'FMLAT': 'arsmagica2_at.cfg'
         )
     }
-
-    // copy everything else, thats not the mcmod.info
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
-    }
 }
-
-if (!hasProperty("mavenUsername")) {
-	ext.mavenUsername="${System.getenv().MAVEN_USERNAME}"
-}
-
-if (!hasProperty("mavenPassword")) {
-	ext.mavenPassword="${System.getenv().MAVEN_PASSWORD}"
-}
-
-if (!hasProperty("mavenURL")) {
-	ext.mavenURL="${System.getenv().MAVEN_URL}"
-}
-
-uploadArchives {
-	repositories {
-		mavenDeployer {
-			repository(url: mavenURL) {
-				authentication(userName: mavenUsername, password: mavenPassword)
-			}
-		}
-	}
+tasks.named('processResources') {
+    inputs.property('version', project.version)
+    inputs.property('mcversion', '1.7.10')
+    filesMatching('mcmod.info') { expand(version: project.version, mcversion: '1.7.10') }
 }

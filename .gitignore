@@ -40,7 +40,6 @@ options.txt
 /out
 #git stuff
 *.orig
-build.gradle
 CREDITS-fml.txt
 LICENSE-fml.txt
 MinecraftForge-Credits.txt
@@ -61,4 +60,5 @@ whitelist.json
 
 # Generated verification output
 /tools/verification/build/
+/dist/
 *.class
