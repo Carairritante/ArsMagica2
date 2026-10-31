@@ -117,7 +117,7 @@
     </component>
     <component id="LightningStrike">
       <name>Lightning Strike</name>
-      <desc>I have at once perfected my mastery of electricity.  No longer do I have to get by with puny discharges - for now I can summon entire lightnings!</desc>
+      <desc>Warning: Lightning Strike, Explosion, and Dig share a limit of 3 casts per player every 10 seconds. Further casts are blocked until the timer expires. Lightning Strike and Explosion zones pulse at most once every 30 ticks (1.5 seconds); Duration can add pulses. Large AoE/Zone spells can still cause heavy lag.</desc>
       <modifiedBy></modifiedBy>
     </component>
     <component id="FireDamage">
@@ -132,7 +132,7 @@
     </component>
     <component id="Explosion">
       <name>Explosion</name>
-      <desc>Those are the sounds of the enemy fortresses falling apart.  Their entire forces - crushed to bits.  With this spell, your destructive power is, at last, indisputable.</desc>
+      <desc>Those are the sounds of the enemy fortresses falling apart. Their entire forces - crushed to bits. With this spell, your destructive power is, at last, indisputable. Warning: Explosion shares a limit of 3 casts per player every 10 seconds with Lightning Strike and Dig. In Zone spells, pulses occur no more often than once every 30 ticks (1.5 seconds); Duration can add pulses. Large AoE/Zone spells can still cause heavy lag.</desc>
       <modifiedBy>MINING_POWER</modifiedBy>
     </component>
     <component id="Forge">
@@ -318,7 +318,7 @@
     </component>
     <component id="Dig">
       <name>Dig</name>
-      <desc>The ground shatters with a snap of your fingers.  Harder blocks take more mana to break.  Dig starts out equivalent to an Iron pickaxe, but can be upgraded with the use of the #5Mining Power#0 modifier.</desc>
+      <desc>The ground shatters with a snap of your fingers. Harder blocks take more mana to break. Dig starts out equivalent to an Iron pickaxe, but can be upgraded with Mining Power. Warning: Dig shares a limit of 3 casts per player every 10 seconds with Lightning Strike and Explosion. This limit applies only to new casts; Dig does not change the Zone pulse rate.</desc>
       <modifiedBy>MINING_POWER,FORTUNE_LEVEL,SILKTOUCH_LEVEL</modifiedBy>
     </component>
     <component id="Light">
@@ -636,12 +636,12 @@
     </modifier>
     <modifier id="Lunar">
       <name>Lunar</name>
-      <desc>Powers up your spell at night.  The closer to midnight time is (Starting at Dusk), the more damage and healing the spell does.  After midnight, as dawn approaches, the spell will become weaker.  Range, Duration, and Radius are all increased where applicable based on the phase of the moon (more power approaching full moon).  More powerful than Solar due to nights not lasting as long as day.</desc>
+      <desc>Lunar increases spell power based on the caster's maximum mana capacity, not current mana. One Lunar copy grants one-third of the bonus, two grant two-thirds, and three grant the full modifier bonus. In AoE or Zone spells that contain both Solar and Lunar, Solar takes priority and Lunar is ignored.</desc>
       <modifies>DAMAGE,HEALING,RANGE,RADIUS,DURATION</modifies>
     </modifier>
     <modifier id="Solar">
       <name>Solar</name>
-      <desc>Powers up your spell during the day.  The closer to noon time is (Starting at Dawn), the more damage and healing the spell does.  After noon, as dusk approaches, the spell will become weaker.  Range, Duration, and Radius are all increased where applicable based on the phase of the moon (more power approaching new moon).</desc>
+      <desc>Solar increases spell power based on the caster's maximum burnout capacity, not current burnout. One Solar copy grants one-third of the bonus, two grant two-thirds, and three grant the full modifier bonus. In AoE or Zone spells that contain both Solar and Lunar, Solar takes priority and Lunar is ignored.</desc>
       <modifies>DAMAGE,HEALING,RANGE,RADIUS,DURATION</modifies>
     </modifier>
     <modifier id="Piercing">

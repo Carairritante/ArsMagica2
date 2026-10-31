@@ -4,6 +4,7 @@ import am2.api.spell.component.interfaces.ISpellModifier;
 import am2.api.spell.enums.SpellModifiers;
 import am2.items.ItemsCommonProxy;
 import am2.playerextensions.ExtendedProperties;
+import am2.spell.SolarLunarTierScaling;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Items;
@@ -13,6 +14,7 @@ import net.minecraft.world.World;
 import java.util.EnumSet;
 
 public class Solar implements ISpellModifier{
+	private static final float MAX_SOLAR_BURNOUT_CAPACITY = ExtendedProperties.maxMagicLevel * 10.0f + 1.0f;
 
 	@Override
 	public int getID(){
@@ -27,11 +29,21 @@ public class Solar implements ISpellModifier{
 	@Override
 	public float getModifier(SpellModifiers type, EntityLivingBase caster, Entity target, World world, byte[] metadata){
 		ExtendedProperties properties = ExtendedProperties.For(caster);
-		float burnoutRatio = properties.getCurrentFatigue() / properties.getMaxFatigue();
+		// Scale Solar by the caster's burnout capacity (magic level), not their
+		// currently accumulated burnout. Level 99 reaches 991 by default.
+		float maxBurnout = properties.getMaxFatigue();
+		float burnoutRatio = Float.isNaN(maxBurnout) || Float.isInfinite(maxBurnout)
+				? 0.0f
+				: Math.max(0.0f, Math.min(1.0f, maxBurnout / MAX_SOLAR_BURNOUT_CAPACITY));
+		if (type == SpellModifiers.RADIUS){
+			// AoE adds this modifier to its base radius; keep the level-99 radius below 21.
+			return SolarLunarTierScaling.scale(1.0f + 18.8f * (float)Math.pow(burnoutRatio, 0.9d), metadata);
+		}
 		float spellBonus = getSpellTypeBonus(type);
 
-		return (float) Math.max(1,
+		float modifier = (float)Math.max(1,
 				Math.pow(Math.pow((burnoutRatio * spellBonus), (burnoutRatio+1)),(burnoutRatio+1))* 5);
+		return SolarLunarTierScaling.scale(modifier, metadata);
 	}
 
 	@SuppressWarnings("incomplete-switch")

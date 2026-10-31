@@ -35,6 +35,9 @@ public class AoE implements ISpellShape{
 	@Override
 	public SpellCastResult beginStackStage(ItemSpellBase item, ItemStack stack, EntityLivingBase caster, EntityLivingBase target, World world, double x, double y, double z, int side, boolean giveXP, int useCount){
 		double radius = SpellUtils.instance.getModifiedDouble_Add(1, stack, caster, target, world, 0, SpellModifiers.RADIUS);
+		radius = AoERadiusGuard.sanitize(radius);
+		boolean showParticles = useCount == 0;
+
 		List<Entity> entities = world.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(x - radius, y - radius, z - radius, x + radius, y + radius, z + radius));
 
 		boolean appliedToAtLeastOneEntity = false;
@@ -48,24 +51,24 @@ public class AoE implements ISpellShape{
 		}
 
 		if (side == 0 || side == 1){ //top/bottom
-			if (world.isRemote)
+			if (world.isRemote && showParticles)
 				spawnAoEParticles(stack, caster, world, x + 0.5f, y + ((side == 1) ? 0.5f : (target != null ? target.getEyeHeight() : -2.0f)), z + 0.5f, (int)radius);
 			int gravityMagnitude = SpellUtils.instance.countModifiers(SpellModifiers.GRAVITY, stack, 0);
 			return applyStageHorizontal(stack, caster, world, (int)Math.floor(x), (int)Math.ceil(y), (int)Math.floor(z), side, (int)Math.floor(radius), gravityMagnitude, giveXP);
 		}else if (side == 2 || side == 3){ // +/- x
 			//if (side == 3) z--;
-			if (world.isRemote)
+			if (world.isRemote && showParticles)
 				spawnAoEParticles(stack, caster, world, x, y, (side == 2) ? z - 0.5f : z + 1.5f, (int)radius);
 			return applyStageVerticalZ(stack, caster, world, (int)Math.floor(x), (int)Math.ceil(y), (int)Math.floor(z), side, (int)Math.floor(radius), giveXP);
 		}else if (side == 4 || side == 5){ // +/- z
 			//if (side == 5) x--;
-			if (world.isRemote)
+			if (world.isRemote && showParticles)
 				spawnAoEParticles(stack, caster, world, x, y, (side == 5) ? z - 0.5f : z + 1.5f, (int)radius);
 			return applyStageVerticalX(stack, caster, world, (int)Math.floor(x), (int)Math.ceil(y), (int)Math.floor(z), side, (int)Math.floor(radius), giveXP);
 		}
 
 		if (appliedToAtLeastOneEntity){
-			if (world.isRemote)
+			if (world.isRemote && showParticles)
 				spawnAoEParticles(stack, caster, world, x, y + 1, z, (int)radius);
 			return SpellCastResult.SUCCESS;
 		}

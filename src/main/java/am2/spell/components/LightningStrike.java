@@ -24,8 +24,7 @@ public class LightningStrike implements ISpellComponent{
 
 	@Override
 	public boolean applyEffectBlock(ItemStack stack, World world, int blockx, int blocky, int blockz, int blockFace, double impactX, double impactY, double impactZ, EntityLivingBase caster){
-		world.addWeatherEffect(new EntityLightningBolt(world, blockx, blocky, blockz));
-		return true;
+		return LightningStrikeRateLimiter.spawnBlockBolt(world, blockx, blocky, blockz, caster, stack);
 	}
 
 	@Override
@@ -51,7 +50,7 @@ public class LightningStrike implements ISpellComponent{
 
 	@Override
 	public void spawnParticles(World world, double x, double y, double z, EntityLivingBase caster, Entity target, Random rand, int colorModifier){
-		for (int i = 0; i < 5; ++i){
+		for (int i = 0; i < 2; ++i){
 			AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(world, "lightning", x, y, z);
 			if (particle != null){
 				particle.addRandomOffset(1, 0.5, 1);

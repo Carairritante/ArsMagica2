@@ -996,9 +996,12 @@ public class SpellUtils implements ISpellUtils{
 	}
 
 	public byte[] getModifierMetadataFromStack(ItemStack stack, ISpellModifier modifier, int stage, int ordinal){
-		if (!stack.hasTagCompound()) return new byte[0];
-		String identifier = String.format("%s%d_%d_%d", Modifier_Meta_Prefix, modifier.getID(), stage, ordinal);
-		return stack.stackTagCompound.getByteArray(identifier);
+		byte[] metadata = new byte[0];
+		if (stack.hasTagCompound()){
+			String identifier = String.format("%s%d_%d_%d", Modifier_Meta_Prefix, modifier.getID(), stage, ordinal);
+			metadata = stack.stackTagCompound.getByteArray(identifier);
+		}
+		return SolarLunarTierScaling.withModifierCount(metadata, stack, modifier, stage);
 	}
 
 	public int getNextOrdinalForModifier(ItemStack stack, int stage, EnumSet<SpellModifiers> enumSet){

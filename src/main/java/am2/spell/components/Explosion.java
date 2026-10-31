@@ -68,7 +68,7 @@ public class Explosion implements ISpellComponent{
 
 	@Override
 	public void spawnParticles(World world, double x, double y, double z, EntityLivingBase caster, Entity target, Random rand, int colorModifier){
-		for (int i = 0; i < 5; ++i){
+		for (int i = 0; i < 2; ++i){
 			AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(world, "explosion_2", x + 0.5, y + 0.5, z + 0.5);
 			if (particle != null){
 				particle.addRandomOffset(1, 0.5, 1);

@@ -25,6 +25,7 @@ import am2.network.AMNetHandler;
 import am2.network.AMPacketIDs;
 import am2.playerextensions.ExtendedProperties;
 import am2.spell.SpellUtils.SpellRequirements;
+import am2.spell.components.LightningStrikeRateLimiter;
 import am2.spell.modifiers.Colour;
 import am2.utility.EntityUtilities;
 import am2.utility.KeystoneUtilities;
@@ -277,6 +278,7 @@ public class SpellHelper{
 			return SpellCastResult.SILENCED;
 
 		ItemStack parsedStack = SpellUtils.instance.constructSpellStack(stack);
+		SolarLunarCompatibility.prepareSpell(parsedStack, world, caster);
 
 		if (SpellUtils.instance.numStages(parsedStack) == 0){
 			return SpellCastResult.SUCCESS;
@@ -294,6 +296,7 @@ public class SpellHelper{
 		SpellCastingEvent.Pre checkEvent = null;
 		if (consumeMBR){
 			checkEvent = preSpellCast(parsedStack, caster, false);
+			LightningStrikeRateLimiter.applyCastLimit(checkEvent, parsedStack, caster, world);
 			if (checkEvent.castResult != SpellCastResult.SUCCESS){
 				if (checkEvent.castResult == SpellCastResult.NOT_ENOUGH_MANA && caster.worldObj.isRemote && caster instanceof EntityPlayer){
 					AMCore.proxy.flashManaBar();

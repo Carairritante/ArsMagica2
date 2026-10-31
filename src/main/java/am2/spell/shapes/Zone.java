@@ -10,6 +10,7 @@ import am2.entities.EntitySpellEffect;
 import am2.items.ItemsCommonProxy;
 import am2.spell.SpellHelper;
 import am2.spell.SpellUtils;
+import am2.spell.components.LightningStrikeRateLimiter;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
@@ -34,6 +35,7 @@ public class Zone implements ISpellShape{
 		EntitySpellEffect zone = new EntitySpellEffect(world);
 		zone.setRadius(radius);
 		zone.setTicksToExist(duration);
+		LightningStrikeRateLimiter.configureZone(stack, zone);
 		zone.setGravity(gravity);
 		zone.SetCasterAndStack(caster, SpellUtils.instance.popStackStage(stack));
 		zone.setPosition(x, y, z);

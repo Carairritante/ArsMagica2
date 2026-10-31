@@ -78,6 +78,7 @@ public class EntitySpellEffect extends Entity{
 
 	public void setTickRate(int newTickRate){
 		this.maxTicksToEffect = newTickRate;
+		this.ticksToEffect = newTickRate;
 	}
 
 	public void setTicksToExist(int ticks){
@@ -104,7 +105,8 @@ public class EntitySpellEffect extends Entity{
 	public void setWave(float rotation, float speed){
 		this.setRotation(rotation, 0);
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_WAVE);
-		this.moveSpeed = speed;
+		this.moveSpeed = WaveTravelLimiter.limitSpeed(speed);
+		this.ticksToExist = WaveTravelLimiter.limitDuration(this.ticksToExist, this.moveSpeed);
 		this.stepHeight = 0.5f;
 		maxTicksToEffect_wall = 1;
 	}
@@ -221,19 +223,21 @@ public class EntitySpellEffect extends Entity{
 		if (ticksToEffect <= 0){
 			ticksToEffect = maxTicksToEffect;
 			float radius = this.dataWatcher.getWatchableObjectFloat(WATCHER_RADIUS);
-			List<Entity> possibleTargets = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(posX - radius, posY - 1, posZ - radius, posX + radius, posY + 3, posZ + radius));
-			for (Entity e : possibleTargets){
-				if (e instanceof EntityDragonPart && ((EntityDragonPart)e).entityDragonObj instanceof EntityLivingBase)
-					e = (EntityLivingBase)((EntityDragonPart)e).entityDragonObj;
+			if (!worldObj.isRemote){
+				List<Entity> possibleTargets = worldObj.getEntitiesWithinAABB(Entity.class, AxisAlignedBB.getBoundingBox(posX - radius, posY - 1, posZ - radius, posX + radius, posY + 3, posZ + radius));
+				for (Entity e : possibleTargets){
+					if (e instanceof EntityDragonPart && ((EntityDragonPart)e).entityDragonObj instanceof EntityLivingBase)
+						e = (EntityLivingBase)((EntityDragonPart)e).entityDragonObj;
 
-				if (e instanceof EntityLivingBase)
-					SpellHelper.instance.applyStageToEntity(spellStack, dummycaster, worldObj, e, 0, false);
+					if (e instanceof EntityLivingBase)
+						SpellHelper.instance.applyStageToEntity(spellStack, dummycaster, worldObj, e, 0, false);
+				}
+				if (this.dataWatcher.getWatchableObjectInt(WATCHER_GRAVITY) < 0 && !firstApply)
+					SpellHelper.instance.applyStackStage(spellStack, dummycaster, null, posX, posY - 1, posZ, 0, worldObj, false, false, this.ticksExisted);
+				else
+					SpellHelper.instance.applyStackStage(spellStack, dummycaster, null, posX, posY, posZ, 0, worldObj, false, false, this.ticksExisted);
+				firstApply = false;
 			}
-			if (this.dataWatcher.getWatchableObjectInt(WATCHER_GRAVITY) < 0 && !firstApply)
-				SpellHelper.instance.applyStackStage(spellStack, dummycaster, null, posX, posY - 1, posZ, 0, worldObj, false, false, this.ticksExisted);
-			else
-				SpellHelper.instance.applyStackStage(spellStack, dummycaster, null, posX, posY, posZ, 0, worldObj, false, false, this.ticksExisted);
-			firstApply = false;
 		}
 	}
 

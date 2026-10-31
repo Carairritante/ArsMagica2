@@ -58,3 +58,7 @@ usercache.json
 usernamecache.json
 whitelist.json
 /world/
+
+# Generated verification output
+/tools/verification/build/
+*.class

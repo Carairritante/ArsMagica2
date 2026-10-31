@@ -1,6 +1,42 @@
 Ars Magica 2.5
 ==========
 
+## Versão de manutenção 1.6.11-LE-CR2
+
+Fork mantido por [Carairritante](https://github.com/Carairritante), com participação
+substancial do **OpenAI Codex** na investigação, implementação, verificações e
+documentação das alterações de manutenção.
+
+A base desta versão é [ArsMagica2 LE v1.6.11-LE, de DrParadox7](https://github.com/DrParadox7/ArsMagica2/tree/v1.6.11-LE),
+continuação do AM2.5 LTS de TCLProject e do AM2 original de Mithion. O histórico,
+a licença e os créditos originais foram preservados.
+
+- [Builds e artefatos do Actions](https://github.com/Carairritante/ArsMagica2/actions)
+- [Correções e mudanças de comportamento](CHANGELOG.md)
+- [Participação da IA e autoria original](AI_DISCLOSURE.md)
+- [Verificações e limites da validação](docs/VALIDACAO-CR2.md)
+- [Ferramentas de verificação](tools/verification/README.md)
+
+Esta manutenção inclui proteções para Lunar, AoE e Zone, progressão gradual de
+Solar/Lunar, limites de conjuração para Lightning Strike, Explosion e Dig, redução
+de partículas e limite de **128 blocos para o percurso da Wave**, preservando sua
+largura. Bless permanece habilitado.
+
+O JAR disponibilizado é o arquivo de teste já preparado e instalado anteriormente,
+conferido por SHA-256. Ele foi produzido por patches incrementais; não é apresentado
+como resultado de uma nova compilação completa deste checkout. Use uma cópia do
+modpack e instale a mesma versão no cliente e no servidor para validar o conjunto.
+Os testes disponíveis não garantem ausência de travamentos em todas as combinações.
+
+### Pull requests
+
+Esta branch `correcoes` concentra a manutencao experimental do nosso servidor.
+Crie uma branch ou um fork com suas mudancas e abra o PR com destino a
+`Carairritante/ArsMagica2:correcoes`. Os commits e creditos de origem foram mantidos.
+Nao ha compromisso de suporte geral ou de novas funcionalidades.
+
+---
+
 Ars Magica 2.5 - Carrying the Torch of True Magic
 
 ## New Features (TL;DR)
