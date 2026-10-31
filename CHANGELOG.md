@@ -1,5 +1,16 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR6 — 2026-10-31
+
+- Novo Giz do Arquiteto Arcano, reutilizável, com receita usando Nether Star,
+  Wizard's Chalk, Sunstone, Moonstone, essências arcanas, cinzas arcanas e runa.
+- Menu para escolher rituais nativos descobertos, girar o desenho e marcar o
+  centro; projeção de blocos, região dos reagentes e lista de faltantes.
+- Montagem da estrutura disponível exclusivamente no criativo, validada pelo
+  servidor e sem ativar o ritual. Survival continua usando os materiais normais.
+- A conferência do guia não consome nem modifica reagentes no chão.
+- Instruções em português e inglês no Arcane Compendium.
+
 ## 1.6.11-LE-CR5 — 2026-10-31
 
 - Novo evento de servidor `WorldFusionEvent` permite estender o ritual de World

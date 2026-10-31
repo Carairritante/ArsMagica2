@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR5
+## Versão de manutenção 1.6.11-LE-CR6
 
 Fork mantido por [Carairritante](https://github.com/Carairritante), com participação
 substancial do **OpenAI Codex** na investigação, implementação, verificações e
@@ -17,6 +17,7 @@ a licença e os créditos originais foram preservados.
 - [Verificações e limites da validação](docs/VALIDACAO-CR2.md)
 - [Validação da sincronização e dos pontos Silver na CR3](docs/VALIDACAO-CR3.md)
 - [Validação das compras de talentos na CR4](docs/VALIDACAO-CR4.md)
+- [Giz do Arquiteto Arcano: uso e validação da CR6](docs/GIZ-ARQUITETO-CR6.md)
 - [Ferramentas de verificação](tools/verification/README.md)
 
 Esta manutenção inclui proteções para Lunar, AoE e Zone, progressão gradual de
@@ -30,6 +31,11 @@ Silver livres compram **somente talentos**, respeitando a árvore e os pré-requ
 Magias, formas e modificadores Silver dependem de descobertas ou recompensas
 especiais; o bloqueio de compra vale na interface e no servidor.
 Habilidades já aprendidas em versões anteriores são preservadas.
+
+A CR6 acrescenta o **Giz do Arquiteto Arcano**, uma ferramenta reutilizável para
+planejar os rituais de magia nativos. No survival, projeta o desenho e mostra
+materiais e reagentes faltantes; no criativo, pode montar a estrutura. A ativação
+dos rituais continua sendo feita pelas magias e condições normais.
 
 O Actions compila o código desta branch a cada push e pull request. Nas execuções
 concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o

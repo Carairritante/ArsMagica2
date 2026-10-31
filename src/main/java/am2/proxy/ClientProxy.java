@@ -22,6 +22,7 @@ import am2.commands.ConfigureAMUICommand;
 import am2.entities.EntityAirSled;
 import am2.guis.AMGuiHelper;
 import am2.guis.GuiParticleEmitter;
+import am2.guis.GuiRitualArchitect;
 import am2.guis.GuiSkillTrees;
 import am2.items.ItemSpellBook;
 import am2.items.ItemsCommonProxy;
@@ -36,6 +37,7 @@ import am2.particles.ParticleManagerClient;
 import am2.power.PowerNodeEntry;
 import am2.proxy.gui.ClientGuiManager;
 import am2.proxy.tick.ClientTickHandler;
+import am2.ritual.client.RitualArchitectRenderer;
 import am2.spell.SpellUtils;
 import am2.spell.components.Telekinesis;
 import am2.texture.SpellIconManager;
@@ -61,6 +63,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.play.client.C03PacketPlayer;
+import net.minecraft.network.play.client.C08PacketPlayerBlockPlacement;
 import net.minecraft.network.play.client.C0CPacketInput;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.MovingObjectPosition;
@@ -108,6 +111,7 @@ public class ClientProxy extends CommonProxy{
 		MinecraftForge.EVENT_BUS.post(new RegisterCompendiumEntries(ArcaneCompendium.instance));
 		MinecraftForge.EVENT_BUS.post(new RegisterSkillTreeIcons(SpellIconManager.instance));
 		MinecraftForge.EVENT_BUS.register(new AMClientEventHandler());
+		MinecraftForge.EVENT_BUS.register(new RitualArchitectRenderer());
 		((ParticleManagerClient)particleManager).registerEventHandlers();
 
 		FMLCommonHandler.instance().bus().register(new AMKeyBindings());
@@ -196,6 +200,25 @@ public class ClientProxy extends CommonProxy{
 	public void openSkillTreeUI(World world, EntityPlayer player){
 		if (world.isRemote){
 			Minecraft.getMinecraft().displayGuiScreen(new GuiSkillTrees(player));
+		}
+	}
+
+	@Override
+	public boolean forwardRitualArchitectClick(EntityPlayer player, int x, int y, int z, int side,
+			float hitX, float hitY, float hitZ){
+		// onItemUseFirst must return true to skip local container activation. Forward the
+		// normal placement packet ourselves because the controller returns before sending it.
+		Minecraft client = Minecraft.getMinecraft();
+		if (player != client.thePlayer || client.getNetHandler() == null) return false;
+		client.getNetHandler().addToSendQueue(new C08PacketPlayerBlockPlacement(x, y, z, side,
+				player.inventory.getCurrentItem(), hitX, hitY, hitZ));
+		return true;
+	}
+
+	@Override
+	public void openRitualArchitect(EntityPlayer player){
+		if (player.worldObj.isRemote){
+			Minecraft.getMinecraft().displayGuiScreen(new GuiRitualArchitect(player));
 		}
 	}
 

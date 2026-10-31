@@ -53,6 +53,12 @@ public class AMPacketProcessorServer{
 			bbis.readFully(remaining);
 
 			switch (packetID){
+			case AMPacketIDs.RITUAL_ARCHITECT:
+				if (remaining.length == 24) {
+					java.nio.ByteBuffer request = java.nio.ByteBuffer.wrap(remaining);
+					am2.items.ItemRitualArchitect.handleAction(player, request.getInt(), request.getInt(), request.getInt(), request.getInt(), request.getLong());
+				}
+				break;
 			case AMPacketIDs.SPELL_SHAPE_GROUP_CHANGE:
 				handleCastingModeChange(remaining, (EntityPlayerMP)player);
 				break;

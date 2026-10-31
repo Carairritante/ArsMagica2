@@ -1665,6 +1665,7 @@
 		</subitem>
 		<relatedEntries>inscriptionTable</relatedEntries>
 	</item>
+    <item id="ritualArchitect" unlocked="true"><name>Arcane Architect's Chalk</name><desc>A reusable guide to native spell rituals. Right-click in the air to choose a discovered ritual; right-click the top of the ground to set its center. For a ritual with a central block, click that block itself or mark the place where it belongs. Use the menu to rotate the plan or clear the center.!dKeep the tool in your hotbar to see the projection while placing materials: blue marks missing pieces, green marks correct pieces and red marks blocked positions. The display lists missing materials, ground reagents and the normal activation instructions. Reagents must stay inside the indicated area; special runes for Recall must still match the destination and their normal order.!dIn survival, place the ordinary chalk, candles and blocks yourself. The guide does not wear out or consume mana. In creative, the Build button places the structure in a clear, supported space. Ingredients and spell activation are still performed normally. The guide never grants a completed ritual or unlocks undiscovered knowledge.!dThe crafting recipe uses one Nether Star, one new Wizard's Chalk, one Sunstone, one Moonstone, two Arcane Essences, two Arcane Ash and one Blank Rune. The material list and preview describe preparation; they do not guarantee that every condition of the ritual has been met.</desc></item>
   </items>
   <structures>
     <structure id="obelisk_structure">

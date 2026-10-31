@@ -64,6 +64,7 @@ public class ItemsCommonProxy{
 	public static ItemFlickerFocus flickerFocus;
 
 	public static Item wizardChalk;
+	public static ItemRitualArchitect ritualArchitect;
 
 	public static Item boundCatalystHelmet;
 	public static Item boundCatalystArmor;
@@ -262,6 +263,7 @@ public class ItemsCommonProxy{
 		archmageLeggings = (new AMArmor( ArmorMaterial.DIAMOND, ArsMagicaArmorMaterial.ARCHMAGE, ArmorHelper.getArmorRenderIndex("archmage"), 2)).setUnlocalizedAndTextureName("arsmagica2:legs_archmage").setCreativeTab(itemTab).setMaxDamage(0);
 		archmageBoots = (new AMArmor(ArmorMaterial.DIAMOND, ArsMagicaArmorMaterial.ARCHMAGE, ArmorHelper.getArmorRenderIndex("archmage"), 3)).setUnlocalizedAndTextureName("arsmagica2:boots_archmage").setCreativeTab(itemTab).setMaxDamage(0);
 		wizardChalk = new ItemChalk().setUnlocalizedAndTextureName("arsmagica2:wizardChalk").setCreativeTab(itemTab);
+		ritualArchitect = (ItemRitualArchitect)new ItemRitualArchitect().setUnlocalizedAndTextureName("arsmagica2:ritualArchitect").setCreativeTab(itemTab);
 		lesserFocus = (ItemFocusLesser)new ItemFocusLesser().setUnlocalizedAndTextureName("arsmagica2:lesserfocus").setCreativeTab(itemTab);
 		standardFocus = (ItemFocusStandard)new ItemFocusStandard().setUnlocalizedAndTextureName("arsmagica2:standardfocus").setCreativeTab(itemTab);
 		greaterFocus = (ItemFocusGreater)new ItemFocusGreater().setUnlocalizedAndTextureName("arsmagica2:greaterfocus").setCreativeTab(itemTab);
@@ -524,6 +526,7 @@ public class ItemsCommonProxy{
 		registerItem(astrocalis, "astrocalis");
 		registerItem(casparazoid, "casparazoid");
 		registerItem(inscriptionUpgrade, "inscriptionUpgrade");
+		registerItem(ritualArchitect, "ritualArchitect");
 
 		//registerItem(boundBow, "boundBow");
 
@@ -1062,6 +1065,18 @@ public class ItemsCommonProxy{
 						new ItemStack(Items.flint),
 						new ItemStack(Items.paper)
 				}));
+
+		//Reusable ritual guide; ordinary ritual materials are still needed in survival.
+		GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(ritualArchitect), new Object[]{
+				"AES", "CNR", "MEA",
+				'A', "arcaneAsh",
+				'E', new ItemStack(essence, 1, ItemEssence.META_ARCANE),
+				'S', "gemSunstone",
+				'C', new ItemStack(wizardChalk),
+				'N', Items.nether_star,
+				'R', new ItemStack(rune, 1, ItemRune.META_BLANK),
+				'M', "gemMoonstone"
+		}));
 
 		//empty flicker jar
 		GameRegistry.addRecipe(new ShapedOreRecipe(

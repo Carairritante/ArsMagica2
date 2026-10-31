@@ -195,10 +195,17 @@ public class CommonProxy{
 		serverTickHandler = new ServerTickHandler();
 
 		FMLCommonHandler.instance().bus().register(serverTickHandler);
+		FMLCommonHandler.instance().bus().register(new am2.ritual.RitualArchitectServer());
 		MinecraftForge.EVENT_BUS.register(serverTickHandler);
 
 		AMNetHandler.INSTANCE.registerChannels(new AMPacketProcessorServer());
 	}
+
+	/** Client proxy opens the planner; dedicated servers never load a screen class. */
+	public void openRitualArchitect(EntityPlayer player) {}
+
+	/** Client forwards the ordinary block-use packet before intercepting the local activation. */
+	public boolean forwardRitualArchitectClick(EntityPlayer player, int x, int y, int z, int side, float hitX, float hitY, float hitZ) { return false; }
 
 	public void addQueuedRetrogen(int dimensionID, ChunkCoordIntPair pair){
 		ArrayList<ChunkCoordIntPair> chunks;
