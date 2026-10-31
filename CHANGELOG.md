@@ -1,5 +1,16 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR3 — 2026-10-31
+
+- Corrigida a leitura do quarto saldo de pontos (Silver) no pacote de sincronização
+  que o servidor já enviava. O cliente antes atualizava apenas azul, verde e vermelho.
+- Acrescentado o contador de pontos Silver, em cinza, abaixo do vermelho no Oculus.
+- Acrescentada verificação do campo de sincronização e do contador no JAR de CI.
+- Preservadas as correções anteriores de conjuração, Solar/Lunar, AoE, Zone e Wave.
+
+Os pontos Silver continuam obedecendo às regras de aprendizagem e persistência
+existentes. Esta mudança não cria pontos automaticamente nem altera pré-requisitos.
+
 ## 1.6.11-LE-CR2 — publicação em 2026-10-31
 
 Base: DrParadox7/ArsMagica2, tag `v1.6.11-LE`, commit

@@ -374,6 +374,7 @@ public class SkillData implements IExtendedEntityProperties, ISkillData{
 
 				if ((flags & NUM_SPELL_POINTS) == NUM_SPELL_POINTS){
 					setSpellPoints(rdr.getInt(), rdr.getInt(), rdr.getInt());
+					setSpellPoints(rdr.getInt(), SkillPointTypes.SILVER);
 				}
 				break;
 			}

@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR2
+## Versão de manutenção 1.6.11-LE-CR3
 
 Fork mantido por [Carairritante](https://github.com/Carairritante), com participação
 substancial do **OpenAI Codex** na investigação, implementação, verificações e
@@ -15,12 +15,17 @@ a licença e os créditos originais foram preservados.
 - [Correções e mudanças de comportamento](CHANGELOG.md)
 - [Participação da IA e autoria original](AI_DISCLOSURE.md)
 - [Verificações e limites da validação](docs/VALIDACAO-CR2.md)
+- [Validação da sincronização e dos pontos Silver na CR3](docs/VALIDACAO-CR3.md)
 - [Ferramentas de verificação](tools/verification/README.md)
 
 Esta manutenção inclui proteções para Lunar, AoE e Zone, progressão gradual de
 Solar/Lunar, limites de conjuração para Lightning Strike, Explosion e Dig, redução
 de partículas e limite de **128 blocos para o percurso da Wave**, preservando sua
 largura. Bless permanece habilitado.
+
+A CR3 corrige a leitura dos pontos **Silver (cinza)** recebidos do servidor e
+acrescenta seu contador abaixo do contador vermelho no Oculus. Os pontos podem
+ser gastos normalmente nas habilidades Silver, respeitando a árvore e os pré-requisitos.
 
 O Actions compila o código desta branch a cada push e pull request. Nas execuções
 concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o

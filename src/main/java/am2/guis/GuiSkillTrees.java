@@ -201,6 +201,9 @@ public class GuiSkillTrees extends GuiScreen{
 		quantity = String.format("%d", sk.getSpellPoints(SkillPointTypes.RED));
 		Minecraft.getMinecraft().fontRenderer.drawString(quantity, l + xSize - 18 - (Minecraft.getMinecraft().fontRenderer.getStringWidth(quantity) / 2), i1 + 15, 0xFF0000);
 
+		quantity = String.format("%d", sk.getSpellPoints(SkillPointTypes.SILVER));
+		Minecraft.getMinecraft().fontRenderer.drawString(quantity, l + xSize - 18 - (Minecraft.getMinecraft().fontRenderer.getStringWidth(quantity) / 2), i1 + 25, 0xBBBBBB);
+
 		super.drawScreen(par1, par2, par3);
 
 		if (hoveredItem != null){
