@@ -1,5 +1,17 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR7 — 2026-10-31
+
+- Corrigido o desenho do Giz do Arquiteto Arcano que ficava preso na seleção
+  anterior em mundos de um jogador. O registro do processador da fila estava
+  somente na inicialização do servidor dedicado, substituída pelo proxy cliente.
+- O processador agora é registrado uma vez no caminho comum de inicialização,
+  atendendo tanto o servidor integrado quanto o dedicado.
+- Confirmados no cliente real: troca de ritual e páginas do menu, rotação,
+  limpeza do centro, marcação por clique vanilla e montagem criativa.
+- Novo verificador de CI impede regressão do registro comum. O teste de servidor
+  dedicado usa o evento real de tick em vez de drenar a fila diretamente.
+
 ## 1.6.11-LE-CR6 — 2026-10-31
 
 - Novo Giz do Arquiteto Arcano, reutilizável, com receita usando Nether Star,

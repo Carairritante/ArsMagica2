@@ -100,6 +100,9 @@ public class AMCore{
 
 		AMNetHandler.INSTANCE.init();
 
+		// Both physical sides run this path. ClientProxy replaces handler initialization,
+		// so an integrated server must not depend on CommonProxy's dedicated-only setup.
+		am2.ritual.RitualArchitectServer.register();
 		proxy.InitializeAndRegisterHandlers();
 		proxy.preinit();
 	}

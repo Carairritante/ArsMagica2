@@ -2,6 +2,7 @@ package am2.ritual;
 
 import am2.LogHelper;
 import am2.items.ItemRitualArchitect;
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import net.minecraft.entity.player.EntityPlayer;
@@ -15,6 +16,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public final class RitualArchitectServer {
     private static final ConcurrentLinkedQueue<UUID> QUEUE = new ConcurrentLinkedQueue<UUID>();
     private static final ConcurrentHashMap<UUID, Action> PENDING = new ConcurrentHashMap<UUID, Action>();
+    private static boolean registered;
+
+    /** Called before sided proxy setup, including the physical client's integrated server. */
+    public static synchronized void register() {
+        if (registered) return;
+        FMLCommonHandler.instance().bus().register(new RitualArchitectServer());
+        registered = true;
+    }
 
     private static final class Action {
         final EntityPlayer player;

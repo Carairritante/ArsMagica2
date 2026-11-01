@@ -102,7 +102,7 @@ public final class ArchitectProbe {
   StringBuilder out=new StringBuilder();for(Object e:entities){Object nbt=compound();call(call(e,"func_92059_d"),"func_77955_b",nbt);out.append(nbt.toString()).append(':').append(get(e,"field_70128_L")).append('|');}return out.toString();
  }
  static long token()throws Exception{return ((Number)stat(ENGINE,"token",tool)).longValue();}
- static void drain()throws Exception{stat("am2.ritual.RitualArchitectServer","drain");}
+ static void drain()throws Exception{cpw.mods.fml.common.FMLCommonHandler.instance().bus().post(new cpw.mods.fml.common.gameevent.TickEvent.ServerTickEvent(cpw.mods.fml.common.gameevent.TickEvent.Phase.END));}
  static void action(int action,int index,int rotation,int slot,long token)throws Exception{stat(ITEM,"handleAction",player,action,index,rotation,slot,token);drain();}
 
  @Mod.EventHandler public void started(FMLServerStartedEvent event){int exit=0;try{

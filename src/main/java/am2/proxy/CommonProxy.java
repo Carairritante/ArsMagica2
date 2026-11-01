@@ -195,7 +195,6 @@ public class CommonProxy{
 		serverTickHandler = new ServerTickHandler();
 
 		FMLCommonHandler.instance().bus().register(serverTickHandler);
-		FMLCommonHandler.instance().bus().register(new am2.ritual.RitualArchitectServer());
 		MinecraftForge.EVENT_BUS.register(serverTickHandler);
 
 		AMNetHandler.INSTANCE.registerChannels(new AMPacketProcessorServer());

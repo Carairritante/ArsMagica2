@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR6
+## Versão de manutenção 1.6.11-LE-CR7
 
 Fork mantido por [Carairritante](https://github.com/Carairritante), com participação
 substancial do **OpenAI Codex** na investigação, implementação, verificações e
@@ -18,6 +18,7 @@ a licença e os créditos originais foram preservados.
 - [Validação da sincronização e dos pontos Silver na CR3](docs/VALIDACAO-CR3.md)
 - [Validação das compras de talentos na CR4](docs/VALIDACAO-CR4.md)
 - [Giz do Arquiteto Arcano: uso e validação da CR6](docs/GIZ-ARQUITETO-CR6.md)
+- [Correção da seleção do giz em um jogador na CR7](docs/CORRECAO-GIZ-CR7.md)
 - [Ferramentas de verificação](tools/verification/README.md)
 
 Esta manutenção inclui proteções para Lunar, AoE e Zone, progressão gradual de
@@ -36,6 +37,10 @@ A CR6 acrescenta o **Giz do Arquiteto Arcano**, uma ferramenta reutilizável par
 planejar os rituais de magia nativos. No survival, projeta o desenho e mostra
 materiais e reagentes faltantes; no criativo, pode montar a estrutura. A ativação
 dos rituais continua sendo feita pelas magias e condições normais.
+
+A CR7 corrige a seleção, rotação, limpeza e montagem do giz em mundos de um
+jogador. A fila de ações passa a ser registrada também no servidor integrado,
+e o menu foi testado num cliente real com troca de mensagens e sincronização.
 
 O Actions compila o código desta branch a cada push e pull request. Nas execuções
 concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o
