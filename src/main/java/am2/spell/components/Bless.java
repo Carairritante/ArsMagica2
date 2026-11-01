@@ -61,11 +61,7 @@ public class Bless implements ISpellComponent{
 						((BuffEffect) pe).stopEffect((EntityLivingBase) target);
 					}
 				}
-			} else { // good effect
-				effectsToRemove.add(potionID);
-				if (pe instanceof BuffEffect && !world.isRemote) {
-					((BuffEffect) pe).stopEffect((EntityLivingBase) target);
-				}
+			} else { // Keep good effects active until their replacement is ready.
 				effectsToMagnify.put(potionID, pe.getDuration() + ":" + pe.getAmplifier() + ":" + (pe instanceof BuffEffect));
 			}
 		}
@@ -73,28 +69,37 @@ public class Bless implements ISpellComponent{
 		if (!world.isRemote){
 			removePotionEffects((EntityLivingBase)target, effectsToRemove);
 			for (Integer potionID : effectsToMagnify.keySet()) {
-				magnifyPotions(world, (EntityLivingBase) target, magnitudeLeft, targetAmplifier, targetDuration, potionID, Integer.valueOf(effectsToMagnify.get(potionID).split(":")[0]), Integer.valueOf(effectsToMagnify.get(potionID).split(":")[1]), Boolean.valueOf(effectsToMagnify.get(potionID).split(":")[2]));
+				magnitudeLeft = magnifyPotions(world, (EntityLivingBase) target, magnitudeLeft, targetAmplifier, targetDuration, potionID, Integer.valueOf(effectsToMagnify.get(potionID).split(":")[0]), Integer.valueOf(effectsToMagnify.get(potionID).split(":")[1]), Boolean.valueOf(effectsToMagnify.get(potionID).split(":")[2]));
 			}
 		}
 		return true;
 	}
 
 	public static int magnifyPotions(World world, EntityLivingBase target, int magnitudeLeft, int targetAmplifier, int targetDuration, Integer potionID, int lastDuration, int lastAmplifier, boolean lastBuffEffect) {
-		int magnitudeCost = lastAmplifier;
-		if (targetAmplifier > magnitudeCost || targetDuration > lastDuration) {
-			if (magnitudeLeft >= magnitudeCost) {
-				magnitudeLeft -= magnitudeCost;
-				if (!world.isRemote) {
-					// re-add
-					if (lastBuffEffect) {
-						target.addPotionEffect(buffEffectFromPotionID(potionID, Math.max(targetDuration, lastDuration), Math.max(targetAmplifier, magnitudeCost)));
-					} else {
-						target.addPotionEffect(new PotionEffect(potionID, Math.max(targetDuration, lastDuration), Math.max(targetAmplifier, magnitudeCost)));
-					}
-				}
-			}
+		if (world.isRemote) return magnitudeLeft;
+		int magnitudeCost = Math.max(0, lastAmplifier);
+		boolean improve = (targetAmplifier > lastAmplifier || targetDuration > lastDuration)
+				&& magnitudeLeft >= magnitudeCost;
+		PotionEffect current = potionID >= 0 && potionID < Potion.potionTypes.length
+				&& Potion.potionTypes[potionID] != null
+				? target.getActivePotionEffect(Potion.potionTypes[potionID]) : null;
+		// Bless leaves unchanged buffs in place. Curse also calls this after removal.
+		if (!improve && current != null) return magnitudeLeft;
+		int duration = improve ? Math.max(targetDuration, lastDuration) : lastDuration;
+		int amplifier = improve ? Math.max(targetAmplifier, lastAmplifier) : lastAmplifier;
+		PotionEffect replacement;
+		if (lastBuffEffect) {
+			// BuffEffect's constructor accepts a one-based level, PotionEffect is zero-based.
+			if (amplifier == Integer.MAX_VALUE) return magnitudeLeft;
+			replacement = buffEffectFromPotionID(potionID, duration, amplifier + 1);
+		} else {
+			replacement = new PotionEffect(potionID, duration, amplifier);
 		}
-		return magnitudeLeft;
+		if (replacement == null) return magnitudeLeft;
+		if (current instanceof BuffEffect) ((BuffEffect) current).stopEffect(target);
+		if (current != null) target.removePotionEffect(potionID);
+		target.addPotionEffect(replacement);
+		return improve ? magnitudeLeft - magnitudeCost : magnitudeLeft;
 	}
 
 	private void removePotionEffects(EntityLivingBase target, List<Integer> effectsToRemove){

@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR8
+## Versão de manutenção 1.6.11-LE-CR9
 
 [Slide antes/depois e histórico cronológico das atualizações](docs/RESUMO-ANTES-DEPOIS.md)
 
@@ -15,6 +15,7 @@ a licença e os créditos originais foram preservados.
 
 - [Builds e artefatos do Actions](https://github.com/Carairritante/ArsMagica2/actions)
 - [Correções e mudanças de comportamento](CHANGELOG.md)
+- [Correção de Bless e Mana Regen na CR9](docs/CORRECAO-BLESS-CR9.md)
 - [Participação da IA e autoria original](AI_DISCLOSURE.md)
 - [Verificações e limites da validação](docs/VALIDACAO-CR2.md)
 - [Validação da sincronização e dos pontos Silver na CR3](docs/VALIDACAO-CR3.md)

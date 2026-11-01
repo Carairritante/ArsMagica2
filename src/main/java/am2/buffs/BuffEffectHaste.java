@@ -28,7 +28,8 @@ public class BuffEffectHaste extends BuffEffect{
 			attributeinstance.removeModifier(hasteSpeedBoost_Augmented);
 		}
 
-		switch (this.getAmplifier()){
+		// Levels above III retain the strongest implemented attribute modifier.
+		switch (Math.min(2, Math.max(0, this.getAmplifier()))){
 		case 0:
 			attributeinstance.applyModifier(hasteSpeedBoost_Diminished);
 			break;

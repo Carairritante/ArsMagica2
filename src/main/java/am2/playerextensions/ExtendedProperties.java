@@ -1582,7 +1582,8 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 					//mana regen buff
 					if (entity.isPotionActive(BuffList.manaRegen.id)){
 						PotionEffect pe = entity.getActivePotionEffect(BuffList.manaRegen);
-						regenTicks *= (1.0f - Math.max(0.9f, (0.25 * (pe.getAmplifier() + 1))));
+						// Buff strength reduces regeneration time, never below 10% of its base.
+						regenTicks *= 1.0d - Math.min(0.9d, 0.25d * (Math.max(0, pe.getAmplifier()) + 1.0d));
 					}
 
 					//mana scepter handling - 10% boost to mana regen
@@ -1616,7 +1617,7 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 					}
 
 					//actual mana regen
-					float manaToAdd = (actualMaxMana / regenTicks) * ticksSinceLastRegen;
+					float manaToAdd = (actualMaxMana / Math.max(1, regenTicks)) * ticksSinceLastRegen;
 
 					setCurrentMana(getCurrentMana() + manaToAdd);
 				}

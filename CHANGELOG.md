@@ -1,5 +1,21 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR9 — 2026-11-01
+
+- Mana Regen deixa de inverter a regeneração em níveis altos: a redução do tempo
+  cresce 25%, 50%, 75% e chega ao teto de 90% no nível IV ou superior.
+- O denominador da regeneração nunca fica abaixo de um tick, evitando divisão por
+  zero ou recuperação negativa. Os eventos e talentos do Playground são preservados.
+- Bless preserva efeitos benéficos quando não consegue melhorá-los ou não tem
+  orçamento, e só remove a versão anterior após construir a substituição.
+- Corrigida a diferença entre amplificador zero-based de PotionEffect e nível
+  one-based do construtor BuffEffect, impedindo a perda de um nível na reaplicação.
+- Bless passa a compartilhar o orçamento de amplificação entre os buffs.
+- Haste e Frost Slow acima do nível III mantêm o modificador de atributo mais
+  forte implementado, em vez de ficar sem bônus na aplicação direta.
+- Teste de cliente integrado cobre a drenagem anterior e as correções, incluindo
+  a preservação dos talentos Archmage/Atronach e do auxiliar usado por Curse.
+
 ## 1.6.11-LE-CR8 — 2026-11-01
 
 - Compatibilidade opcional do giz com rituais registrados e infusões de buffs do
