@@ -807,7 +807,7 @@ public class GuiArcaneCompendium extends GuiScreen{
 		int l = (width - xSize) / 2;
 		int i1 = (height - ySize) / 2;
 
-		String renderString = "Click and drag to rotate";
+		String renderString = StatCollector.translateToLocal("am2.compendium.rotate");
 		fontRendererObj.drawString(renderString, cx - fontRendererObj.getStringWidth(renderString) / 2, i1 + 20, 0x000000);
 	}
 
@@ -1202,7 +1202,7 @@ public class GuiArcaneCompendium extends GuiScreen{
 			int row = 0;
 			int widthSq = (int)Math.ceil(Math.sqrt(recipeWidth));
 
-			String label = "\247nShapeless";
+			String label = "\247n" + StatCollector.translateToLocal("am2.compendium.shapeless");
 			fontRendererObj.drawString(label, cx - (int)(fontRendererObj.getStringWidth(label) / 2.5), cy - step * 3, 0x6600FF);
 
 			for (int i = 0; i < recipeWidth; ++i){

@@ -1090,3 +1090,18 @@ am2.ritual_architect.details_compendium=More details: see Compendium.
 am2.architect.pg.note.liquid_containment_required=Contain Liquid Essence with solid blocks on all four sides before building.
 am2.architect.pg.note.fire_support_required=Place Netherrack below the central fire so it stays lit.
 am2.architect.pg.note.filled_phylactery_required=A filled Phylactery with a valid creature is required.
+
+# Compendium localization
+am2.compendium.category.guides=Guides
+am2.compendium.category.mechanics=Mechanics
+am2.compendium.category.items=Items
+am2.compendium.category.blocks=Blocks
+am2.compendium.category.shapes=Shapes
+am2.compendium.category.components=Components
+am2.compendium.category.modifiers=Modifiers
+am2.compendium.category.talents=Talents
+am2.compendium.category.mobs=Mobs
+am2.compendium.category.structures=Structures
+am2.compendium.category.bosses=Bosses
+am2.compendium.rotate=Click and drag to rotate
+am2.compendium.shapeless=Shapeless

@@ -201,6 +201,8 @@ public class AMGuiHelper{
 	}
 
 	public static void OpenCompendiumGui(ItemStack stack){
+		if (am2.lore.ArcaneCompendium.instance.refreshLanguageIfNeeded())
+			AMGuiHelper.instance.clearCompendiumBreadcrumbs();
 		CompendiumBreadcrumb breadcrumb = AMGuiHelper.instance.popCompendiumBreadcrumb();
 		if (breadcrumb != null){
 			if (breadcrumb.entryType == breadcrumb.TYPE_ENTRY){

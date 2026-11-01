@@ -109,6 +109,7 @@ public class ClientProxy extends CommonProxy{
 		super.postinit();
 		ArcaneCompendium.instance.init(Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage());
 		MinecraftForge.EVENT_BUS.post(new RegisterCompendiumEntries(ArcaneCompendium.instance));
+		((net.minecraft.client.resources.IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(ArcaneCompendium.instance);
 		MinecraftForge.EVENT_BUS.post(new RegisterSkillTreeIcons(SpellIconManager.instance));
 		MinecraftForge.EVENT_BUS.register(new AMClientEventHandler());
 		MinecraftForge.EVENT_BUS.register(new RitualArchitectRenderer());

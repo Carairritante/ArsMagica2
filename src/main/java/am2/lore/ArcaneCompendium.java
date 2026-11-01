@@ -1,6 +1,10 @@
 package am2.lore;
 
 import am2.AMCore;
+import am2.api.events.RegisterCompendiumEntries;
+import net.minecraft.client.resources.IResourceManager;
+import net.minecraft.client.resources.IResourceManagerReloadListener;
+import net.minecraftforge.common.MinecraftForge;
 import am2.LogHelper;
 import am2.api.ILoreHelper;
 import am2.api.spell.component.interfaces.ISpellComponent;
@@ -36,7 +40,7 @@ import java.io.*;
 import java.util.*;
 
 @SideOnly(Side.CLIENT)
-public class ArcaneCompendium implements ILoreHelper{
+public class ArcaneCompendium implements ILoreHelper, IResourceManagerReloadListener{
 
 	public static final ArcaneCompendium instance = new ArcaneCompendium();
 
@@ -54,6 +58,7 @@ public class ArcaneCompendium implements ILoreHelper{
 	private boolean hasLoaded = false;
 
 	private String languageCode = "";
+	private boolean reloadPending;
 	private String MCVersion = "";
 
 	private ArcaneCompendium(){
@@ -115,6 +120,38 @@ public class ArcaneCompendium implements ILoreHelper{
 		aliases.put(alias, baseItem);
 	}
 
+	@Override
+	public void onResourceManagerReload(IResourceManager manager){
+		// Only mark dirty here: language tables and addons may still be reloading.
+		reloadPending = true;
+	}
+
+	public boolean refreshLanguageIfNeeded(){
+		Language lang = Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage();
+		if (lang == null || (!reloadPending && languageCode.equals(lang.getLanguageCode().trim()))) return false;
+		Map<String, Integer> states = new HashMap<String, Integer>();
+		for (CompendiumEntry entry : compendium.values()) rememberState(entry, states);
+		init(lang);
+		MinecraftForge.EVENT_BUS.post(new RegisterCompendiumEntries(this));
+		loadUnlockData();
+		for (CompendiumEntry entry : compendium.values()) restoreState(entry, states);
+		return true;
+	}
+
+	private void rememberState(CompendiumEntry entry, Map<String, Integer> states){
+		states.put(entry.getID(), (entry.isLocked() ? 1 : 0) | (entry.isNew() ? 2 : 0));
+		for (CompendiumEntry child : entry.getSubItems()) rememberState(child, states);
+	}
+
+	private void restoreState(CompendiumEntry entry, Map<String, Integer> states){
+		Integer state = states.get(entry.getID());
+		if (state != null){
+			entry.setIsLocked((state & 1) != 0);
+			entry.setIsNew((state & 2) != 0);
+		}
+		for (CompendiumEntry child : entry.getSubItems()) restoreState(child, states);
+	}
+
 	public void init(Language lang){
 		if (lang == null){
 			LogHelper.error("Got a current language of NULL from Minecraft?!?  The compendium cannot load!");
@@ -122,6 +159,7 @@ public class ArcaneCompendium implements ILoreHelper{
 		}
 		MCVersion = (String)ReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getMinecraft(), "field_110447_Z", "launchedVersion");
 		languageCode = lang.getLanguageCode().trim();
+		reloadPending = false;
 
 		compendium.clear();
 		aliases.clear();

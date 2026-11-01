@@ -1,6 +1,7 @@
 package am2.lore;
 
 import net.minecraft.util.IIcon;
+import net.minecraft.util.StatCollector;
 import org.w3c.dom.Node;
 
 public class CompendiumEntryType{
@@ -45,7 +46,8 @@ public class CompendiumEntryType{
 
 
 	public String getCategoryLabel(){
-		return this.categoryLabel;
+		String key = "am2.compendium.category." + categoryName;
+		return StatCollector.canTranslate(key) ? StatCollector.translateToLocal(key) : categoryLabel;
 	}
 
 	public IIcon getRepresentItem(){

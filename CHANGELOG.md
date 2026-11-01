@@ -1,5 +1,16 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR10 — 2026-11-01
+
+- Tradução completa PT-BR do Compêndio: 535 entradas e 474 descrições não vazias,
+  com IDs, receitas, controladores e marcações de paginação preservados.
+- Categorias, título, rotação e receitas sem formato passam a usar a localização.
+- Reabrir o livro após trocar o idioma do jogo ou recarregar recursos atualiza
+  textos e entradas opcionais, preservando flags de descoberta e novidade por ID.
+- Inglês original preservado. A tradução adicional do Playground é fornecida
+  por pacote de recursos, sem alterar o JAR do addon.
+- Testes de cliente integrado alternam EN/PT/EN e verificam páginas e progresso.
+
 ## 1.6.11-LE-CR9 — 2026-11-01
 
 - Mana Regen deixa de inverter a regeneração em níveis altos: a redução do tempo

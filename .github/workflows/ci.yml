@@ -33,19 +33,21 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon --stacktrace build -Dorg.gradle.java.installations.paths="${{ steps.java8.outputs.path }}"
+      - name: Verify complete Portuguese Compendium resources
+        run: python3 tools/verification/check_compendium_localization.py
       - name: Prepare JAR and SHA-256
         run: |
           mkdir -p dist
-          cp build/libs/AM2.5-LTS-1.6.11-LE-CR9.jar dist/
+          cp build/libs/AM2.5-LTS-1.6.11-LE-CR10.jar dist/
           cd dist
-          sha256sum AM2.5-LTS-1.6.11-LE-CR9.jar > SHA256SUMS
+          sha256sum AM2.5-LTS-1.6.11-LE-CR10.jar > SHA256SUMS
           printf '### Build artifacts\n\n```text\n' >> "$GITHUB_STEP_SUMMARY"
           cat SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
           printf '```\n' >> "$GITHUB_STEP_SUMMARY"
       - name: Upload JAR without ZIP
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
-          path: dist/AM2.5-LTS-1.6.11-LE-CR9.jar
+          path: dist/AM2.5-LTS-1.6.11-LE-CR10.jar
           archive: false
           if-no-files-found: error
           retention-days: 14

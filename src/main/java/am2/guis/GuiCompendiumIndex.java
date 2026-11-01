@@ -470,7 +470,7 @@ public class GuiCompendiumIndex extends GuiScreen implements GuiYesNoCallback{
 		GL11.glColor3f(1.0f, 1.0f, 1.0f);
 		this.drawTexturedModalRect_Classic(l, i1, 0, 0, xSize, ySize, 256, 240);
 
-		String compendiumTitle = "\247nArcane Compendium";
+		String compendiumTitle = "\247n" + StatCollector.translateToLocal("item.arsmagica2:ArcaneCompendium.name");
 
 		int y_start_title = i1 + 20;
 		int x_start_title = l + 100 - (fontRendererObj.getStringWidth(compendiumTitle) / 2);
