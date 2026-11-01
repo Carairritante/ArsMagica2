@@ -1,5 +1,14 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR11 — 2026-11-01
+
+- Corrigido o escurecimento do Compêndio ao visualizar criaturas como Mana
+  Creeper e Earth Elemental: a prévia não deixa o lightmap ativo no desenho do livro.
+- Estado gráfico, matrizes e cache de iluminação restaurados após cada modelo,
+  mantendo as prévias e a rotação das criaturas.
+- Teste gráfico reproduz a falha na CR10 e valida a correção em cliente mínimo
+  e no modpack completo, incluindo navegação de volta ao texto e ao mundo.
+
 ## 1.6.11-LE-CR10 — 2026-11-01
 
 - Tradução completa PT-BR do Compêndio: 535 entradas e 474 descrições não vazias,

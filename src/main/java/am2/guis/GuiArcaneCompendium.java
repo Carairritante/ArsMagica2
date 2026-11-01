@@ -35,6 +35,7 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.RenderHelper;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderItem;
@@ -59,6 +60,7 @@ import net.minecraftforge.oredict.ShapedOreRecipe;
 import net.minecraftforge.oredict.ShapelessOreRecipe;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL13;
 
 import java.util.*;
 
@@ -792,17 +794,20 @@ public class GuiArcaneCompendium extends GuiScreen{
 		double ey = cy;
 
 		GL11.glPushMatrix();
-		GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		GL11.glTranslatef((float)(ex - 2), (float)(ey + 20), -3.0F + itemRenderer.zLevel);
-		GL11.glScalef(10.0F, 10.0F, 10.0F);
-		GL11.glTranslatef(1.0F, 6.5F, 1.0F);
-		GL11.glScalef(6.0F, 6.0F, -1.0F);
-		GL11.glRotatef(210.0F, 1.0F, 0.0F, 0.0F);
-		GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
-		GL11.glRotatef(-90.0F, 0.0F, 1.0F, 0.0F);
+		try {
+			GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+			GL11.glTranslatef((float)(ex - 2), (float)(ey + 20), -3.0F + itemRenderer.zLevel);
+			GL11.glScalef(10.0F, 10.0F, 10.0F);
+			GL11.glTranslatef(1.0F, 6.5F, 1.0F);
+			GL11.glScalef(6.0F, 6.0F, -1.0F);
+			GL11.glRotatef(210.0F, 1.0F, 0.0F, 0.0F);
+			GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
+			GL11.glRotatef(-90.0F, 0.0F, 1.0F, 0.0F);
 
-		renderEntityIntoUI();
-		GL11.glPopMatrix();
+			renderEntityIntoUI();
+		} finally {
+			GL11.glPopMatrix();
+		}
 
 		int l = (width - xSize) / 2;
 		int i1 = (height - ySize) / 2;
@@ -813,8 +818,27 @@ public class GuiArcaneCompendium extends GuiScreen{
 
 	private void renderEntityIntoUI(){
 		Render render = (Render)RenderManager.instance.entityRenderMap.get(entryEntity.getClass());
-		if (render != null){
-			GL11.glPushMatrix();
+		if (render == null) return;
+
+		int activeTexture = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
+		int matrixMode = GL11.glGetInteger(GL11.GL_MATRIX_MODE);
+		float lightX = OpenGlHelper.lastBrightnessX;
+		float lightY = OpenGlHelper.lastBrightnessY;
+		// Living renderers enable the lightmap on exit. Keep that state out of the book.
+		GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+		OpenGlHelper.setActiveTexture(OpenGlHelper.defaultTexUnit);
+		GL11.glMatrixMode(GL11.GL_TEXTURE);
+		GL11.glPushMatrix();
+		OpenGlHelper.setActiveTexture(OpenGlHelper.lightmapTexUnit);
+		GL11.glPushMatrix();
+		OpenGlHelper.setActiveTexture(OpenGlHelper.defaultTexUnit);
+		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+		GL11.glPushMatrix();
+		try {
+			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+			GL11.glEnable(GL11.GL_COLOR_MATERIAL);
+			RenderHelper.enableStandardItemLighting();
+			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0F, 240.0F);
 			if (entryEntity instanceof IArsMagicaBoss){
 				float scaleFactorX = (1 / entryEntity.width);
 				float scaleFactorY = (2 / entryEntity.height);
@@ -823,11 +847,19 @@ public class GuiArcaneCompendium extends GuiScreen{
 				GL11.glTranslatef(0, 1.3f, 0);
 			}
 			GL11.glRotatef(curRotationH, 0, 1, 0);
-
-			//entity, x, y, z, yaw, partialtick
 			render.doRender(entryEntity, 0, 0, 0, 90, 0);
-
+		} finally {
+			GL11.glMatrixMode(GL11.GL_MODELVIEW);
 			GL11.glPopMatrix();
+			OpenGlHelper.setActiveTexture(OpenGlHelper.lightmapTexUnit);
+			GL11.glMatrixMode(GL11.GL_TEXTURE);
+			GL11.glPopMatrix();
+			OpenGlHelper.setActiveTexture(OpenGlHelper.defaultTexUnit);
+			GL11.glPopMatrix();
+			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lightX, lightY);
+			GL11.glPopAttrib();
+			OpenGlHelper.setActiveTexture(activeTexture);
+			GL11.glMatrixMode(matrixMode);
 		}
 	}
 
