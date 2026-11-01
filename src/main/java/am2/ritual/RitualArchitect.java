@@ -10,7 +10,10 @@ import am2.blocks.BlocksCommonProxy;
 import am2.items.ItemRitualArchitect;
 import am2.items.ItemsCommonProxy;
 import am2.playerextensions.ExtendedProperties;
+import am2.playerextensions.SkillData;
 import am2.spell.SkillManager;
+import am2.spell.SkillTreeManager;
+import am2.api.SkillTreeEntry;
 import am2.utility.InventoryUtilities;
 import net.minecraft.block.Block;
 import net.minecraft.entity.item.EntityItem;
@@ -45,6 +48,9 @@ public final class RitualArchitect {
     public static final class Entry {
         public final int index;
         public final String id, compendiumId, controller, nameKey, activationKey;
+        public final String noteKey;
+        public final boolean playground;
+        public final PlaygroundRitualCompat.Descriptor compat;
         public final Block centerBlock;
         public final boolean dynamicReagents;
 
@@ -54,13 +60,48 @@ public final class RitualArchitect {
             this.controller = controller;
             this.centerBlock = centerBlock;
             this.dynamicReagents = dynamic;
+            this.playground = false;
+            this.compat = null;
+            this.noteKey = "";
             this.nameKey = "am2.architect.ritual." + id;
             this.activationKey = "am2.architect.activate." + id;
         }
 
         public IRitualInteraction interaction() {
+            if (compat != null) return compat.interaction;
             Object skill = SkillManager.instance.getSkill(controller);
             return skill instanceof IRitualInteraction ? (IRitualInteraction)skill : null;
+        }
+
+        private Entry(int index, PlaygroundRitualCompat.Descriptor descriptor) {
+            this.index = index;
+            this.id = "pg:" + descriptor.key;
+            this.compendiumId = descriptor.compendiumId;
+            this.controller = descriptor.controller;
+            this.nameKey = descriptor.nameKey;
+            this.activationKey = descriptor.activationKey;
+            this.noteKey = descriptor.noteKey;
+            this.centerBlock = descriptor.centerBlock;
+            this.dynamicReagents = false;
+            this.playground = true;
+            this.compat = descriptor;
+        }
+
+        public int orientationCount() {
+            if (!playground) return 4;
+            int count = 1;
+            IRitualInteraction ritual = interaction();
+            if (ritual != null) for (int mutex : ritual.getRitualShape().getMutexList())
+                count = Math.max(count, nonEmptyGroups(ritual.getRitualShape(), mutex).size());
+            return Math.min(4, count);
+        }
+
+        public AxisAlignedBB reagentBounds(int x, int y, int z) {
+            int radius = Math.max(0, Math.min(16, interaction().getReagentSearchRadius()));
+            if (playground) return AxisAlignedBB.getBoundingBox(x - radius - 1, y, z - radius - 1,
+                    x + radius + 1, y + 2, z + radius + 1);
+            return AxisAlignedBB.getBoundingBox(x - radius, y, z - radius,
+                    x + radius + 1, y + 1, z + radius + 1);
         }
     }
 
@@ -97,6 +138,8 @@ public final class RitualArchitect {
             add(list, "recall_other", "Recall", null, true);
             add(list, "spatial_fracture", "Blink", BlocksCommonProxy.blackAurem, false);
             add(list, "otherworldly_ritual", "Transplace", BlocksCommonProxy.inertSpawner, false);
+            for (PlaygroundRitualCompat.Descriptor descriptor : PlaygroundRitualCompat.descriptors())
+                list.add(new Entry(list.size(), descriptor));
             catalog = Collections.unmodifiableList(list);
         }
         return catalog;
@@ -110,14 +153,33 @@ public final class RitualArchitect {
         return index >= 0 && index < entries().size() ? entries().get(index) : null;
     }
 
+    public static Entry getEntry(String id) {
+        if (id == null || id.length() > 128) return null;
+        for (Entry entry : entries()) if (entry.id.equals(id)) return entry;
+        return null;
+    }
+
     public static boolean canUse(EntityPlayer player, Entry entry) {
         if (player == null || entry == null || entry.interaction() == null) return false;
         if (player.capabilities.isCreativeMode || !AMCore.config.stagedCompendium()) return true;
         ExtendedProperties properties = ExtendedProperties.For(player);
         if (properties == null) return false;
+        if (entry.playground) {
+            boolean discovered = unlocked(properties, entry.compendiumId) || unlocked(properties, entry.compat.parentId);
+            if (!discovered) return false;
+            if (entry.compat.key.startsWith("potionBuff_")) {
+                SkillTreeEntry skill = SkillTreeManager.instance.getSkillTreeEntry(SkillManager.instance.getSkill(entry.controller));
+                return skill != null && SkillData.For(player).isEntryKnown(skill);
+            }
+            return true;
+        }
         // Native Compendium saves/unlocks the parent chapter and all of its ritual subentries together.
         return (properties.hasCompendiumEntry(entry.id) && !properties.isEntryLocked(entry.id))
                 || (properties.hasCompendiumEntry("rituals_overview") && !properties.isEntryLocked("rituals_overview"));
+    }
+
+    private static boolean unlocked(ExtendedProperties properties, String id) {
+        return id != null && properties.hasCompendiumEntry(id) && !properties.isEntryLocked(id);
     }
 
     private static NBTTagCompound read(ItemStack stack) {
@@ -146,6 +208,7 @@ public final class RitualArchitect {
 
     public static Entry selected(ItemStack stack) {
         NBTTagCompound data = read(stack);
+        if (data != null && data.hasKey("selectedId", 8)) return getEntry(data.getString("selectedId"));
         return getEntry(data == null ? 0 : data.getInteger("selected"));
     }
 
@@ -158,6 +221,7 @@ public final class RitualArchitect {
         if (stack == null || getEntry(index) == null || rotation < 0 || rotation > 3) return;
         NBTTagCompound data = write(stack);
         data.setInteger("selected", index);
+        data.setString("selectedId", getEntry(index).id);
         data.setInteger("rotation", rotation);
     }
 
@@ -213,6 +277,13 @@ public final class RitualArchitect {
         return anchor == null ? Collections.<Cell>emptyList() : plan(selected(stack), rotation(stack), anchor.x, anchor.y, anchor.z);
     }
 
+    private static List<StructureGroup> nonEmptyGroups(MultiblockStructureDefinition definition, int mutex) {
+        List<StructureGroup> result = new ArrayList<StructureGroup>();
+        for (StructureGroup group : definition.getGroupsForMutex(mutex))
+            if (!group.getAllowedBlocks().isEmpty()) result.add(group);
+        return result;
+    }
+
     public static List<Cell> plan(Entry entry, int rotation, int x, int y, int z) {
         if (entry == null || entry.interaction() == null) return Collections.emptyList();
         List<Cell> cells = new ArrayList<Cell>();
@@ -220,13 +291,14 @@ public final class RitualArchitect {
         MultiblockStructureDefinition definition = entry.interaction().getRitualShape();
         if (definition == null) return cells;
         for (int mutex : definition.getMutexList()) {
-            List<StructureGroup> alternatives = definition.getGroupsForMutex(mutex);
+            List<StructureGroup> alternatives = nonEmptyGroups(definition, mutex);
             if (alternatives.isEmpty()) continue;
-            // A quarter turn rotates the canonical group into the native WE/NS alternative.
-            for (Map.Entry<BlockCoord, ArrayList<BlockDec>> part : alternatives.get(0).getAllowedBlocks().entrySet()) {
+            // Addon orientations are the actual alternatives, including mirrored layouts.
+            StructureGroup chosen = alternatives.get(entry.playground ? (rotation & 3) % alternatives.size() : 0);
+            for (Map.Entry<BlockCoord, ArrayList<BlockDec>> part : chosen.getAllowedBlocks().entrySet()) {
                 BlockCoord relative = part.getKey();
                 int rx = relative.x, rz = relative.z;
-                for (int i = 0; i < (rotation & 3); i++) { int oldX = rx; rx = -rz; rz = oldX; }
+                if (!entry.playground) for (int i = 0; i < (rotation & 3); i++) { int oldX = rx; rx = -rz; rz = oldX; }
                 if (part.getValue().isEmpty()) continue;
                 BlockDec block = part.getValue().get(0);
                 int px = x + rx, py = y + relative.y, pz = z + rz;
@@ -256,6 +328,7 @@ public final class RitualArchitect {
     public static final class Status {
         public final List<Cell> cells;
         public final List<Reagent> reagents = new ArrayList<Reagent>();
+        public final List<String> warnings = new ArrayList<String>();
         public int correct, missing, blocked, extraItems;
         public boolean structureReady, reagentsReady;
         private Status(List<Cell> cells) { this.cells = cells; }
@@ -281,11 +354,9 @@ public final class RitualArchitect {
                     entry.id.equals("recall_other") ? 1 : 3, ItemsCommonProxy.rune.META_BLANK)));
             if (entry.id.equals("recall_other")) status.reagents.add(new Reagent(new ItemStack(ItemsCommonProxy.itemOre, 1, ItemsCommonProxy.itemOre.META_VINTEUMDUST)));
         } else if (required != null) for (ItemStack reagent : required) if (reagent != null) status.reagents.add(new Reagent(reagent));
-        int radius = Math.max(0, Math.min(16, entry.interaction().getReagentSearchRadius()));
-        if (!world.checkChunksExist(anchor.x - radius, anchor.y, anchor.z - radius, anchor.x + radius, anchor.y, anchor.z + radius)) return status;
-        List<EntityItem> ground = world.getEntitiesWithinAABB(EntityItem.class,
-                AxisAlignedBB.getBoundingBox(anchor.x - radius, anchor.y, anchor.z - radius,
-                        anchor.x + radius + 1, anchor.y + 1, anchor.z + radius + 1));
+        AxisAlignedBB bounds = entry.reagentBounds(anchor.x, anchor.y, anchor.z);
+        if (!world.checkChunksExist((int)bounds.minX, anchor.y, (int)bounds.minZ, (int)Math.ceil(bounds.maxX), anchor.y, (int)Math.ceil(bounds.maxZ))) return status;
+        List<EntityItem> ground = world.getEntitiesWithinAABB(EntityItem.class, bounds);
         // Read-only accounting: never use RitualShapeHelper.checkForRitual, which can split actual stacks.
         for (EntityItem item : ground) {
             if (item == null || item.isDead || item.getEntityItem() == null) continue;
@@ -305,7 +376,11 @@ public final class RitualArchitect {
                 continue;
             }
             for (Reagent reagent : status.reagents) {
-                if (InventoryUtilities.compareItemStacks(offered, reagent.stack, true, false, true, true)) {
+                boolean phylactery = entry.playground && entry.compat.filledPhylactery
+                        && reagent.stack.getItem() == ItemsCommonProxy.crystalPhylactery;
+                if (phylactery && !PlaygroundRitualCompat.validPhylactery(offered)) continue;
+                boolean compareNbt = !(entry.playground && entry.compat.filledPhylactery);
+                if (InventoryUtilities.compareItemStacks(offered, reagent.stack, true, false, compareNbt, true)) {
                     int used = Math.min(remaining, Math.max(0, reagent.required - reagent.present));
                     reagent.present += used; remaining -= used;
                     if (remaining == 0) break;
@@ -316,7 +391,34 @@ public final class RitualArchitect {
         if (entry.id.equals("recall_to_gateway")) status.extraItems += Math.max(0, status.reagents.get(0).present - 3);
         status.reagentsReady = !entry.dynamicReagents && status.extraItems == 0;
         for (Reagent reagent : status.reagents) status.reagentsReady &= reagent.present >= reagent.required;
+        if (entry.playground) {
+            if (entry.compat.filledPhylactery) for (Reagent reagent : status.reagents)
+                if (reagent.stack.getItem() == ItemsCommonProxy.crystalPhylactery && reagent.present < reagent.required)
+                    status.warnings.add("am2.architect.pg.note.filled_phylactery_required");
+            String potionWarning = PlaygroundRitualCompat.potionWarningKey(entry.compat, world, anchor.x, anchor.y, anchor.z);
+            if (potionWarning != null) status.warnings.add(potionWarning);
+            if (entry.compat.activationUnverified) status.warnings.add(entry.noteKey);
+            String centerWarning = centerPreparationWarning(entry, world, anchor);
+            if (centerWarning != null) status.warnings.add(centerWarning);
+            status.reagentsReady &= status.warnings.isEmpty();
+        }
         return status;
+    }
+
+    private static String centerPreparationWarning(Entry entry, World world, Anchor anchor) {
+        if (!entry.playground) return null;
+        if (entry.centerBlock == BlocksCommonProxy.liquidEssence) {
+            int[][] offsets = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+            ForgeDirection[] faces = {ForgeDirection.EAST, ForgeDirection.WEST, ForgeDirection.SOUTH, ForgeDirection.NORTH};
+            for (int i = 0; i < offsets.length; i++) {
+                int x = anchor.x + offsets[i][0], z = anchor.z + offsets[i][1];
+                if (!world.blockExists(x, anchor.y, z) || !world.isSideSolid(x, anchor.y, z, faces[i]))
+                    return "am2.architect.pg.note.liquid_containment_required";
+            }
+        }
+        if (entry.centerBlock == Blocks.fire && world.getBlock(anchor.x, anchor.y - 1, anchor.z) != Blocks.netherrack)
+            return "am2.architect.pg.note.fire_support_required";
+        return null;
     }
 
     /** Returns a translation key. This never performs a spell or creates/drops reagents. */
@@ -334,6 +436,8 @@ public final class RitualArchitect {
         List<Cell> cells = plan(stack);
         if (cells.isEmpty() || cells.size() > 128) return "am2.architect.invalid_plan";
         if (world.captureBlockSnapshots || !world.capturedBlockSnapshots.isEmpty()) return "am2.architect.busy";
+        String centerWarning = centerPreparationWarning(entry, world, anchor);
+        if (centerWarning != null) return centerWarning;
         List<Cell> missing = new ArrayList<Cell>();
         for (Cell cell : cells) {
             int state = cell.state(world);

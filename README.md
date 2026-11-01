@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR7
+## Versão de manutenção 1.6.11-LE-CR8
 
 Fork mantido por [Carairritante](https://github.com/Carairritante), com participação
 substancial do **OpenAI Codex** na investigação, implementação, verificações e
@@ -19,6 +19,7 @@ a licença e os créditos originais foram preservados.
 - [Validação das compras de talentos na CR4](docs/VALIDACAO-CR4.md)
 - [Giz do Arquiteto Arcano: uso e validação da CR6](docs/GIZ-ARQUITETO-CR6.md)
 - [Correção da seleção do giz em um jogador na CR7](docs/CORRECAO-GIZ-CR7.md)
+- [Compatibilidade opcional do giz com rituais na CR8](docs/COMPATIBILIDADE-RITUAIS-CR8.md)
 - [Ferramentas de verificação](tools/verification/README.md)
 
 Esta manutenção inclui proteções para Lunar, AoE e Zone, progressão gradual de
@@ -41,6 +42,12 @@ dos rituais continua sendo feita pelas magias e condições normais.
 A CR7 corrige a seleção, rotação, limpeza e montagem do giz em mundos de um
 jogador. A fila de ações passa a ser registrada também no servidor integrado,
 e o menu foi testado num cliente real com troca de mensagens e sincronização.
+
+A CR8 acrescenta compatibilidade opcional com os rituais do AM2 Playground. O giz
+lê os desenhos e ingredientes fornecidos pelo addon instalado, sem depender dele
+para iniciar. No ambiente completo de teste, foram reconhecidos 32 rituais e 33
+infusões de buffs adicionais. O guia mostra orientações legais, poções e Phylactery
+preenchida; a construção continua exclusiva do criativo e não executa rituais.
 
 O Actions compila o código desta branch a cada push e pull request. Nas execuções
 concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o

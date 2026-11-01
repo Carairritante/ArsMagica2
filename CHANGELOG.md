@@ -1,5 +1,24 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR8 — 2026-11-01
+
+- Compatibilidade opcional do giz com rituais registrados e infusões de buffs do
+  Playground, usando as estruturas e ingredientes reais expostos pela API.
+- Mantidos os 30 rituais nativos; entradas opcionais são acrescentadas ao catálogo
+  e a seleção passa a persistir por ID, sem depender da posição de outros mods.
+- O pedido do menu inclui esse ID; pacotes antigos continuam limitados aos índices
+  dos rituais nativos. Registro e execução no servidor integrado da CR7 preservados.
+- Variantes do addon respeitam seus grupos preenchidos, incluindo desenhos
+  espelhados. Grupos padrão vazios não são usados como desenho.
+- Região dos reagentes adaptada, Phylactery preenchida e poções verificadas sem
+  consumir itens ou alterar o suporte de poções.
+- Contenção lateral exigida antes de montar Liquid Essence; fogo central requer
+  Netherrack sob ele. O painel informa essas preparações.
+- Rituais com suspeita de falha de ativação original apresentam aviso; a ferramenta
+  mostra a preparação e não altera a execução do addon.
+- Testes em servidor completo, sem integrações e sem addon, além de cliente real
+  com navegação, variantes e montagem do desenho do portal.
+
 ## 1.6.11-LE-CR7 — 2026-10-31
 
 - Corrigido o desenho do Giz do Arquiteto Arcano que ficava preso na seleção

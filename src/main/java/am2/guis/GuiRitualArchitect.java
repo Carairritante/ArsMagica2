@@ -21,6 +21,7 @@ import java.util.List;
 public class GuiRitualArchitect extends GuiScreen {
     private final EntityPlayer player;
     private final int heldSlot;
+    private long heldToken;
     private final List<RitualArchitect.Entry> entries = new ArrayList<RitualArchitect.Entry>();
     private int selected = -1;
     private int rotation;
@@ -32,6 +33,7 @@ public class GuiRitualArchitect extends GuiScreen {
         this.player = player;
         this.heldSlot = player.inventory.currentItem;
         ItemStack stack = player.getCurrentEquippedItem();
+        this.heldToken = RitualArchitect.token(stack);
         RitualArchitect.Entry entry = RitualArchitect.selected(stack);
         if (entry != null) selected = entry.index;
         rotation = RitualArchitect.rotation(stack);
@@ -42,6 +44,20 @@ public class GuiRitualArchitect extends GuiScreen {
 
     public static String text(String key, Object... args) {
         return StatCollector.translateToLocalFormatted("am2.ritual_architect." + key, args);
+    }
+
+    public static String ritualName(RitualArchitect.Entry entry) {
+        if (entry.playground && entry.compat.key.startsWith("potionBuff_")
+                && !StatCollector.canTranslate(entry.nameKey))
+            return StatCollector.translateToLocalFormatted("am2.architect.pg.dynamic_name", entry.controller);
+        return StatCollector.translateToLocal(entry.nameKey);
+    }
+
+    public static String ritualActivation(RitualArchitect.Entry entry) {
+        if (entry.playground && entry.compat.key.startsWith("potionBuff_")
+                && !StatCollector.canTranslate(entry.activationKey))
+            return StatCollector.translateToLocalFormatted("am2.architect.pg.dynamic_activation", entry.controller);
+        return StatCollector.translateToLocal(entry.activationKey);
     }
 
     @Override
@@ -62,14 +78,17 @@ public class GuiRitualArchitect extends GuiScreen {
 
     private void refreshButtons() {
         buttonList.clear();
+        boolean ready = toolReady();
         for (int i = 0; i < rows; i++) {
             int at = page * rows + i;
             if (at >= entries.size()) break;
             RitualArchitect.Entry entry = entries.get(at);
-            String name = StatCollector.translateToLocal(entry.nameKey);
+            String name = ritualName(entry);
             name = fontRendererObj.trimStringToWidth(name, panelWidth - 48);
-            buttonList.add(new GuiButton(100 + at, left + 12, top + 43 + i * 21,
-                    panelWidth - 24, 20, (entry.index == selected ? "\u00a76> " : "") + name));
+            GuiButton choice = new GuiButton(100 + at, left + 12, top + 43 + i * 21,
+                    panelWidth - 24, 20, (entry.index == selected ? "\u00a76> " : "") + name);
+            choice.enabled = ready;
+            buttonList.add(choice);
         }
         GuiButton previous = new GuiButton(1, left + 12, footer, 26, 20, "<");
         previous.enabled = page > 0;
@@ -79,25 +98,31 @@ public class GuiRitualArchitect extends GuiScreen {
         buttonList.add(next);
         buttonList.add(new GuiButton(3, left + panelWidth - 82, footer, 70, 20, text("done")));
         int controlWidth = (panelWidth - 32) / 3;
+        RitualArchitect.Entry entry = RitualArchitect.getEntry(selected);
+        int orientations = orientations(entry);
         GuiButton rotate = new GuiButton(4, left + 12, footer + 24, controlWidth, 20,
-                text("rotate", rotation * 90));
-        rotate.enabled = selected >= 0;
+                entry != null && entry.playground
+                        ? text("orientation", rotation % orientations + 1, orientations)
+                        : text("rotate", rotation * 90));
+        rotate.enabled = ready && entry != null && orientations > 1;
         buttonList.add(rotate);
         GuiButton clear = new GuiButton(5, left + 16 + controlWidth, footer + 24, controlWidth, 20,
                 text("clear"));
-        clear.enabled = RitualArchitect.anchor(player.getCurrentEquippedItem()) != null;
+        clear.enabled = ready && RitualArchitect.anchor(player.getCurrentEquippedItem()) != null;
         buttonList.add(clear);
         GuiButton build = new GuiButton(6, left + 20 + controlWidth * 2, footer + 24,
                 controlWidth, 20, text("build"));
-        build.enabled = player.capabilities.isCreativeMode && selected >= 0
+        build.enabled = ready && player.capabilities.isCreativeMode && selected >= 0
                 && RitualArchitect.anchor(player.getCurrentEquippedItem()) != null;
         buttonList.add(build);
     }
 
     @Override
     protected void actionPerformed(GuiButton button) {
+        if ((button.id >= 100 || button.id >= 4 && button.id <= 6) && !toolReady()) return;
         if (button.id >= 100) {
             selected = entries.get(button.id - 100).index;
+            rotation %= orientations(RitualArchitect.getEntry(selected));
             send(0);
         } else if (button.id == 1) {
             page--;
@@ -108,7 +133,7 @@ public class GuiRitualArchitect extends GuiScreen {
             mc.setIngameFocus();
             return;
         } else if (button.id == 4) {
-            rotation = (rotation + 1) & 3;
+            rotation = (rotation + 1) % orientations(RitualArchitect.getEntry(selected));
             send(0);
         } else if (button.id == 5) {
             send(2);
@@ -123,19 +148,38 @@ public class GuiRitualArchitect extends GuiScreen {
     }
 
     private void send(int action) {
-        ItemStack stack = player.getCurrentEquippedItem();
-        if (player.inventory.currentItem != heldSlot || stack == null
-                || !(stack.getItem() instanceof ItemRitualArchitect)) return;
+        if (!toolReady()) return;
+        RitualArchitect.Entry entry = RitualArchitect.getEntry(selected);
         AMNetHandler.INSTANCE.sendPacketToServer(AMPacketIDs.RITUAL_ARCHITECT,
                 new AMDataWriter().add(action).add(selected).add(rotation).add(heldSlot)
-                        .add(RitualArchitect.token(stack)).generate());
+                        .add(heldToken).add(entry == null ? "" : entry.id).generate());
+    }
+
+    private static int orientations(RitualArchitect.Entry entry) {
+        return entry == null ? 1 : entry.playground
+                ? Math.max(1, Math.min(4, entry.orientationCount())) : 4;
+    }
+
+    private boolean toolReady() {
+        ItemStack stack = player.getCurrentEquippedItem();
+        if (player.inventory.currentItem != heldSlot || stack == null
+                || !(stack.getItem() instanceof ItemRitualArchitect)) return false;
+        long token = RitualArchitect.token(stack);
+        // A just-created tool may still be waiting for the first inventory synchronization.
+        if (heldToken == 0L && token != 0L) heldToken = token;
+        return heldToken != 0L && token == heldToken;
     }
 
     @Override
     public void updateScreen() {
         ItemStack stack = player.getCurrentEquippedItem();
         if (player.inventory.currentItem != heldSlot || stack == null
-                || !(stack.getItem() instanceof ItemRitualArchitect)) mc.displayGuiScreen(null);
+                || !(stack.getItem() instanceof ItemRitualArchitect)
+                || heldToken != 0L && RitualArchitect.token(stack) != heldToken) {
+            mc.displayGuiScreen(null);
+            return;
+        }
+        if (heldToken == 0L && toolReady()) refreshButtons();
     }
 
     @Override

@@ -54,9 +54,19 @@ public class AMPacketProcessorServer{
 
 			switch (packetID){
 			case AMPacketIDs.RITUAL_ARCHITECT:
-				if (remaining.length == 24) {
-					java.nio.ByteBuffer request = java.nio.ByteBuffer.wrap(remaining);
-					am2.items.ItemRitualArchitect.handleAction(player, request.getInt(), request.getInt(), request.getInt(), request.getInt(), request.getLong());
+				if (remaining.length >= 24 && remaining.length <= 512) {
+					java.io.DataInputStream request = new java.io.DataInputStream(new java.io.ByteArrayInputStream(remaining));
+					int action = request.readInt(), index = request.readInt(), rotation = request.readInt(), slot = request.readInt();
+					long token = request.readLong();
+					if (remaining.length == 24) {
+						// Legacy packets address only the thirty native entries.
+						if (action == 2 || index >= 0 && index < 30)
+							am2.items.ItemRitualArchitect.handleAction(player, action, index, rotation, slot, token);
+					} else {
+						String entryId = request.readUTF();
+						if (request.available() == 0 && entryId.length() <= 128)
+							am2.items.ItemRitualArchitect.handleAction(player, action, index, rotation, slot, token, entryId);
+					}
 				}
 				break;
 			case AMPacketIDs.SPELL_SHAPE_GROUP_CHANGE:

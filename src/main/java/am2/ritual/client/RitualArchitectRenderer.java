@@ -17,6 +17,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
@@ -27,6 +28,7 @@ import org.lwjgl.opengl.GL11;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -155,11 +157,12 @@ public final class RitualArchitectRenderer {
                         cell.x + 0.985, cell.y + height, cell.z + 0.985);
                 GL11.glEnable(GL11.GL_TEXTURE_2D);
             }
-            int radius = view.entry.interaction().getReagentSearchRadius();
+            AxisAlignedBB bounds = view.entry.reagentBounds(view.anchor.x, view.anchor.y, view.anchor.z);
             GL11.glDisable(GL11.GL_TEXTURE_2D);
             tint(0xc09aff, 0.65f);
-            box(view.anchor.x - radius + 0.02, view.anchor.y + 0.025, view.anchor.z - radius + 0.02,
-                    view.anchor.x + radius + 0.98, view.anchor.y + 0.04, view.anchor.z + radius + 0.98);
+            box(bounds.minX + 0.02, bounds.minY + 0.025, bounds.minZ + 0.02,
+                    bounds.maxX - 0.02, view.entry.playground ? bounds.maxY - 0.02 : bounds.minY + 0.04,
+                    bounds.maxZ - 0.02);
             GL11.glBegin(GL11.GL_LINES);
             GL11.glVertex3d(view.anchor.x + 0.2, view.anchor.y + 0.08, view.anchor.z + 0.5);
             GL11.glVertex3d(view.anchor.x + 0.8, view.anchor.y + 0.08, view.anchor.z + 0.5);
@@ -216,13 +219,17 @@ public final class RitualArchitectRenderer {
         int left = resolution.getScaledWidth() - panelWidth - 6;
         List<String> lines = new ArrayList<String>();
         lines.add("\u00a7e" + GuiRitualArchitect.text("title"));
-        if (view.entry != null) lines.add(StatCollector.translateToLocal(view.entry.nameKey));
+        if (view.entry != null) lines.add(GuiRitualArchitect.ritualName(view.entry));
         if (view.warning != null) {
             lines.add("\u00a77" + GuiRitualArchitect.text(view.warning));
         } else if (view.status != null) {
             lines.add(GuiRitualArchitect.text("structure", view.status.correct,
                     view.status.correct + view.status.missing + view.status.blocked));
             if (view.status.blocked > 0) lines.add("\u00a7c" + GuiRitualArchitect.text("blocked", view.status.blocked));
+            // Context requirements must remain visible even when a ritual has many ingredients.
+            LinkedHashSet<String> warnings = new LinkedHashSet<String>(view.status.warnings);
+            if (view.entry.noteKey != null && !view.entry.noteKey.isEmpty()) warnings.add(view.entry.noteKey);
+            for (String key : warnings) addWrapped(lines, "\u00a7e" + StatCollector.translateToLocal(key), panelWidth - 12);
             addMissingBlocks(lines, view);
             boolean missingReagent = false;
             int shown = 0;
@@ -238,13 +245,19 @@ public final class RitualArchitectRenderer {
             }
             if (shown > 6) lines.add("\u00a77" + GuiRitualArchitect.text("more", shown - 6));
             if (view.entry.dynamicReagents) lines.add("\u00a7d" + GuiRitualArchitect.text("dynamic_reagents"));
-            else if (!missingReagent) lines.add("\u00a7a" + GuiRitualArchitect.text("reagents_ready"));
+            else if (!missingReagent && view.status.reagentsReady && view.status.warnings.isEmpty())
+                lines.add("\u00a7a" + GuiRitualArchitect.text("reagents_ready"));
             if (view.status.extraItems > 0) lines.add("\u00a7c" + GuiRitualArchitect.text("extra_items", view.status.extraItems));
-            String activation = "\u00a77" + StatCollector.translateToLocal(view.entry.activationKey);
-            lines.addAll(mc.fontRenderer.listFormattedStringToWidth(activation, panelWidth - 12));
+            String activation = "\u00a77" + GuiRitualArchitect.ritualActivation(view.entry);
+            addWrapped(lines, activation, panelWidth - 12);
             lines.add("\u00a77" + GuiRitualArchitect.text("legend"));
         }
         lines.add("\u00a78" + GuiRitualArchitect.text("menu_hint"));
+        int maxLines = Math.max(5, (resolution.getScaledHeight() - 24) / 10);
+        if (lines.size() > maxLines) {
+            lines = new ArrayList<String>(lines.subList(0, maxLines - 1));
+            lines.add("\u00a77" + GuiRitualArchitect.text("details_compendium"));
+        }
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
         try {
             GL11.glDisable(GL11.GL_LIGHTING);
@@ -259,6 +272,10 @@ public final class RitualArchitectRenderer {
         } finally {
             GL11.glPopAttrib();
         }
+    }
+
+    private void addWrapped(List<String> lines, String text, int width) {
+        lines.addAll(mc.fontRenderer.listFormattedStringToWidth(text, width));
     }
 
     private static void addMissingBlocks(List<String> lines, Snapshot view) {
