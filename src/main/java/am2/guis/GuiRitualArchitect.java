@@ -1,7 +1,8 @@
 package am2.guis;
 
 import am2.AMCore;
-
+import am2.guis.controls.ArcaneChalkStyle;
+import am2.guis.controls.GuiButtonArcaneChalk;
 import am2.items.ItemRitualArchitect;
 import am2.network.AMDataWriter;
 import am2.network.AMNetHandler;
@@ -14,6 +15,7 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.StatCollector;
+import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,17 +67,21 @@ public class GuiRitualArchitect extends GuiScreen {
 
     @Override
     public void initGui() {
-        rows = Math.max(2, Math.min(7, (height - 148) / 21));
-        panelWidth = Math.min(420, width - 12);
-        panelHeight = rows * 21 + 142;
+        int oldStart = page * Math.max(1, rows);
+        boolean firstLayout = rows == 0;
+        rows = Math.max(2, Math.min(7, (height - 180) / 25));
+        panelWidth = Math.min(456, width - 24);
+        panelHeight = rows * 25 + 174;
         left = (width - panelWidth) / 2;
         top = Math.max(4, (height - panelHeight) / 2);
-        footer = top + 47 + rows * 21;
-        if (page == 0 && selected >= 0) {
+        footer = top + 72 + rows * 25;
+        page = oldStart / rows;
+        if (firstLayout && selected >= 0) {
             for (int i = 0; i < entries.size(); i++) {
                 if (entries.get(i).index == selected) page = i / rows;
             }
         }
+        page = Math.max(0, Math.min(page, Math.max(0, (entries.size() - 1) / rows)));
         refreshButtons();
         syncSelection();
     }
@@ -88,34 +94,33 @@ public class GuiRitualArchitect extends GuiScreen {
             if (at >= entries.size()) break;
             RitualArchitect.Entry entry = entries.get(at);
             String name = ritualName(entry);
-            name = fontRendererObj.trimStringToWidth(name, panelWidth - 48);
-            GuiButton choice = new GuiButton(100 + at, left + 12, top + 43 + i * 21,
-                    panelWidth - 24, 20, (entry.index == selected ? "\u00a76> " : "") + name);
+            GuiButton choice = new GuiButtonArcaneChalk(100 + at, left + 16, top + 65 + i * 25,
+                    panelWidth - 32, 23, name, entry.index & 15, entry.index == selected);
             choice.enabled = ready;
             buttonList.add(choice);
         }
-        GuiButton previous = new GuiButton(1, left + 12, footer, 26, 20, "<");
+        GuiButton previous = new GuiButtonArcaneChalk(1, left + 16, footer, 27, 20, "<");
         previous.enabled = page > 0;
         buttonList.add(previous);
-        GuiButton next = new GuiButton(2, left + 42, footer, 26, 20, ">");
+        GuiButton next = new GuiButtonArcaneChalk(2, left + 47, footer, 27, 20, ">");
         next.enabled = (page + 1) * rows < entries.size();
         buttonList.add(next);
-        buttonList.add(new GuiButton(3, left + panelWidth - 82, footer, 70, 20, text("done")));
-        int controlWidth = (panelWidth - 32) / 3;
+        buttonList.add(new GuiButtonArcaneChalk(3, left + panelWidth - 94, footer, 78, 20, text("done")));
+        int controlWidth = (panelWidth - 44) / 3;
         RitualArchitect.Entry entry = RitualArchitect.getEntry(selected);
         int orientations = orientations(entry);
-        GuiButton rotate = new GuiButton(4, left + 12, footer + 24, controlWidth, 20,
+        GuiButton rotate = new GuiButtonArcaneChalk(4, left + 16, footer + 25, controlWidth, 23,
                 entry != null && entry.playground
                         ? text("orientation", rotation % orientations + 1, orientations)
                         : text("rotate", rotation * 90));
         rotate.enabled = ready && entry != null && orientations > 1;
         buttonList.add(rotate);
-        GuiButton clear = new GuiButton(5, left + 16 + controlWidth, footer + 24, controlWidth, 20,
+        GuiButton clear = new GuiButtonArcaneChalk(5, left + 22 + controlWidth, footer + 25, controlWidth, 23,
                 text("clear"));
         clear.enabled = ready && RitualArchitect.anchor(player.getCurrentEquippedItem()) != null;
         buttonList.add(clear);
-        GuiButton build = new GuiButton(6, left + 20 + controlWidth * 2, footer + 24,
-                controlWidth, 20, text("build"));
+        GuiButton build = new GuiButtonArcaneChalk(6, left + 28 + controlWidth * 2, footer + 25,
+                controlWidth, 23, text("build"));
         build.enabled = ready && player.capabilities.isCreativeMode && selected >= 0
                 && RitualArchitect.anchor(player.getCurrentEquippedItem()) != null;
         buttonList.add(build);
@@ -198,20 +203,51 @@ public class GuiRitualArchitect extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        drawRect(left, top, left + panelWidth, top + panelHeight, 0xe5191c2a);
-        drawRect(left, top, left + panelWidth, top + 2, 0xffbda55e);
-        drawCenteredString(fontRendererObj, text("title"), width / 2, top + 10, 0xffe7ca80);
-        drawCenteredString(fontRendererObj, text(player.capabilities.isCreativeMode
-                ? "mode_creative" : "mode_survival"), width / 2, top + 25, 0xffc8c8d1);
-        if (entries.isEmpty()) {
-            fontRendererObj.drawSplitString(text("none_unlocked"), left + 16, top + 48,
-                    panelWidth - 32, 0xffdfbf79);
+        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+        try {
+            GL11.glDisable(GL11.GL_LIGHTING);
+            GL11.glDisable(GL11.GL_DEPTH_TEST);
+            GL11.glLineWidth(1f);
+            ArcaneChalkStyle.panel(left, top, panelWidth, panelHeight);
+            ArcaneChalkStyle.seal(mc, selected < 0 ? 0 : selected & 15, left + 35, top + 30);
+            GL11.glColor4f(1, 1, 1, 1);
+            drawString(fontRendererObj, fontRendererObj.trimStringToWidth(text("title"), panelWidth - 90),
+                    left + 66, top + 15, 0xffe9f5ff);
+            String mode = text(player.capabilities.isCreativeMode ? "mode_creative" : "mode_survival");
+            int modeWidth = Math.min(panelWidth - 88, fontRendererObj.getStringWidth(mode) + 12);
+            drawRect(left + 65, top + 31, left + 65 + modeWidth, top + 49, 0xff102e4d);
+            drawRect(left + 65, top + 31, left + 65 + modeWidth, top + 32, 0xff2b638b);
+            drawString(fontRendererObj, fontRendererObj.trimStringToWidth(mode, modeWidth - 10),
+                    left + 71, top + 36, 0xff86caff);
+            drawRect(left + 16, top + 57, left + panelWidth - 16, top + 58, 0x55508fc0);
+            for (int y = top + 73, n = 0; y < top + panelHeight - 16; y += 28, n++)
+                ArcaneChalkStyle.glyph(mc, (selected + n * 3) & 15, left + panelWidth - 12, y,
+                        7, 0x5eb9f2, 0.32f);
+            if (entries.isEmpty()) fontRendererObj.drawSplitString(text("none_unlocked"), left + 20,
+                    top + 73, panelWidth - 44, 0xffd1e0ef);
+            int pages = Math.max(1, (entries.size() + rows - 1) / rows);
+            drawString(fontRendererObj, text("page", page + 1, pages), left + 85, footer + 6, 0xff8bb9df);
+            drawRect(left + 16, footer + 54, left + panelWidth - 16, footer + 55, 0x44446eab);
+            fontRendererObj.drawSplitString(text("controls"), left + 19, footer + 61,
+                    panelWidth - 48, 0xff91acc9);
+            super.drawScreen(mouseX, mouseY, partialTicks);
+            for (Object element : buttonList) {
+                if (!(element instanceof GuiButtonArcaneChalk)) continue;
+                GuiButtonArcaneChalk button = (GuiButtonArcaneChalk)element;
+                if (!button.visible || mouseX < button.xPosition || mouseY < button.yPosition
+                        || mouseX >= button.xPosition + button.width || mouseY >= button.yPosition + button.height) continue;
+                if (button.labelClipped(mc)) {
+                    List<String> lines = fontRendererObj.listFormattedStringToWidth(button.displayString, Math.min(260, width - 32));
+                    drawHoveringText(lines, mouseX, mouseY, fontRendererObj);
+                } else if (button.id == 6 && !player.capabilities.isCreativeMode) {
+                    List<String> lines = fontRendererObj.listFormattedStringToWidth(text("mode_survival"), Math.min(260, width - 32));
+                    drawHoveringText(lines, mouseX, mouseY, fontRendererObj);
+                }
+                break;
+            }
+        } finally {
+            GL11.glPopAttrib();
         }
-        int pages = Math.max(1, (entries.size() + rows - 1) / rows);
-        drawString(fontRendererObj, text("page", page + 1, pages), left + 78, footer + 6, 0xffccccdd);
-        fontRendererObj.drawSplitString(text("controls"), left + 12, footer + 51,
-                panelWidth - 24, 0xffbbbbcc);
-        super.drawScreen(mouseX, mouseY, partialTicks);
     }
 
     @Override

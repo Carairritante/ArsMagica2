@@ -1,5 +1,19 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR16 — 2026-11-02
+
+- Menu do Giz do Arquiteto Arcano no mesmo tema azul-escuro da HUD, com bordas
+  luminosas, runas nativas do Wizard Chalk e destaque para o ritual selecionado.
+- Botões de navegação, rotação, limpeza e montagem usam o novo tema. Rótulos
+  longos têm tooltip; os controles se ajustam a janelas menores.
+- A página é ajustada ao redimensionar a janela, evitando páginas vazias no fim
+  do catálogo. A primeira abertura mostra a página do ritual selecionado.
+- Seleção e ações continuam usando o mesmo protocolo e as mesmas permissões.
+  Projeção no survival; montagem automática apenas no criativo.
+- Compilação e verificações locais concluídas. Menu testado em cliente integrado
+  sem Playground e com Playground corrigido, incluindo troca de mensagens,
+  seleção, rotação, limpeza, nova âncora, montagem criativa e janela pequena.
+
 ## 1.6.11-LE-CR15 — 2026-11-02
 
 - HUD do giz com painel azul-escuro, runas do Wizard Chalk, barra de progresso

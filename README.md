@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR15
+## Versão de manutenção 1.6.11-LE-CR16
 
 [Slide antes/depois e histórico cronológico das atualizações](docs/RESUMO-ANTES-DEPOIS.md)
 
@@ -66,6 +66,9 @@ formas, componentes e modificadores pelos nomes em inglês e no idioma do jogo.
 
 A CR15 renova a HUD do giz com painel azul-escuro, runas nativas e progresso
 da estrutura, mantendo a montagem automática exclusiva do criativo.
+
+A CR16 aplica o mesmo tema ao menu do giz e ajusta a navegação ao tamanho
+da janela. Veja [menu e validação](docs/MENU-GIZ-CR16.md).
 
 O Actions compila o código desta branch a cada push e pull request. Nas execuções
 concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o
