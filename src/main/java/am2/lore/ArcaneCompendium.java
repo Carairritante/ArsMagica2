@@ -434,6 +434,14 @@ public class ArcaneCompendium implements ILoreHelper, IResourceManagerReloadList
 		return false;
 	}
 
+	/** Adds a fully constructed addon entry, including custom category/structure pages. */
+	public void registerAddonEntry(CompendiumEntry entry){
+		if (entry == null || entry.id == null || entry.id.isEmpty() || entry.type == null) throw new IllegalArgumentException("Incomplete compendium entry");
+		if (CompendiumEntryTypes.getForSection(entry.type.getCategoryName(), entry.type.getNodeName()) != entry.type) throw new IllegalArgumentException("Unregistered compendium category");
+		if (compendium.containsKey(entry.id) || aliases.containsKey(entry.id)) throw new IllegalArgumentException("Duplicate compendium entry: " + entry.id);
+		compendium.put(entry.id, entry);
+	}
+
 	@Override
 	public void AddCompenidumEntry(Object entryItem, String entryKey, String entryName, String entryDesc, String parent, boolean allowReplace, String... relatedKeys){
 		if (entryItem == null){

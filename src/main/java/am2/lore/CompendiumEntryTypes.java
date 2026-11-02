@@ -6,6 +6,27 @@ import am2.texture.SpellIconManager;
 
 public class CompendiumEntryTypes{
 
+	private static final java.util.LinkedHashMap<String, CompendiumEntryType> addonCategories = new java.util.LinkedHashMap<String, CompendiumEntryType>();
+
+	/** Register a client-side addon category before RegisterCompendiumEntries. */
+	public static synchronized void registerCategory(CompendiumEntryType type){
+		if (type == null || type.getCategoryName() == null || type.getCategoryName().isEmpty()) throw new IllegalArgumentException("Missing category");
+		for (CompendiumEntryType existing : categoryList()){
+			if (existing.getCategoryName().equals(type.getCategoryName())){
+				if (existing == type) return;
+				throw new IllegalArgumentException("Duplicate compendium category: " + type.getCategoryName());
+			}
+		}
+		addonCategories.put(type.getCategoryName(), type);
+	}
+
+	private static synchronized CompendiumEntryType[] withAddons(CompendiumEntryType[] original){
+		java.util.ArrayList<CompendiumEntryType> values = new java.util.ArrayList<CompendiumEntryType>(java.util.Arrays.asList(original));
+		values.addAll(addonCategories.values());
+		return values.toArray(new CompendiumEntryType[values.size()]);
+	}
+
+
 	public final CompendiumEntryType GUIDE = new CompendiumEntryType("guides", "guide", "Guides", 0, CompendiumEntryGuide.class);
 	public final CompendiumEntryType MECHANIC = new CompendiumEntryType("mechanics", "mechanic", "Mechanics", 1, CompendiumEntryMechanic.class);
 	public final CompendiumEntryType ITEM = new CompendiumEntryType("items", "item", "Items", 2, CompendiumEntryItem.class);
@@ -27,7 +48,7 @@ public class CompendiumEntryTypes{
 	}
 
 	public static CompendiumEntryType[] categoryList(){
-		return new CompendiumEntryType[]{
+		return withAddons(new CompendiumEntryType[]{
 				instance.GUIDE,
 				instance.MECHANIC,
 				instance.ITEM,
@@ -39,11 +60,11 @@ public class CompendiumEntryTypes{
 				instance.MOB,
 				instance.STRUCTURE,
 				instance.BOSS
-		};
+		});
 	}
 
 	private static CompendiumEntryType[] allValues(){
-		return new CompendiumEntryType[]{
+		return withAddons(new CompendiumEntryType[]{
 				instance.GUIDE,
 				instance.MECHANIC,
 				instance.ITEM,
@@ -56,7 +77,7 @@ public class CompendiumEntryTypes{
 				instance.STRUCTURE,
 				instance.RITUAL,
 				instance.BOSS
-		};
+		});
 	}
 
 	public void initTextures(){

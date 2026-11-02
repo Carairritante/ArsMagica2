@@ -1,5 +1,14 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR12 — 2026-11-01
+
+- Extensão cliente permite registrar categorias opcionais no Compêndio,
+  preservando a ordem e os tipos originais e rejeitando nomes duplicados.
+- Registro de entradas completas permite páginas próprias de estruturas e
+  guias de addons, sem substituir entradas ou aliases existentes.
+- Arcane Engineering usa essa extensão; nenhum conteúdo desse addon é incluído
+  no AM2.5. Os testes de manutenção e localização existentes foram preservados.
+
 ## 1.6.11-LE-CR11 — 2026-11-01
 
 - Corrigido o escurecimento do Compêndio ao visualizar criaturas como Mana
