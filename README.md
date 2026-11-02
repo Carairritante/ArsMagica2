@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR17
+## Versão de manutenção 1.6.11-LE-CR18
 
 [Slide antes/depois e histórico cronológico das atualizações](docs/RESUMO-ANTES-DEPOIS.md)
 
@@ -15,6 +15,7 @@ a licença e os créditos originais foram preservados.
 
 - [Builds e artefatos do Actions](https://github.com/Carairritante/ArsMagica2/actions)
 - [Correções e mudanças de comportamento](CHANGELOG.md)
+- [Menu e HUD do Giz do Arquiteto Arcano](docs/MENU-GIZ-CR16.md)
 - [Separação entre o AM2.5 e o Playground na CR13](docs/INDEPENDENCIA-PLAYGROUND-CR13.md)
 - [Correção das prévias de criaturas na CR11](docs/CORRECAO-COMPENDIUM-CR11.md)
 - [API opcional de categorias do Compêndio na CR12](docs/CATEGORIAS-COMPENDIUM-CR12.md)
@@ -61,17 +62,19 @@ para iniciar. No ambiente completo de teste, foram reconhecidos 32 rituais e 33
 infusões de buffs adicionais. O guia mostra orientações legais, poções e Phylactery
 preenchida; a construção continua exclusiva do criativo e não executa rituais.
 
-A CR14 amplia o catálogo do giz para 41 modelos nativos e permite pesquisar
-formas, componentes e modificadores pelos nomes em inglês e no idioma do jogo.
+A CR14 amplia o catálogo para 41 modelos nativos e permite pesquisar as partes
+das magias pelos nomes em inglês e pelo idioma do jogo. A CR15 renova a HUD do
+giz. A CR16 aplica o mesmo azul-escuro ao menu, com runas do Wizard Chalk,
+seleção iluminada e navegação adaptada ao tamanho da janela. A montagem
+automática permanece exclusiva do criativo.
 
-A CR15 renova a HUD do giz com painel azul-escuro, runas nativas e progresso
-da estrutura, mantendo a montagem automática exclusiva do criativo.
+A CR17 posiciona a HUD do giz no canto superior esquerdo e torna seu fundo
+mais transparente, preservando a leitura dos textos e o tema do menu.
 
-A CR16 aplica o mesmo tema ao menu do giz e ajusta a navegação ao tamanho
-da janela. Veja [menu e validação](docs/MENU-GIZ-CR16.md).
-
-A CR17 posiciona a HUD no canto superior esquerdo e torna o fundo mais
-transparente.
+Na CR18, a engrenagem no menu do giz abre os ajustes da HUD: arraste o painel
+para reposicioná-lo, use **− / +** para mudar o tamanho ou a transparência do fundo
+e **Restaurar** para voltar ao padrão. As preferências ficam salvas localmente
+ao fechar os ajustes.
 
 O Actions compila o código desta branch a cada push e pull request. Nas execuções
 concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o

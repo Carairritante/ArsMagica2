@@ -10,6 +10,7 @@ import java.util.List;
 
 @SideOnly(Side.CLIENT)
 public final class GuiButtonArcaneChalk extends GuiButton {
+    public static final int GEAR = -2;
     private final int glyph;
     private final boolean selected;
 
@@ -59,6 +60,8 @@ public final class GuiButtonArcaneChalk extends GuiButton {
                 mc.fontRenderer.drawStringWithShadow(label, xPosition + 37, yPosition + (height - 8) / 2, foreground);
                 if (selected) mc.fontRenderer.drawStringWithShadow("<", xPosition + width - 14,
                         yPosition + (height - 8) / 2, 0x77d4ff);
+            } else if (glyph == GEAR) {
+                ArcaneChalkStyle.gear(xPosition + width / 2, yPosition + height / 2, foreground);
             } else {
                 List<String> lines = mc.fontRenderer.listFormattedStringToWidth(displayString, width - 12);
                 int count = Math.min(2, lines.size());

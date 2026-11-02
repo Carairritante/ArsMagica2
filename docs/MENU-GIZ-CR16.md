@@ -27,3 +27,16 @@ Os rituais ainda precisam de seus ingredientes e de sua ativação normal.
 São testes locais. Este documento não afirma execução do GitHub Actions nem
 compatibilidade universal com outras versões. O Playground não foi modificado
 para esta atualização visual.
+
+## Ajustes locais da HUD — CR18
+
+O botão de configuração no canto superior direito do menu abre a prévia da HUD.
+Arraste o painel para posicioná-lo. Os controles de tamanho vão de 50% a 150%;
+os de transparência do fundo vão de 0% a 100%, mantendo os textos legíveis.
+O botão Restaurar volta ao canto superior esquerdo, tamanho 100% e transparência
+45%. Concluir e Esc salvam os ajustes localmente.
+
+Validado com nossa CR18 em cópia completa do Forbidden Series: abertura pelo
+botão, arraste, tamanho, transparência, recarga do arquivo salvo, restauração,
+limites e janela menor. O item do servidor e a restrição de montagem no survival
+foram preservados; a instância original permaneceu inalterada.

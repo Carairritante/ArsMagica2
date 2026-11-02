@@ -788,3 +788,9 @@ am2.ritual_architect.hud_activation=ATIVAÇÃO
 am2.ritual_architect.hud_correct=Certo
 am2.ritual_architect.hud_missing=Falta
 am2.ritual_architect.hud_blocked=Bloqueio
+
+am2.ritual_architect.hud_settings=Configurar HUD
+am2.ritual_architect.hud_drag=Arraste o painel para mover. Ajuste tamanho e transparência abaixo.
+am2.ritual_architect.hud_reset=Restaurar
+am2.ritual_architect.hud_size=Tamanho: %s%%
+am2.ritual_architect.hud_transparency=Transparência: %s%%

@@ -88,6 +88,8 @@ public class GuiRitualArchitect extends GuiScreen {
 
     private void refreshButtons() {
         buttonList.clear();
+        buttonList.add(new GuiButtonArcaneChalk(7, left + panelWidth - 36, top + 16, 20, 20,
+                text("hud_settings"), GuiButtonArcaneChalk.GEAR, false));
         boolean ready = toolReady();
         for (int i = 0; i < rows; i++) {
             int at = page * rows + i;
@@ -129,7 +131,10 @@ public class GuiRitualArchitect extends GuiScreen {
     @Override
     protected void actionPerformed(GuiButton button) {
         if ((button.id >= 100 || button.id >= 4 && button.id <= 6) && !toolReady()) return;
-        if (button.id >= 100) {
+        if (button.id == 7) {
+            mc.displayGuiScreen(new GuiArcaneChalkHud(this));
+            return;
+        } else if (button.id >= 100) {
             selected = entries.get(button.id - 100).index;
             rotation %= orientations(RitualArchitect.getEntry(selected));
             send(0);
@@ -211,7 +216,7 @@ public class GuiRitualArchitect extends GuiScreen {
             ArcaneChalkStyle.panel(left, top, panelWidth, panelHeight);
             ArcaneChalkStyle.seal(mc, selected < 0 ? 0 : selected & 15, left + 35, top + 30);
             GL11.glColor4f(1, 1, 1, 1);
-            drawString(fontRendererObj, fontRendererObj.trimStringToWidth(text("title"), panelWidth - 90),
+            drawString(fontRendererObj, fontRendererObj.trimStringToWidth(text("title"), panelWidth - 110),
                     left + 66, top + 15, 0xffe9f5ff);
             String mode = text(player.capabilities.isCreativeMode ? "mode_creative" : "mode_survival");
             int modeWidth = Math.min(panelWidth - 88, fontRendererObj.getStringWidth(mode) + 12);
@@ -236,7 +241,10 @@ public class GuiRitualArchitect extends GuiScreen {
                 GuiButtonArcaneChalk button = (GuiButtonArcaneChalk)element;
                 if (!button.visible || mouseX < button.xPosition || mouseY < button.yPosition
                         || mouseX >= button.xPosition + button.width || mouseY >= button.yPosition + button.height) continue;
-                if (button.labelClipped(mc)) {
+                if (button.id == 7) {
+                    List<String> lines = fontRendererObj.listFormattedStringToWidth(text("hud_settings"), Math.min(260, width - 32));
+                    drawHoveringText(lines, mouseX, mouseY, fontRendererObj);
+                } else if (button.labelClipped(mc)) {
                     List<String> lines = fontRendererObj.listFormattedStringToWidth(button.displayString, Math.min(260, width - 32));
                     drawHoveringText(lines, mouseX, mouseY, fontRendererObj);
                 } else if (button.id == 6 && !player.capabilities.isCreativeMode) {

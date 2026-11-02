@@ -63,8 +63,9 @@ os repositórios deste projeto. Novas instruções explícitas do usuário preva
 
 ## Instalação e testes
 
-- A instância de teste é `teste-ars`; o `forbidden-series` serve como referência.
-  Não alterar o forbidden-series sem pedido explícito.
+- Validar em cópia descartável do `forbidden-series`, sem alterar a instância
+  original sem pedido explícito. O `teste-ars` pode receber os JARs validados
+  conforme o fluxo de instalação já autorizado, mas não exige novo teste.
 - Antes de trocar JARs na instância de teste, confirmar que ela está fechada,
   criar backup e preservar os outros mods, configurações e saves.
 - Para uma publicação, executar os checks adequados à mudança e registrar
@@ -87,9 +88,10 @@ os repositórios deste projeto. Novas instruções explícitas do usuário preva
 - Decisão do usuário: as sete descobertas avançadas exigem AM2.5. No AM2 original
   de Mithion, manter o restante do Playground compatível e informar a limitação;
   não substituir World Fusion por nível 70 nem recriar esse ritual no original.
-- Antes de publicar mudanças nessas integrações, testar AM2.5 sem Playground,
-  com Playground original e com Playground corrigido, além do Playground
-  corrigido com AM2 original suportado. Registrar versões e hashes; não afirmar
-  compatibilidade universal com versões que não foram verificadas.
+- Preferência atual do usuário (2026-11-02): testar somente a nossa versão do
+  AM2.5 em cópia descartável do `forbidden-series`. Não é necessário repetir
+  testes no `teste-ars`, com AM2 2.0/original ou com a versão do TCLProject.
+  Preservar a separação entre os projetos e registrar versões, hashes e limites
+  dos testes, sem afirmar compatibilidade não verificada.
 - Ao investigar arquivos de colaboradores, comparar os hashes com os artefatos
   reais do CI. Distinguir JAR jogável do arquivo de ferramentas do fork público.

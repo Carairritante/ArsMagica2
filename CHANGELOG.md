@@ -1,5 +1,14 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR18 — 2026-11-02
+
+- Engrenagem no menu do giz abre os ajustes de posição, tamanho e transparência
+  do fundo da HUD (0% a 100%), preservando a leitura dos textos.
+- Painel pode ser arrastado; botões de tamanho vão de 50% a 150%, com ajuste
+  automático para caber na tela. Restaurar volta ao canto superior esquerdo e 100%.
+- Preferências locais persistem ao fechar o menu, sem modificar o item ou enviar
+  configurações de interface ao servidor. Fundo e estilo da CR17 preservados.
+
 ## 1.6.11-LE-CR17 — 2026-11-02
 
 - HUD do giz fixada no canto superior esquerdo, com margem de oito pixels de

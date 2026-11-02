@@ -68,6 +68,31 @@ public final class ArcaneChalkStyle extends Gui {
         glyph(mc, variant, x - 14, y - 14, 28, 0xa1e5ff, 1f);
     }
 
+    public static void gear(int x, int y, int rgb) {
+        GL11.glDisable(GL11.GL_TEXTURE_2D);
+        color(rgb, 1f);
+        for (int tooth = 0; tooth < 8; tooth++) {
+            double a = tooth * Math.PI / 4;
+            GL11.glBegin(GL11.GL_QUADS);
+            for (int i = 0; i < 4; i++) {
+                double angle = a + (i < 2 ? -0.17 : 0.17);
+                double radius = i == 0 || i == 3 ? 5 : 7;
+                GL11.glVertex2d(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+            }
+            GL11.glEnd();
+        }
+        for (int radius : new int[]{5, 2}) {
+            GL11.glBegin(GL11.GL_LINE_LOOP);
+            for (int i = 0; i < 24; i++) {
+                double angle = i * Math.PI / 12;
+                GL11.glVertex2d(x + Math.cos(angle) * radius, y + Math.sin(angle) * radius);
+            }
+            GL11.glEnd();
+        }
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        GL11.glColor4f(1, 1, 1, 1);
+    }
+
     private static void color(int rgb, float alpha) {
         GL11.glColor4f((rgb >> 16 & 255) / 255f, (rgb >> 8 & 255) / 255f,
                 (rgb & 255) / 255f, alpha);

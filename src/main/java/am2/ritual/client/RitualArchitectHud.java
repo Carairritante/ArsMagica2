@@ -34,7 +34,7 @@ final class RitualArchitectHud extends Gui {
 
     RitualArchitectHud(Minecraft mc) { this.mc = mc; }
 
-    void draw(ScaledResolution screen, String ritual, int glyph, int correct, int total, int blocked,
+    int[] draw(ScaledResolution screen, String ritual, int glyph, int correct, int total, int blocked,
               List<Row> content) {
         int width = Math.min(252, Math.max(170, (int)((screen.getScaledWidth() / 2f - 24) / 0.9f)));
         int textWidth = width - 42;
@@ -65,9 +65,12 @@ final class RitualArchitectHud extends Gui {
             used += 11;
         }
         int height = bodyTop + used + 37;
-        float scale = Math.min(0.9f, (screen.getScaledHeight() - 82f) / height);
-        int left = 9;
-        int top = 8;
+        ArcaneChalkHudSettings settings = ArcaneChalkHudSettings.get();
+        float scale = Math.min(0.9f * settings.percent() / 100f,
+                Math.min((screen.getScaledHeight() - 82f) / height, (screen.getScaledWidth() - 18f) / width));
+        int panelWidth = (int)Math.ceil(width * scale), panelHeight = (int)Math.ceil(height * scale);
+        int left = settings.left(screen.getScaledWidth(), panelWidth);
+        int top = settings.top(screen.getScaledHeight(), panelHeight);
 
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
         GL11.glPushMatrix();
@@ -158,13 +161,16 @@ final class RitualArchitectHud extends Gui {
             GL11.glPopMatrix();
             GL11.glPopAttrib();
         }
+        return new int[]{left, top, panelWidth, panelHeight};
     }
 
     private void panel(int width, int height) {
-        Gui.drawRect(1, 5, width + 3, height + 3, 0x18000000);
-        drawGradientRect(1, 5, width - 1, height - 5, 0x8c0b1c35, 0x78050e20);
-        Gui.drawRect(6, 1, width - 6, 5, 0x8c0b1c35);
-        Gui.drawRect(6, height - 5, width - 6, height - 1, 0x78050e20);
+        int opacity = 100 - ArcaneChalkHudSettings.get().transparency();
+        int alpha = Math.round(opacity * 255f / 100f) << 24;
+        Gui.drawRect(1, 5, width + 3, height + 3, Math.round(opacity * 0.44f) << 24);
+        drawGradientRect(1, 5, width - 1, height - 5, alpha | 0x0b1c35, alpha | 0x050e20);
+        Gui.drawRect(6, 1, width - 6, 5, alpha | 0x0b1c35);
+        Gui.drawRect(6, height - 5, width - 6, height - 1, alpha | 0x050e20);
         Gui.drawRect(7, 0, width - 7, 1, 0xff4a9dde);
         Gui.drawRect(7, height - 1, width - 7, height, 0xff284f83);
         Gui.drawRect(0, 7, 1, height - 7, 0xff386fa9);

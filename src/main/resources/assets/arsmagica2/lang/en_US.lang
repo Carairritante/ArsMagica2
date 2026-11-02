@@ -1133,3 +1133,9 @@ am2.ritual_architect.hud_activation=ACTIVATION
 am2.ritual_architect.hud_correct=Correct
 am2.ritual_architect.hud_missing=Missing
 am2.ritual_architect.hud_blocked=Blocked
+
+am2.ritual_architect.hud_settings=HUD settings
+am2.ritual_architect.hud_drag=Drag the panel to move it. Adjust size and transparency below.
+am2.ritual_architect.hud_reset=Reset
+am2.ritual_architect.hud_size=Size: %s%%
+am2.ritual_architect.hud_transparency=Transparency: %s%%

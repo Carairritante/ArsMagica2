@@ -212,9 +212,18 @@ public final class RitualArchitectRenderer {
     @SubscribeEvent
     public void onOverlay(RenderGameOverlayEvent.Post event) {
         if (event.type != RenderGameOverlayEvent.ElementType.ALL || mc.currentScreen != null) return;
+        drawHud(new ScaledResolution(mc, mc.displayWidth, mc.displayHeight), false);
+    }
+
+    public int[] drawHudPreview(ScaledResolution resolution) { return drawHud(resolution, true); }
+
+    private int[] drawHud(ScaledResolution resolution, boolean preview) {
         Snapshot view = snapshot();
-        if (view == null) return;
-        ScaledResolution resolution = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
+        if (view == null) {
+            if (!preview) return null;
+            view = new Snapshot();
+            view.warning = "mark_center";
+        }
         List<RitualArchitectHud.Row> lines = new ArrayList<RitualArchitectHud.Row>();
         if (view.warning != null) {
             lines.add(RitualArchitectHud.Row.text(GuiRitualArchitect.text(view.warning), RitualArchitectHud.WARN));
@@ -250,7 +259,7 @@ public final class RitualArchitectRenderer {
             lines.add(RitualArchitectHud.Row.heading("hud_activation"));
             lines.add(RitualArchitectHud.Row.text(GuiRitualArchitect.ritualActivation(view.entry), RitualArchitectHud.MUTED));
         }
-        hud.draw(resolution, view.entry == null ? GuiRitualArchitect.text("title") : GuiRitualArchitect.ritualName(view.entry),
+        return hud.draw(resolution, view.entry == null ? GuiRitualArchitect.text("title") : GuiRitualArchitect.ritualName(view.entry),
                 view.entry == null ? 0 : view.entry.index & 15, view.status == null ? 0 : view.status.correct,
                 view.status == null ? -1 : view.status.correct + view.status.missing + view.status.blocked,
                 view.status == null ? 0 : view.status.blocked, lines);
