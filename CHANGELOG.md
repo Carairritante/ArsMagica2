@@ -1,5 +1,14 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR15 — 2026-11-02
+
+- HUD do giz com painel azul-escuro, runas do Wizard Chalk, barra de progresso
+  e seções para materiais, reagentes e condições de ativação.
+- Posicionamento lateral e adaptação a resoluções menores. A HUD respeita a
+  opção de ocultar a interface do jogo.
+- Validada em clientes com e sem Playground e em cópia descartável do
+  Forbidden Series, preservando a instância original.
+
 ## 1.6.11-LE-CR14 — 2026-11-02
 
 - Catálogo do giz ampliado para 41 modelos nativos, cobrindo as variantes dos

@@ -9,7 +9,6 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.TextureMap;
@@ -36,6 +35,7 @@ import java.util.Map;
 @SideOnly(Side.CLIENT)
 public final class RitualArchitectRenderer {
     private final Minecraft mc = Minecraft.getMinecraft();
+    private final RitualArchitectHud hud = new RitualArchitectHud(mc);
     private Snapshot cached;
     private ItemStack cachedStack;
     private World cachedWorld;
@@ -215,70 +215,48 @@ public final class RitualArchitectRenderer {
         Snapshot view = snapshot();
         if (view == null) return;
         ScaledResolution resolution = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
-        int panelWidth = Math.min(270, resolution.getScaledWidth() - 16);
-        int left = resolution.getScaledWidth() - panelWidth - 6;
-        List<String> lines = new ArrayList<String>();
-        lines.add("\u00a7e" + GuiRitualArchitect.text("title"));
-        if (view.entry != null) lines.add(GuiRitualArchitect.ritualName(view.entry));
+        List<RitualArchitectHud.Row> lines = new ArrayList<RitualArchitectHud.Row>();
         if (view.warning != null) {
-            lines.add("\u00a77" + GuiRitualArchitect.text(view.warning));
+            lines.add(RitualArchitectHud.Row.text(GuiRitualArchitect.text(view.warning), RitualArchitectHud.WARN));
         } else if (view.status != null) {
-            lines.add(GuiRitualArchitect.text("structure", view.status.correct,
-                    view.status.correct + view.status.missing + view.status.blocked));
-            if (view.status.blocked > 0) lines.add("\u00a7c" + GuiRitualArchitect.text("blocked", view.status.blocked));
+            if (view.status.blocked > 0) lines.add(RitualArchitectHud.Row.text(
+                    GuiRitualArchitect.text("blocked", view.status.blocked), RitualArchitectHud.BAD));
             // Context requirements must remain visible even when a ritual has many ingredients.
             LinkedHashSet<String> warnings = new LinkedHashSet<String>(view.status.warnings);
             if (view.entry.noteKey != null && !view.entry.noteKey.isEmpty()) warnings.add(view.entry.noteKey);
-            for (String key : warnings) addWrapped(lines, "\u00a7e" + StatCollector.translateToLocal(key), panelWidth - 12);
+            for (String key : warnings) lines.add(RitualArchitectHud.Row.text(
+                    StatCollector.translateToLocal(key), RitualArchitectHud.WARN));
             addMissingBlocks(lines, view);
             boolean missingReagent = false;
+            if (!view.status.reagents.isEmpty()) lines.add(RitualArchitectHud.Row.heading("hud_reagents"));
             int shown = 0;
             for (RitualArchitect.Reagent reagent : view.status.reagents) {
                 if (view.entry.dynamicReagents && reagent.stack.getItem() == ItemsCommonProxy.rune) {
-                    lines.add("\u00a7d" + GuiRitualArchitect.text("rune_combination", reagent.present));
+                    lines.add(RitualArchitectHud.Row.text(GuiRitualArchitect.text("rune_combination", reagent.present), RitualArchitectHud.BLUE));
                     continue;
                 }
                 if (reagent.present >= reagent.required) continue;
                 missingReagent = true;
-                if (shown++ < 6) lines.add("\u00a7d" + GuiRitualArchitect.text("ingredient",
-                        reagent.stack.getDisplayName(), reagent.present, reagent.required));
+                if (shown++ < 6) lines.add(RitualArchitectHud.Row.text(GuiRitualArchitect.text("ingredient",
+                        reagent.stack.getDisplayName(), reagent.present, reagent.required), RitualArchitectHud.TEXT));
             }
-            if (shown > 6) lines.add("\u00a77" + GuiRitualArchitect.text("more", shown - 6));
-            if (view.entry.dynamicReagents) lines.add("\u00a7d" + GuiRitualArchitect.text("dynamic_reagents"));
+            if (shown > 6) lines.add(RitualArchitectHud.Row.text(GuiRitualArchitect.text("more", shown - 6), RitualArchitectHud.MUTED));
+            if (view.entry.dynamicReagents) lines.add(RitualArchitectHud.Row.text(
+                    GuiRitualArchitect.text("dynamic_reagents"), RitualArchitectHud.WARN));
             else if (!missingReagent && view.status.reagentsReady && view.status.warnings.isEmpty())
-                lines.add("\u00a7a" + GuiRitualArchitect.text("reagents_ready"));
-            if (view.status.extraItems > 0) lines.add("\u00a7c" + GuiRitualArchitect.text("extra_items", view.status.extraItems));
-            String activation = "\u00a77" + GuiRitualArchitect.ritualActivation(view.entry);
-            addWrapped(lines, activation, panelWidth - 12);
-            lines.add("\u00a77" + GuiRitualArchitect.text("legend"));
+                lines.add(RitualArchitectHud.Row.text(GuiRitualArchitect.text("reagents_ready"), RitualArchitectHud.GOOD));
+            if (view.status.extraItems > 0) lines.add(RitualArchitectHud.Row.text(
+                    GuiRitualArchitect.text("extra_items", view.status.extraItems), RitualArchitectHud.BAD));
+            lines.add(RitualArchitectHud.Row.heading("hud_activation"));
+            lines.add(RitualArchitectHud.Row.text(GuiRitualArchitect.ritualActivation(view.entry), RitualArchitectHud.MUTED));
         }
-        lines.add("\u00a78" + GuiRitualArchitect.text("menu_hint"));
-        int maxLines = Math.max(5, (resolution.getScaledHeight() - 24) / 10);
-        if (lines.size() > maxLines) {
-            lines = new ArrayList<String>(lines.subList(0, maxLines - 1));
-            lines.add("\u00a77" + GuiRitualArchitect.text("details_compendium"));
-        }
-        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
-        try {
-            GL11.glDisable(GL11.GL_LIGHTING);
-            GL11.glEnable(GL11.GL_BLEND);
-            Gui.drawRect(left, 6, left + panelWidth, 16 + lines.size() * 10, 0xbd10131d);
-            int y = 12;
-            for (String line : lines) {
-                mc.fontRenderer.drawStringWithShadow(mc.fontRenderer.trimStringToWidth(line, panelWidth - 12),
-                        left + 6, y, 0xeeeeee);
-                y += 10;
-            }
-        } finally {
-            GL11.glPopAttrib();
-        }
+        hud.draw(resolution, view.entry == null ? GuiRitualArchitect.text("title") : GuiRitualArchitect.ritualName(view.entry),
+                view.entry == null ? 0 : view.entry.index & 15, view.status == null ? 0 : view.status.correct,
+                view.status == null ? -1 : view.status.correct + view.status.missing + view.status.blocked,
+                view.status == null ? 0 : view.status.blocked, lines);
     }
 
-    private void addWrapped(List<String> lines, String text, int width) {
-        lines.addAll(mc.fontRenderer.listFormattedStringToWidth(text, width));
-    }
-
-    private static void addMissingBlocks(List<String> lines, Snapshot view) {
+    private static void addMissingBlocks(List<RitualArchitectHud.Row> lines, Snapshot view) {
         Map<String, Integer> missing = new LinkedHashMap<String, Integer>();
         for (int i = 0; i < view.cells.size(); i++) {
             if (view.states[i] == RitualArchitect.CORRECT) continue;
@@ -287,8 +265,8 @@ public final class RitualArchitectRenderer {
             Integer count = missing.get(name);
             missing.put(name, count == null ? 1 : count + 1);
         }
-        for (Map.Entry<String, Integer> entry : missing.entrySet()) {
-            lines.add("\u00a7b" + GuiRitualArchitect.text("material", entry.getValue(), entry.getKey()));
-        }
+        if (!missing.isEmpty()) lines.add(RitualArchitectHud.Row.heading("hud_materials"));
+        for (Map.Entry<String, Integer> entry : missing.entrySet())
+            lines.add(RitualArchitectHud.Row.text(GuiRitualArchitect.text("material", entry.getValue(), entry.getKey()), RitualArchitectHud.TEXT));
     }
 }

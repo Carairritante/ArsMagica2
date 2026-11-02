@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR14
+## Versão de manutenção 1.6.11-LE-CR15
 
 [Slide antes/depois e histórico cronológico das atualizações](docs/RESUMO-ANTES-DEPOIS.md)
 
@@ -63,6 +63,9 @@ preenchida; a construção continua exclusiva do criativo e não executa rituais
 
 A CR14 amplia o catálogo do giz para 41 modelos nativos e permite pesquisar
 formas, componentes e modificadores pelos nomes em inglês e no idioma do jogo.
+
+A CR15 renova a HUD do giz com painel azul-escuro, runas nativas e progresso
+da estrutura, mantendo a montagem automática exclusiva do criativo.
 
 O Actions compila o código desta branch a cada push e pull request. Nas execuções
 concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o
