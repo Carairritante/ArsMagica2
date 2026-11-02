@@ -1,5 +1,12 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR17 — 2026-11-02
+
+- HUD do giz fixada no canto superior esquerdo, com margem de oito pixels de
+  interface no topo, preservando a adaptação da altura a janelas menores.
+- Fundo azul-escuro e sombra mais transparentes; textos, runas e bordas mantêm
+  o contraste. O menu da CR16 e os controles do giz são preservados.
+
 ## 1.6.11-LE-CR16 — 2026-11-02
 
 - Menu do Giz do Arquiteto Arcano no mesmo tema azul-escuro da HUD, com bordas

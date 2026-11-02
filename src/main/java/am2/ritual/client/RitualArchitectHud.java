@@ -67,8 +67,7 @@ final class RitualArchitectHud extends Gui {
         int height = bodyTop + used + 37;
         float scale = Math.min(0.9f, (screen.getScaledHeight() - 82f) / height);
         int left = 9;
-        int top = Math.max(24, Math.min((screen.getScaledHeight() - (int)(height * scale)) / 2,
-                screen.getScaledHeight() - (int)(height * scale) - 52));
+        int top = 8;
 
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
         GL11.glPushMatrix();
@@ -162,10 +161,10 @@ final class RitualArchitectHud extends Gui {
     }
 
     private void panel(int width, int height) {
-        Gui.drawRect(1, 5, width + 3, height + 3, 0x38000000);
-        drawGradientRect(1, 5, width - 1, height - 5, 0xf20b1c35, 0xf2050e20);
-        Gui.drawRect(6, 1, width - 6, 5, 0xf20b1c35);
-        Gui.drawRect(6, height - 5, width - 6, height - 1, 0xf2050e20);
+        Gui.drawRect(1, 5, width + 3, height + 3, 0x18000000);
+        drawGradientRect(1, 5, width - 1, height - 5, 0x8c0b1c35, 0x78050e20);
+        Gui.drawRect(6, 1, width - 6, 5, 0x8c0b1c35);
+        Gui.drawRect(6, height - 5, width - 6, height - 1, 0x78050e20);
         Gui.drawRect(7, 0, width - 7, 1, 0xff4a9dde);
         Gui.drawRect(7, height - 1, width - 7, height, 0xff284f83);
         Gui.drawRect(0, 7, 1, height - 7, 0xff386fa9);

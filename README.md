@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR16
+## Versão de manutenção 1.6.11-LE-CR17
 
 [Slide antes/depois e histórico cronológico das atualizações](docs/RESUMO-ANTES-DEPOIS.md)
 
@@ -69,6 +69,9 @@ da estrutura, mantendo a montagem automática exclusiva do criativo.
 
 A CR16 aplica o mesmo tema ao menu do giz e ajusta a navegação ao tamanho
 da janela. Veja [menu e validação](docs/MENU-GIZ-CR16.md).
+
+A CR17 posiciona a HUD no canto superior esquerdo e torna o fundo mais
+transparente.
 
 O Actions compila o código desta branch a cada push e pull request. Nas execuções
 concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o
