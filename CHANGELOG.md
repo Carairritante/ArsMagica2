@@ -1,5 +1,21 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR13 — 2026-11-02
+
+- Removidos do núcleo o contador cinza adicional do Oculus, a mensagem de
+  descoberta e a regra da CR4 que reservava compras Silver somente a talentos.
+  Esses ajustes pertencem à manutenção opcional do Playground.
+- O AM2.5 sozinho conserva sua interface e suas regras nativas. Conhecimentos,
+  saldos salvos e os métodos públicos originais não são removidos.
+- Mantida a correção da leitura do quarto saldo do protocolo nativo: o upstream
+  já transmitia os quatro saldos e possuía o tipo Silver, mas lia somente três.
+- Mantida a API opcional World Fusion da CR5 por compatibilidade com extensões
+  já distribuídas. Sua presença não exige Playground; a iniciação continua nativa.
+- O verificador do JAR exige sincronização dos quatro saldos e rejeita a volta
+  de contador, tooltip e política de compra específicos do addon no núcleo.
+- Preservadas as correções de magias, Bless, giz e Compêndio, inclusive as APIs
+  genéricas de categorias e entradas da CR12.
+
 ## 1.6.11-LE-CR12 — 2026-11-01
 
 - Extensão cliente permite registrar categorias opcionais no Compêndio,

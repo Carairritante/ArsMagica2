@@ -8,7 +8,9 @@ o arquivo de entrada.
   intervalo de 30 ticks da Zone, três conjurações em 200 ticks e versão Java 8.
 - `VerifySolarLunarTierJar.java`: metadados de contagem e chamadas do escalonamento
   por uma, duas e três cópias de Solar/Lunar.
-- `VerifySilverPointsJar.java`: sincronização Silver, contador e compras de talentos.
+- `VerifySilverPointsJar.java`: escrita dos quatro saldos nativos, leitura do quarto
+  saldo e ausência de contador, tooltip e regra de compra próprios do Playground
+  no núcleo. Confere também a API opcional World Fusion mantida por compatibilidade.
 - `VerifyRitualArchitectJar.java`: processador de ações registrado antes dos proxies,
   incluindo o servidor integrado, e processamento pelo evento de tick do Forge.
 

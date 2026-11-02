@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR10
+## Versão de manutenção 1.6.11-LE-CR13
 
 [Slide antes/depois e histórico cronológico das atualizações](docs/RESUMO-ANTES-DEPOIS.md)
 
@@ -15,12 +15,15 @@ a licença e os créditos originais foram preservados.
 
 - [Builds e artefatos do Actions](https://github.com/Carairritante/ArsMagica2/actions)
 - [Correções e mudanças de comportamento](CHANGELOG.md)
+- [Separação entre o AM2.5 e o Playground na CR13](docs/INDEPENDENCIA-PLAYGROUND-CR13.md)
+- [Correção das prévias de criaturas na CR11](docs/CORRECAO-COMPENDIUM-CR11.md)
+- [API opcional de categorias do Compêndio na CR12](docs/CATEGORIAS-COMPENDIUM-CR12.md)
 - [Compêndio completo em português e troca de idioma na CR10](docs/TRADUCAO-COMPENDIUM-CR10.md)
 - [Correção de Bless e Mana Regen na CR9](docs/CORRECAO-BLESS-CR9.md)
 - [Participação da IA e autoria original](AI_DISCLOSURE.md)
 - [Verificações e limites da validação](docs/VALIDACAO-CR2.md)
 - [Validação da sincronização e dos pontos Silver na CR3](docs/VALIDACAO-CR3.md)
-- [Validação das compras de talentos na CR4](docs/VALIDACAO-CR4.md)
+- [Registro histórico das compras de talentos na CR4](docs/VALIDACAO-CR4.md)
 - [Giz do Arquiteto Arcano: uso e validação da CR6](docs/GIZ-ARQUITETO-CR6.md)
 - [Correção da seleção do giz em um jogador na CR7](docs/CORRECAO-GIZ-CR7.md)
 - [Compatibilidade opcional do giz com rituais na CR8](docs/COMPATIBILIDADE-RITUAIS-CR8.md)
@@ -31,12 +34,17 @@ Solar/Lunar, limites de conjuração para Lightning Strike, Explosion e Dig, red
 de partículas e limite de **128 blocos para o percurso da Wave**, preservando sua
 largura. Bless permanece habilitado.
 
-A CR3 corrige a leitura dos pontos **Silver (cinza)** recebidos do servidor e
-acrescenta seu contador abaixo do contador vermelho no Oculus. Na CR4, pontos
-Silver livres compram **somente talentos**, respeitando a árvore e os pré-requisitos.
-Magias, formas e modificadores Silver dependem de descobertas ou recompensas
-especiais; o bloqueio de compra vale na interface e no servidor.
-Habilidades já aprendidas em versões anteriores são preservadas.
+A CR13 separa as regras específicas do Playground do núcleo. O AM2.5 sozinho
+mantém os três contadores originais do Oculus e suas regras nativas de compra.
+O contador cinza, suas mensagens e a regra de gastar pontos Silver livres somente
+em talentos passam a ser responsabilidade da manutenção do Playground, que aplica
+seus ajustes quando está instalado. Conhecimentos já salvos são preservados.
+
+A correção da leitura do quarto saldo continua no AM2.5: esse campo já existia e
+era enviado pelo protocolo original, mas não era lido. Isso não acrescenta uma
+moeda, um contador visível nem requisitos de outro mod. A API opcional World Fusion
+da CR5 permanece para compatibilidade com extensões já distribuídas; o AM2.5 não
+precisa do Playground para executar o ritual nativo.
 
 A CR6 acrescenta o **Giz do Arquiteto Arcano**, uma ferramenta reutilizável para
 planejar os rituais de magia nativos. No survival, projeta o desenho e mostra

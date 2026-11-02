@@ -201,9 +201,6 @@ public class GuiSkillTrees extends GuiScreen{
 		quantity = String.format("%d", sk.getSpellPoints(SkillPointTypes.RED));
 		Minecraft.getMinecraft().fontRenderer.drawString(quantity, l + xSize - 18 - (Minecraft.getMinecraft().fontRenderer.getStringWidth(quantity) / 2), i1 + 15, 0xFF0000);
 
-		quantity = String.format("%d", sk.getSpellPoints(SkillPointTypes.SILVER));
-		Minecraft.getMinecraft().fontRenderer.drawString(quantity, l + xSize - 18 - (Minecraft.getMinecraft().fontRenderer.getStringWidth(quantity) / 2), i1 + 25, 0xBBBBBB);
-
 		super.drawScreen(par1, par2, par3);
 
 		if (hoveredItem != null){
@@ -218,12 +215,6 @@ public class GuiSkillTrees extends GuiScreen{
 			//else fr = Minecraft.getMinecraft().standardGalacticFontRenderer;
 			text.add(s);
 			SkillPointTypes type = SkillTreeManager.instance.getSkillPointTypeForPart(hoveredItem.registeredItem);
-			if (type == SkillPointTypes.SILVER && state != LearnStates.LEARNED
-					&& (hoveredItem.registeredItem instanceof am2.api.spell.component.interfaces.ISpellShape
-					|| hoveredItem.registeredItem instanceof ISpellComponent
-					|| hoveredItem.registeredItem instanceof am2.api.spell.component.interfaces.ISpellModifier)){
-				text.add(StatCollector.translateToLocal("am2.gui.silverDiscoveryOnly"));
-			}
 
 			if (hoveredItem.registeredItem instanceof ISpellComponent){
 				EnumSet<Affinity> aff = ((ISpellComponent)hoveredItem.registeredItem).getAffinity();

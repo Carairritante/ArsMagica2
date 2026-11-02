@@ -70,3 +70,26 @@ os repositórios deste projeto. Novas instruções explícitas do usuário preva
 - Para uma publicação, executar os checks adequados à mudança e registrar
   limites relevantes da validação. Não confundir testes descartáveis com uma
   sessão de jogo do usuário.
+
+## Independência entre AM2 e Playground
+
+- O AM2.5 deve funcionar sozinho e com o Playground original. Recursos
+  específicos do Playground, incluindo contador cinza e política de compras
+  Silver, pertencem ao Playground e só se aplicam quando ele está carregado.
+- O Playground modificado não deve exigir APIs exclusivas do nosso fork do
+  AM2.5. Aplicar seus hooks no próprio addon, detectar capacidades da versão
+  base e manter compatibilidade com as versões originais efetivamente testadas.
+- Correções de bugs nativos, como a leitura de todos os saldos que o próprio
+  protocolo do AM2 transmite, continuam no AM2.5. APIs genéricas opcionais podem
+  ser preservadas por compatibilidade, sem dependências obrigatórias do addon.
+- Não remover silenciosamente requisitos de progressão para contornar diferenças
+  entre versões. Documentar recursos ausentes e a solução de compatibilidade.
+- Decisão do usuário: as sete descobertas avançadas exigem AM2.5. No AM2 original
+  de Mithion, manter o restante do Playground compatível e informar a limitação;
+  não substituir World Fusion por nível 70 nem recriar esse ritual no original.
+- Antes de publicar mudanças nessas integrações, testar AM2.5 sem Playground,
+  com Playground original e com Playground corrigido, além do Playground
+  corrigido com AM2 original suportado. Registrar versões e hashes; não afirmar
+  compatibilidade universal com versões que não foram verificadas.
+- Ao investigar arquivos de colaboradores, comparar os hashes com os artefatos
+  reais do CI. Distinguir JAR jogável do arquivo de ferramentas do fork público.

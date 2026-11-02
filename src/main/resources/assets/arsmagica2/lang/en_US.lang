@@ -830,7 +830,6 @@ am2.tooltip.drink=Reduces Burnout by 25%
 am2.tooltip.potionEssence=Increases Max Mana by 25%
 enchantment.magicresist=Magic Resistance
 enchantment.soulbound=Soulbound
-am2.gui.silverDiscoveryOnly=Unlocked through discovery or special rewards.
 
 # Ritual Architect
 item.arsmagica2:ritualArchitect.name=Arcane Architect's Chalk
