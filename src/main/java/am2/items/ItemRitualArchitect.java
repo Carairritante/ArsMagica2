@@ -96,11 +96,19 @@ public class ItemRitualArchitect extends ArsMagicaItem {
         RitualArchitectServer.enqueue(player, action, index, rotation, slot, token, entryId);
     }
 
+    public static void handleAction(EntityPlayer player, int action, int index, int rotation, int slot, long token, String entryId, boolean catalogView) {
+        RitualArchitectServer.enqueue(player, action, index, rotation, slot, token, entryId, catalogView);
+    }
+
     public static void applyAction(EntityPlayer player, int action, int index, int rotation, int slot, long token) {
         applyAction(player, action, index, rotation, slot, token, null);
     }
 
     public static void applyAction(EntityPlayer player, int action, int index, int rotation, int slot, long token, String entryId) {
+        applyAction(player, action, index, rotation, slot, token, entryId, false);
+    }
+
+    public static void applyAction(EntityPlayer player, int action, int index, int rotation, int slot, long token, String entryId, boolean catalogView) {
         if (player == null || player.worldObj == null || player.worldObj.isRemote || player.isDead
                 || action < 0 || action > 2 || rotation < 0 || rotation > 3 || slot < 0 || slot > 8
                 || player.inventory.currentItem != slot || token == 0L) return;
@@ -113,6 +121,8 @@ public class ItemRitualArchitect extends ArsMagicaItem {
             return;
         }
         RitualArchitect.Entry entry = entryId == null ? RitualArchitect.getEntry(index) : RitualArchitect.getEntry(entryId);
+        if (entry == null || entry.interaction() == null) return;
+        if (action == 0) RitualArchitect.updateView(player, token, catalogView);
         if (!RitualArchitect.canUse(player, entry)) { message(player, "am2.architect.locked"); return; }
         if (action == 1 && !player.capabilities.isCreativeMode) { message(player, "am2.architect.creative_only"); return; }
         RitualArchitect.select(stack, entry.index, rotation % entry.orientationCount());

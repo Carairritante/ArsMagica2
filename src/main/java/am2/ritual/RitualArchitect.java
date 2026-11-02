@@ -36,12 +36,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.WeakHashMap;
 
 /** Read-only ritual plans shared by the client overlay and the authoritative creative builder. */
 public final class RitualArchitect {
     public static final int CORRECT = 0, MISSING = 1, BLOCKED = 2, UNSUPPORTED = 3, UNLOADED = 4;
     private static final String DATA = "am2RitualArchitect";
     private static List<Entry> catalog;
+    private static final Map<EntityPlayer, Long> catalogViews = Collections.synchronizedMap(new WeakHashMap<EntityPlayer, Long>());
 
     private RitualArchitect() {}
 
@@ -138,6 +140,17 @@ public final class RitualArchitect {
             add(list, "recall_other", "Recall", null, true);
             add(list, "spatial_fracture", "Blink", BlocksCommonProxy.blackAurem, false);
             add(list, "otherworldly_ritual", "Transplace", BlocksCommonProxy.inertSpawner, false);
+            add(list, "extend_curse", "Curse", null, false);
+            add(list, "extend_deafen", "Deafen", null, false);
+            add(list, "extend_digspeed", "DigSpeed", null, false);
+            add(list, "extend_fatigue", "Fatigue", null, false);
+            add(list, "extend_hunger", "Hunger", null, false);
+            add(list, "extend_poison", "Poison", null, false);
+            add(list, "extend_saturation", "Saturation", null, false);
+            add(list, "extend_weakness", "Weakness", null, false);
+            add(list, "extend_wither", "Wither", null, false);
+            add(list, "spawner_extraction_lifetap", "LifeTap", Blocks.mob_spawner, false);
+            add(list, "spawner_extraction_rift", "Rift", Blocks.mob_spawner, false);
             for (PlaygroundRitualCompat.Descriptor descriptor : PlaygroundRitualCompat.descriptors())
                 list.add(new Entry(list.size(), descriptor));
             catalog = Collections.unmodifiableList(list);
@@ -162,6 +175,10 @@ public final class RitualArchitect {
     public static boolean canUse(EntityPlayer player, Entry entry) {
         if (player == null || entry == null || entry.interaction() == null) return false;
         if (player.capabilities.isCreativeMode || !AMCore.config.stagedCompendium()) return true;
+        Long view = catalogViews.get(player);
+        ItemStack held = player.getHeldItem();
+        if (view != null && held != null && held.getItem() instanceof ItemRitualArchitect
+                && token(held) == view.longValue()) return true;
         ExtendedProperties properties = ExtendedProperties.For(player);
         if (properties == null) return false;
         if (entry.playground) {
@@ -180,6 +197,12 @@ public final class RitualArchitect {
 
     private static boolean unlocked(ExtendedProperties properties, String id) {
         return id != null && properties.hasCompendiumEntry(id) && !properties.isEntryLocked(id);
+    }
+
+    public static void updateView(EntityPlayer player, long token, boolean catalogView) {
+        if (player == null || player.worldObj == null || player.worldObj.isRemote) return;
+        if (catalogView && token != 0L) catalogViews.put(player, token);
+        else catalogViews.remove(player);
     }
 
     private static NBTTagCompound read(ItemStack stack) {

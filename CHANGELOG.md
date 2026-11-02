@@ -1,5 +1,13 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR14 — 2026-11-02
+
+- Catálogo do giz ampliado para 41 modelos nativos, cobrindo as variantes dos
+  rituais. Seleção e projeções verificadas em cliente e servidor.
+- Pesquisa da mesa de inscrição aceita tanto o nome traduzido quanto o nome
+  em inglês das formas, componentes e modificadores, inclusive termos parciais.
+- Preservada a independência entre AM2.5 e Playground.
+
 ## 1.6.11-LE-CR13 — 2026-11-02
 
 - Removidos do núcleo o contador cinza adicional do Oculus, a mensagem de

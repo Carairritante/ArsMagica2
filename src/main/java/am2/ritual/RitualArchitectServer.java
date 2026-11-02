@@ -30,9 +30,11 @@ public final class RitualArchitectServer {
         final int action, index, rotation, slot;
         final long token;
         final String entryId;
-        Action(EntityPlayer player, int action, int index, int rotation, int slot, long token, String entryId) {
+        final boolean catalogView;
+        Action(EntityPlayer player, int action, int index, int rotation, int slot, long token, String entryId, boolean catalogView) {
             this.player = player; this.action = action; this.index = index; this.rotation = rotation; this.slot = slot; this.token = token;
             this.entryId = entryId;
+            this.catalogView = catalogView;
         }
     }
 
@@ -40,11 +42,15 @@ public final class RitualArchitectServer {
         enqueue(player, action, index, rotation, slot, token, null);
     }
 
-    public static synchronized void enqueue(EntityPlayer player, int action, int index, int rotation, int slot, long token, String entryId) {
+    public static void enqueue(EntityPlayer player, int action, int index, int rotation, int slot, long token, String entryId) {
+        enqueue(player, action, index, rotation, slot, token, entryId, false);
+    }
+
+    public static synchronized void enqueue(EntityPlayer player, int action, int index, int rotation, int slot, long token, String entryId, boolean catalogView) {
         if (player == null || action < 0 || action > 2 || rotation < 0 || rotation > 3 || slot < 0 || slot > 8
                 || token == 0L || entryId != null && entryId.length() > 128
                 || (!PENDING.containsKey(player.getUniqueID()) && PENDING.size() >= 128)) return;
-        Action previous = PENDING.put(player.getUniqueID(), new Action(player, action, index, rotation, slot, token, entryId));
+        Action previous = PENDING.put(player.getUniqueID(), new Action(player, action, index, rotation, slot, token, entryId, catalogView));
         if (previous == null) QUEUE.add(player.getUniqueID());
     }
 
@@ -63,7 +69,7 @@ public final class RitualArchitectServer {
                 EntityPlayer player = action.player;
                 if (player instanceof EntityPlayerMP && ((EntityPlayerMP)player).playerNetServerHandler != null
                         && !((EntityPlayerMP)player).playerNetServerHandler.netManager.isChannelOpen()) continue;
-                ItemRitualArchitect.applyAction(player, action.action, action.index, action.rotation, action.slot, action.token, action.entryId);
+                ItemRitualArchitect.applyAction(player, action.action, action.index, action.rotation, action.slot, action.token, action.entryId, action.catalogView);
             } catch (RuntimeException failure) {
                 LogHelper.error("Ritual Architect request failed: " + failure);
             }

@@ -1,5 +1,7 @@
 package am2.guis;
 
+import am2.AMCore;
+
 import am2.items.ItemRitualArchitect;
 import am2.network.AMDataWriter;
 import am2.network.AMNetHandler;
@@ -27,6 +29,7 @@ public class GuiRitualArchitect extends GuiScreen {
     private int rotation;
     private int page;
     private int rows;
+    private boolean selectionSynced;
     private int left, top, panelWidth, panelHeight, footer;
 
     public GuiRitualArchitect(EntityPlayer player) {
@@ -74,6 +77,7 @@ public class GuiRitualArchitect extends GuiScreen {
             }
         }
         refreshButtons();
+        syncSelection();
     }
 
     private void refreshButtons() {
@@ -152,7 +156,15 @@ public class GuiRitualArchitect extends GuiScreen {
         RitualArchitect.Entry entry = RitualArchitect.getEntry(selected);
         AMNetHandler.INSTANCE.sendPacketToServer(AMPacketIDs.RITUAL_ARCHITECT,
                 new AMDataWriter().add(action).add(selected).add(rotation).add(heldSlot)
-                        .add(heldToken).add(entry == null ? "" : entry.id).generate());
+                        .add(heldToken).add(entry == null ? "" : entry.id)
+                        .add(!AMCore.config.stagedCompendium()).generate());
+    }
+
+    private void syncSelection() {
+        if (!selectionSynced && !AMCore.config.stagedCompendium() && selected >= 0 && toolReady()) {
+            send(0);
+            selectionSynced = true;
+        }
     }
 
     private static int orientations(RitualArchitect.Entry entry) {
@@ -180,6 +192,7 @@ public class GuiRitualArchitect extends GuiScreen {
             return;
         }
         if (heldToken == 0L && toolReady()) refreshButtons();
+        syncSelection();
     }
 
     @Override

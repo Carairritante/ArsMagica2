@@ -147,7 +147,7 @@ public final class PGArchitectProbe {
   item=field("am2.items.ItemsCommonProxy","ritualArchitect");tool=stack(item,1,0);set(inventory,"field_70461_c",0);call(inventory,"func_70299_a",0,tool);stat(ENGINE,"ensureToken",tool);
   List<?> entries=(List<?>)stat(ENGINE,"entries");List<Object> pg=new ArrayList<Object>();int natives=0,dynamic=0,registered=0;
   for(Object entry:entries){if(yes(get(entry,"playground"))){pg.add(entry);String key=(String)get(get(entry,"compat"),"key");if(key.startsWith("potionBuff_"))dynamic++;else registered++;}else natives++;}
-  require(natives==30,"Native catalog changed: "+natives);
+  require(natives==41,"Native catalog changed: "+natives);
   require("world_fusion".equals(get(entries.get(0),"id"))&&"otherworldly_ritual".equals(get(entries.get(29),"id")),"Legacy native indices changed");
   log.add("NATIVE_THIRTY_ENTRIES_AND_LEGACY_INDICES_PRESERVED=PASS");
   if(mode.equals("am2only")){

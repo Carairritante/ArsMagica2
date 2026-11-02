@@ -64,8 +64,10 @@ public class AMPacketProcessorServer{
 							am2.items.ItemRitualArchitect.handleAction(player, action, index, rotation, slot, token);
 					} else {
 						String entryId = request.readUTF();
-						if (request.available() == 0 && entryId.length() <= 128)
-							am2.items.ItemRitualArchitect.handleAction(player, action, index, rotation, slot, token, entryId);
+						if (entryId.length() <= 128 && request.available() <= 1) {
+							boolean catalogView = request.available() == 1 && request.readBoolean();
+							am2.items.ItemRitualArchitect.handleAction(player, action, index, rotation, slot, token, entryId, catalogView);
+						}
 					}
 				}
 				break;

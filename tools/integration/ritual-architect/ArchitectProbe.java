@@ -113,7 +113,7 @@ public final class ArchitectProbe {
   tool=stack(item,1,0);set(inventory,"field_70461_c",0);call(inventory,"func_70299_a",0,tool);
   // Item update assigns the server-owned GUI identity token.
   Class.forName("net.minecraft.item.Item").getMethod("func_77663_a",Class.forName("net.minecraft.item.ItemStack"),Class.forName("net.minecraft.world.World"),Class.forName("net.minecraft.entity.Entity"),int.class,boolean.class).invoke(item,tool,world,player,0,true);
-  List<Object> entries=new ArrayList<Object>();for(Object candidate:(List<?>)stat(ENGINE,"entries"))if(!yes(get(candidate,"playground")))entries.add(candidate);require(entries.size()==30,"Native ritual catalog changed: "+entries.size());
+  List<Object> entries=new ArrayList<Object>();for(Object candidate:(List<?>)stat(ENGINE,"entries"))if(!yes(get(candidate,"playground")))entries.add(candidate);require(entries.size()==41,"Native ritual catalog changed: "+entries.size());
   Object fusion=null;for(Object entry:entries)if("world_fusion".equals(get(entry,"id")))fusion=entry;
   require(fusion!=null,"World Fusion absent from catalog");
   int fusionIndex=number(get(fusion,"index"));

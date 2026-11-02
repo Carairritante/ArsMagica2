@@ -479,8 +479,9 @@ public class GuiInscriptionTable extends GuiContainer{
 			}
 			String name = SkillManager.instance.getDisplayName(part);
 
-			String filterText = searchBar.getText().toLowerCase();
-			if (filterText != "" && !filterText.equals(defaultSearchLabel.toLowerCase()) && !name.toLowerCase().contains(filterText)){
+			String filterText = searchBar.getText();
+			if (!filterText.equalsIgnoreCase(defaultSearchLabel)
+					&& !SpellPartSearch.INSTANCE.matches(name, SkillManager.instance.getSkillName(part), filterText)){
 				continue;
 			}
 

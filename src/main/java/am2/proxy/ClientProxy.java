@@ -24,6 +24,7 @@ import am2.guis.AMGuiHelper;
 import am2.guis.GuiParticleEmitter;
 import am2.guis.GuiRitualArchitect;
 import am2.guis.GuiSkillTrees;
+import am2.guis.SpellPartSearch;
 import am2.items.ItemSpellBook;
 import am2.items.ItemsCommonProxy;
 import am2.items.renderers.CustomItemRenderer;
@@ -110,6 +111,7 @@ public class ClientProxy extends CommonProxy{
 		ArcaneCompendium.instance.init(Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage());
 		MinecraftForge.EVENT_BUS.post(new RegisterCompendiumEntries(ArcaneCompendium.instance));
 		((net.minecraft.client.resources.IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(ArcaneCompendium.instance);
+		((net.minecraft.client.resources.IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(SpellPartSearch.INSTANCE);
 		MinecraftForge.EVENT_BUS.post(new RegisterSkillTreeIcons(SpellIconManager.instance));
 		MinecraftForge.EVENT_BUS.register(new AMClientEventHandler());
 		MinecraftForge.EVENT_BUS.register(new RitualArchitectRenderer());

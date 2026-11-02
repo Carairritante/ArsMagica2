@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR13
+## Versão de manutenção 1.6.11-LE-CR14
 
 [Slide antes/depois e histórico cronológico das atualizações](docs/RESUMO-ANTES-DEPOIS.md)
 
@@ -60,6 +60,9 @@ lê os desenhos e ingredientes fornecidos pelo addon instalado, sem depender del
 para iniciar. No ambiente completo de teste, foram reconhecidos 32 rituais e 33
 infusões de buffs adicionais. O guia mostra orientações legais, poções e Phylactery
 preenchida; a construção continua exclusiva do criativo e não executa rituais.
+
+A CR14 amplia o catálogo do giz para 41 modelos nativos e permite pesquisar
+formas, componentes e modificadores pelos nomes em inglês e no idioma do jogo.
 
 O Actions compila o código desta branch a cada push e pull request. Nas execuções
 concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o
