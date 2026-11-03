@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR18
+## Versão de manutenção 1.6.11-LE-CR19
 
 [Slide antes/depois e histórico cronológico das atualizações](docs/RESUMO-ANTES-DEPOIS.md)
 
@@ -15,6 +15,7 @@ a licença e os créditos originais foram preservados.
 
 - [Builds e artefatos do Actions](https://github.com/Carairritante/ArsMagica2/actions)
 - [Correções e mudanças de comportamento](CHANGELOG.md)
+- [Isolamento das molduras e investigação da desconexão na CR19](docs/CORRECAO-MOLDURAS-CR19.md)
 - [Commits e validação local da CR14 à CR18](docs/VALIDACAO-CR18.md)
 - [Menu e HUD do Giz do Arquiteto Arcano](docs/MENU-GIZ-CR16.md)
 - [Separação entre o AM2.5 e o Playground na CR13](docs/INDEPENDENCIA-PLAYGROUND-CR13.md)

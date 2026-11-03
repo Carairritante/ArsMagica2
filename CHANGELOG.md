@@ -1,5 +1,15 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR19 — 2026-11-03
+
+- Rotina das molduras do Compêndio separa estados e filas do cliente e servidor,
+  impedindo a tarefa do cliente de consultar molduras do mundo do servidor.
+- Entradas concorrentes são enfileiradas, e a busca da receita consulta somente
+  chunks já carregados. O mundo descarregado libera seus registros pendentes.
+- Criação do Compêndio continua no servidor. A API sem argumentos foi preservada
+  para addons; os ticks nativos informam seu lado explicitamente.
+- Correção nativa do AM2.5, sem dependência nova do Playground ou do Cérebro.
+
 ## 1.6.11-LE-CR18 — 2026-11-02
 
 - Engrenagem no menu do giz abre os ajustes de posição, tamanho e transparência

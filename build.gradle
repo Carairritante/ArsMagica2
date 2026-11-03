@@ -3,7 +3,7 @@ plugins {
     id 'com.gtnewhorizons.retrofuturagradle' version '1.4.9'
 }
 group = 'am2'
-version = '1.6.11-LE-CR18'
+version = '1.6.11-LE-CR19'
 base { archivesName = 'AM2.5-LTS' }
 java { toolchain { languageVersion = JavaLanguageVersion.of(8) } }
 minecraft {
@@ -30,7 +30,7 @@ tasks.register('verifyMaintenanceJar') {
     description = 'Check the maintenance hooks in the reobfuscated Java 8 mod.'
     dependsOn tasks.named('reobfJar'), tasks.named('verificationClasses')
     doLast {
-        ['VerifyLightningJar', 'VerifySolarLunarTierJar', 'VerifySilverPointsJar', 'VerifyRitualArchitectJar'].each { verifier ->
+        ['VerifyLightningJar', 'VerifySolarLunarTierJar', 'VerifySilverPointsJar', 'VerifyRitualArchitectJar', 'VerifyItemFrameWatcherJar'].each { verifier ->
             javaexec {
                 classpath = sourceSets.verification.runtimeClasspath
                 mainClass = verifier

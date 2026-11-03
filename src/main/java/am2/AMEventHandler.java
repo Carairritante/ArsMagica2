@@ -1491,6 +1491,11 @@ public class AMEventHandler{
 	}
 
 	@SubscribeEvent
+	public void itemFrameWorldUnload(net.minecraftforge.event.world.WorldEvent.Unload event){
+		if (AMCore.proxy != null && AMCore.proxy.itemFrameWatcher != null) AMCore.proxy.itemFrameWatcher.clearWorld(event.world);
+	}
+
+	@SubscribeEvent
 	public void onPlayerTossItem(ItemTossEvent event){
 		if (!event.entityItem.worldObj.isRemote)
 			EntityItemWatcher.instance.addWatchedItem(event.entityItem);

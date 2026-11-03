@@ -50,7 +50,7 @@ public class ServerTickHandler{
 			firstTick = false;
 		}
 
-		AMCore.proxy.itemFrameWatcher.checkWatchedFrames();
+		AMCore.proxy.itemFrameWatcher.checkWatchedFrames(false);
 	}
 
 	private void gameTick_End(){
