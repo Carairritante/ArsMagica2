@@ -32,3 +32,9 @@ terceiros descritas no README. Os créditos e as condições originais foram man
 O [histórico](CHANGELOG.md) distingue correções e ajustes de equilíbrio. A
 [validação](docs/VALIDACAO-CR2.md) descreve o que foi conferido e o que permanece
 sem uma nova compilação completa ou validação independente.
+
+Atualização em 2 de novembro de 2026: a participação substancial do Codex também
+abrange as correções de Bless, a tradução e iluminação do Compêndio, a separação
+do Playground e as CR14–CR18: busca bilíngue, catálogo de rituais e a HUD e o menu
+do giz, incluindo seus ajustes locais. A [validação da CR18](docs/VALIDACAO-CR18.md)
+registra as verificações recentes. A autoria original permanece preservada.

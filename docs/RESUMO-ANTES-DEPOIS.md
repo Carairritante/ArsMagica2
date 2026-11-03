@@ -1,8 +1,9 @@
 # Antes e depois da manutenção
 
-Resumo das correções e melhorias instaladas até AM2.5 CR8 e Playground
-`advanced-silver-progression`. Os históricos originais e os commits da manutenção
-permanecem nas branches `correcoes`, sem reescrita.
+Resumo das correções e melhorias até AM2.5 CR18 e Playground `independent-silver`.
+O slide original abaixo retrata a etapa CR8; a tabela e o registro de validação
+complementam as atualizações posteriores. Os históricos permanecem nas branches
+`correcoes`, sem reescrita.
 
 [Baixar o slide único editável](Resumo-antes-depois-AM2.pptx)
 
@@ -33,6 +34,22 @@ publicação. Ajustes menores de documentação continuam no histórico Git comp
 
 ## Estado atual e limites
 
+As CR9–CR13 corrigiram Bless, traduziram o Compêndio, isolaram a iluminação das
+prévias de criaturas, acrescentaram categorias opcionais e separaram as regras
+do Playground do núcleo. Veja o [histórico completo](../CHANGELOG.md).
+
+As cinco etapas seguintes foram acrescentadas na ordem de desenvolvimento:
+
+| Versão | Antes → depois | Commit |
+| --- | --- | --- |
+| CR14 | Busca só pelo nome exibido → inglês, tradução e termos parciais; 30 → 41 modelos nativos do giz | [aa0af08](https://github.com/Carairritante/ArsMagica2/commit/aa0af089ca1a20ba5fae8db041fade87065a942a) |
+| CR15 | Lista simples → HUD azul com runas, progresso e seções | [f3d1a66](https://github.com/Carairritante/ArsMagica2/commit/f3d1a663545c0c99cce93957975b9495269849ae) |
+| CR16 | Menu cinza → tema da HUD, seleção destacada e páginas adaptáveis | [eaec4a4](https://github.com/Carairritante/ArsMagica2/commit/eaec4a48bee98d7b4c53d22e8261586a373fd28c) |
+| CR17 | Painel lateral → canto superior esquerdo, com fundo mais transparente | [67df9e0](https://github.com/Carairritante/ArsMagica2/commit/67df9e0378089b0c7245a83956ee1b6a0bbddedf) |
+| CR18 | Posição e tamanho fixos → ajuste local por botão, incluindo transparência | [466ad91](https://github.com/Carairritante/ArsMagica2/commit/466ad915ae608b3be947a62c7af7debd8e7e01f6) |
+
+[Versões, checksums e limites da validação da CR18](VALIDACAO-CR18.md).
+
 - A orb do Crimson Portal criado pelo ritual concede **1 Silver**, sem pontos
   coloridos ou habilidades. A pérola original continua no drop. Portais naturais
   não recebem essa recompensa extra.
@@ -46,8 +63,8 @@ publicação. Ajustes menores de documentação continuam no histórico Git comp
 - As consultas verificam coven próprio com 3 bruxas e pelo menos 200.000 de mana
   disponível nos itens Botania carregados, sem consumir bruxas ou mana Botania.
   Nullify exige o Ender Guardian pessoal. Sacrament inclui consagração pessoal.
-- No pack completo de teste, o giz reconhece 30 rituais nativos, 32 rituais do
-  Playground e 33 infusões de buffs. Quantidades dependem dos mods instalados.
+- O giz reconhece 41 modelos nativos desde a CR14 e acrescenta os desenhos do
+  Playground instalado. Quantidades adicionais dependem dos mods do pack.
   Sobrevivência recebe projeção e conferência de materiais, montagem é exclusiva
   do criativo e não ativa o ritual.
 - A CR8 avisa sobre três ritos com suspeita de falha original de ativação. Não
