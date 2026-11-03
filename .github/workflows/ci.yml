@@ -38,9 +38,17 @@ jobs:
       - name: Prepare JAR and SHA-256
         run: |
           mkdir -p dist
-          jars=(build/libs/AM2.5-LTS-*.jar)
-          test "${#jars[@]}" -eq 1 && test -f "${jars[0]}"
-          cp "${jars[0]}" dist/
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import shutil
+          version = re.search(r"(?m)^version\s*=\s*'([^']+)'$", Path('build.gradle').read_text()).group(1)
+          name = 'AM2.5-LTS-' + version + '.jar'
+          source = Path('build/libs') / name
+          if not source.is_file():
+              raise SystemExit('Missing reobfuscated playable JAR: ' + str(source))
+          shutil.copy2(source, Path('dist') / name)
+          PY
           cd dist
           sha256sum *.jar > SHA256SUMS
           printf '### Build artifacts\n\n```text\n' >> "$GITHUB_STEP_SUMMARY"
