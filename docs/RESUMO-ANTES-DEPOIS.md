@@ -1,6 +1,6 @@
 # Antes e depois da manutenção
 
-Resumo das correções e melhorias até AM2.5 CR18 e Playground `independent-silver`.
+Resumo das correções e melhorias até AM2.5 CR19 e Playground CR1.
 O slide original abaixo retrata a etapa CR8; a tabela e o registro de validação
 complementam as atualizações posteriores. Os históricos permanecem nas branches
 `correcoes`, sem reescrita.
@@ -38,7 +38,7 @@ As CR9–CR13 corrigiram Bless, traduziram o Compêndio, isolaram a iluminação
 prévias de criaturas, acrescentaram categorias opcionais e separaram as regras
 do Playground do núcleo. Veja o [histórico completo](../CHANGELOG.md).
 
-As cinco etapas seguintes foram acrescentadas na ordem de desenvolvimento:
+As etapas seguintes foram acrescentadas na ordem de desenvolvimento:
 
 | Versão | Antes → depois | Commit |
 | --- | --- | --- |
@@ -47,8 +47,14 @@ As cinco etapas seguintes foram acrescentadas na ordem de desenvolvimento:
 | CR16 | Menu cinza → tema da HUD, seleção destacada e páginas adaptáveis | [eaec4a4](https://github.com/Carairritante/ArsMagica2/commit/eaec4a48bee98d7b4c53d22e8261586a373fd28c) |
 | CR17 | Painel lateral → canto superior esquerdo, com fundo mais transparente | [67df9e0](https://github.com/Carairritante/ArsMagica2/commit/67df9e0378089b0c7245a83956ee1b6a0bbddedf) |
 | CR18 | Posição e tamanho fixos → ajuste local por botão, incluindo transparência | [466ad91](https://github.com/Carairritante/ArsMagica2/commit/466ad915ae608b3be947a62c7af7debd8e7e01f6) |
+| CR19 | Molduras compartilhadas entre cliente/servidor → filas por lado, consulta sem gerar chunks e limpeza ao sair do mundo | [d1a86ca](https://github.com/Carairritante/ArsMagica2/commit/d1a86ca0d68e6e7a3cf99197a5df64e2f4c5081d) |
 
 [Versões, checksums e limites da validação da CR18](VALIDACAO-CR18.md).
+[Diagnóstico, validação local e limites da CR19](CORRECAO-MOLDURAS-CR19.md).
+
+No Playground CR1 (antes `independent-silver-oculus`), o painel nativo passou a mostrar os
+quatro saldos em 2x2, ativado pelo anúncio do servidor. A mesa de inscrição não
+mudou; essa alteração pertence ao addon, sem dependência de uma CR personalizada.
 
 - A orb do Crimson Portal criado pelo ritual concede **1 Silver**, sem pontos
   coloridos ou habilidades. A pérola original continua no drop. Portais naturais
