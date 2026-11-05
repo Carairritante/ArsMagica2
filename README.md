@@ -15,7 +15,8 @@ a licença e os créditos originais foram preservados.
 
 - [Builds e artefatos do Actions](https://github.com/Carairritante/ArsMagica2/actions)
 - [Correções e mudanças de comportamento](CHANGELOG.md)
-- [Estabiliza??o da Box of Illusions e item na m?o na CR21](docs/BOX-OF-ILLUSIONS-CR21.md)
+- [Expansão da Box of Illusions com mobs vanilla, sons, animações e dragão na CR22](docs/BOX-OF-ILLUSIONS-CR22.md)
+- [Estabilização da Box of Illusions e item na mão na CR21](docs/BOX-OF-ILLUSIONS-CR21.md)
 - [Vara Arcana e visual do Shrunken na CR20](docs/VARA-SHRUNKEN-CR20.md)
 - [Isolamento das molduras e investigação da desconexão na CR19](docs/CORRECAO-MOLDURAS-CR19.md)
 - [Commits e validação local da CR14 à CR18](docs/VALIDACAO-CR18.md)

@@ -72,6 +72,14 @@ public class ArmorEventHandler{
 
 		doInfusions(ImbuementApplicationTypes.ON_TICK, event, (EntityPlayer)event.entityLiving);
 
+		EntityPlayer livingP = (EntityPlayer) event.entityLiving;
+		if (!livingP.worldObj.isRemote) {
+			String mob = net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.get(livingP.getCommandSenderName());
+			if (mob != null && am2.items.renderers.IllusionEntityHelper.isValidMob(mob)) {
+				am2.items.renderers.IllusionEntityHelper.handleLivingSound(livingP, mob);
+			}
+		}
+
 		EntityPlayer player = (EntityPlayer)event.entityLiving;
 		if (player.inventory.armorInventory[0] != null && player.inventory.armorInventory[0].getItem() == ItemsCommonProxy.archmageBoots){
 			ModifiableAttributeInstance instance = (ModifiableAttributeInstance)player.getAttributeMap().getAttributeInstance(SharedMonsterAttributes.movementSpeed);
@@ -119,6 +127,13 @@ public class ArmorEventHandler{
 			return;
 
 		doInfusions(ImbuementApplicationTypes.ON_HIT, event, (EntityPlayer)event.entityLiving);
+		EntityPlayer hurtP = (EntityPlayer) event.entityLiving;
+		if (!hurtP.worldObj.isRemote) {
+			String mob = net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.get(hurtP.getCommandSenderName());
+			if (mob != null && am2.items.renderers.IllusionEntityHelper.isValidMob(mob)) {
+				am2.items.renderers.IllusionEntityHelper.handleHurtSound(hurtP, mob);
+			}
+		}
 
 		if (event.entityLiving instanceof EntityPlayer)
 			doXPInfusion((EntityPlayer)event.entityLiving, 0.01f, Math.max(0.05f, Math.min(event.ammount, 5)));
@@ -146,6 +161,13 @@ public class ArmorEventHandler{
 			return;
 
 		doInfusions(ImbuementApplicationTypes.ON_DEATH, event, (EntityPlayer)event.entityLiving);
+		EntityPlayer deadP = (EntityPlayer) event.entityLiving;
+		if (!deadP.worldObj.isRemote) {
+			String mob = net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.get(deadP.getCommandSenderName());
+			if (mob != null && am2.items.renderers.IllusionEntityHelper.isValidMob(mob)) {
+				am2.items.renderers.IllusionEntityHelper.handleDeathSound(deadP, mob);
+			}
+		}
 	}
 
 	private void doInfusions(ImbuementApplicationTypes type, Event event, EntityPlayer player){
@@ -226,24 +248,12 @@ public class ArmorEventHandler{
 			toMob = null;
 		}
 		if (toMob != null && !toMob.startsWith("maid")) {
-			// custom mobs
-			EntityLivingBase elb = new EntityZombie(event.entityPlayer.worldObj);
-			if (toMob.equalsIgnoreCase("spider")) {
-				elb = new EntitySpider(event.entityPlayer.worldObj);
-			} else if (toMob.equalsIgnoreCase("witch")) {
-				elb = new EntityWitch(event.entityPlayer.worldObj);
-			} else if (toMob.equalsIgnoreCase("snowman")) {
-				elb = new EntitySnowman(event.entityPlayer.worldObj);
-			} else if (toMob.equalsIgnoreCase("creeper")) {
-				elb = new EntityCreeper(event.entityPlayer.worldObj);
-			} else if (toMob.equalsIgnoreCase("chicken")) {
-				elb = new EntityChicken(event.entityPlayer.worldObj);
-			} else if (toMob.equalsIgnoreCase("cow")) {
-				elb = new EntityCow(event.entityPlayer.worldObj);
-			} else if (toMob.equalsIgnoreCase("ender")) {
-				elb = new EntityArcaneGuardian(event.entityPlayer.worldObj);
+			EntityLivingBase elb = am2.items.renderers.IllusionEntityHelper.getEntityForPlayer(event.entityPlayer, toMob, event.entityPlayer.worldObj);
+			if (elb == null) {
+				return;
 			}
-			ItemBoxOfIllusions.Copy(event.entityPlayer, elb);
+			am2.items.renderers.IllusionEntityHelper.updateEntityAnimation(event.entityPlayer, elb, toMob);
+
 			Render rle = RenderManager.instance.getEntityRenderObject(elb);
 			if (rle instanceof RendererLivingEntity) {
 				if (elb.ticksExisted == 0)
@@ -271,7 +281,24 @@ public class ArmorEventHandler{
 				double rx = d0 - RenderManager.renderPosX;
 				double ry = d1 - RenderManager.renderPosY - event.entityPlayer.yOffset;
 				double rz = d2 - RenderManager.renderPosZ;
-				((RendererLivingEntity) rle).doRender(elb, rx, ry, rz, f1, event.partialRenderTick);
+
+				if (am2.items.renderers.IllusionEntityHelper.isMiniatureDragon(toMob)) {
+					GL11.glPushMatrix();
+					GL11.glTranslated(rx, ry + 0.35D, rz);
+					float dragonScale = 0.18F;
+					GL11.glScalef(dragonScale, dragonScale, dragonScale);
+					((RendererLivingEntity) rle).doRender(elb, 0.0D, 0.0D, 0.0D, f1, event.partialRenderTick);
+					GL11.glPopMatrix();
+				} else if (am2.items.renderers.IllusionEntityHelper.isMiniatureWither(toMob)) {
+					GL11.glPushMatrix();
+					GL11.glTranslated(rx, ry + 0.25D, rz);
+					float witherScale = 0.55F;
+					GL11.glScalef(witherScale, witherScale, witherScale);
+					((RendererLivingEntity) rle).doRender(elb, 0.0D, 0.0D, 0.0D, f1, event.partialRenderTick);
+					GL11.glPopMatrix();
+				} else {
+					((RendererLivingEntity) rle).doRender(elb, rx, ry, rz, f1, event.partialRenderTick);
+				}
 				renderIllusionHeldItem(event.entityPlayer, elb, toMob, rx, ry, rz, event.partialRenderTick);
 				event.setCanceled(true);
 			} else {
@@ -288,7 +315,7 @@ public class ArmorEventHandler{
 			return;
 		}
 		// RenderBiped (zombie) and RenderWitch (witch) already render elb.getHeldItem() during doRender
-		if (toMob.equalsIgnoreCase("zombie") || toMob.equalsIgnoreCase("witch")) {
+		if (toMob.equalsIgnoreCase("zombie") || toMob.equalsIgnoreCase("witch") || toMob.equalsIgnoreCase("skeleton")) {
 			return;
 		}
 
@@ -314,6 +341,81 @@ public class ArmorEventHandler{
 			handX = -0.36F;
 			handY = 0.52F;
 			handZ = -0.38F;
+		} else if (toMob.equalsIgnoreCase("pig")) {
+			handX = -0.22F;
+			handY = 0.75F;
+			handZ = -0.42F;
+			mobItemScale = 0.70F;
+		} else if (toMob.equalsIgnoreCase("sheep")) {
+			handX = -0.24F;
+			handY = 0.65F;
+			handZ = -0.45F;
+			mobItemScale = 0.75F;
+		} else if (toMob.equalsIgnoreCase("wolf")) {
+			handX = -0.20F;
+			handY = 0.75F;
+			handZ = -0.40F;
+			mobItemScale = 0.65F;
+		} else if (toMob.equalsIgnoreCase("ocelot")) {
+			handX = -0.16F;
+			handY = 0.88F;
+			handZ = -0.32F;
+			mobItemScale = 0.60F;
+		} else if (toMob.equalsIgnoreCase("horse")) {
+			handX = -0.38F;
+			handY = 0.45F;
+			handZ = -0.75F;
+			mobItemScale = 0.95F;
+		} else if (toMob.equalsIgnoreCase("bat")) {
+			handX = -0.12F;
+			handY = 1.10F;
+			handZ = -0.15F;
+			mobItemScale = 0.50F;
+		} else if (toMob.equalsIgnoreCase("squid")) {
+			handX = -0.25F;
+			handY = 0.65F;
+			handZ = -0.25F;
+			mobItemScale = 0.75F;
+		} else if (toMob.equalsIgnoreCase("villager")) {
+			handX = -0.25F;
+			handY = 0.65F;
+			handZ = -0.35F;
+			mobItemScale = 0.85F;
+		} else if (toMob.equalsIgnoreCase("iron_golem")) {
+			handX = -0.55F;
+			handY = 0.40F;
+			handZ = -0.30F;
+			mobItemScale = 1.15F;
+		} else if (toMob.equalsIgnoreCase("enderman")) {
+			handX = -0.35F;
+			handY = 0.35F;
+			handZ = -0.18F;
+			mobItemScale = 0.95F;
+		} else if (toMob.equalsIgnoreCase("blaze")) {
+			handX = -0.35F;
+			handY = 0.60F;
+			handZ = -0.25F;
+			mobItemScale = 0.85F;
+		} else if (toMob.equalsIgnoreCase("slime") || toMob.equalsIgnoreCase("magma_cube")) {
+			handX = -0.18F;
+			handY = 0.78F;
+			handZ = -0.20F;
+			mobItemScale = 0.70F;
+		} else if (toMob.equalsIgnoreCase("ghast")) {
+			handX = -0.45F;
+			handY = 0.50F;
+			handZ = -0.45F;
+			mobItemScale = 1.10F;
+		} else if (toMob.equalsIgnoreCase("dragon") || toMob.equalsIgnoreCase("ender_dragon")) {
+			handX = -0.15F;
+			handY = 0.55F;
+			handZ = -0.55F;
+			mobItemScale = 0.65F;
+		} else if (toMob.equalsIgnoreCase("wither")) {
+			handX = -0.35F;
+			handY = 0.50F;
+			handZ = -0.30F;
+			mobItemScale = 0.85F;
 		} else if (toMob.equalsIgnoreCase("spider")) {
 			handX = -0.28F;
 			handY = 0.88F;

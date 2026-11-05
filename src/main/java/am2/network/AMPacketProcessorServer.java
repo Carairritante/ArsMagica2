@@ -195,6 +195,20 @@ public class AMPacketProcessorServer{
 	}
 
 	private void handleSyncMapServer(byte[] remaining) {
+		try {
+			AMDataReader rdr = new AMDataReader(remaining, false);
+			int size = rdr.getInt();
+			for (int i = 0; i < size; i++) {
+				String key = rdr.getString();
+				String value = rdr.getString();
+				if (key == null || key.isEmpty()) continue;
+				if (value == null || value.isEmpty() || value.equalsIgnoreCase("human") || value.equalsIgnoreCase("none")) {
+					net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.remove(key);
+				} else {
+					net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.put(key, value);
+				}
+			}
+		} catch (Throwable ignored) {}
 		AMNetHandler.INSTANCE.sendPacketToAllClients(AMPacketIDs.SYNCMAPTOCLIENTS, remaining);
 	}
 

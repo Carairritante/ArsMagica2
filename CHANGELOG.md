@@ -1,5 +1,18 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR22 — 2026-11-05
+
+- Expansão da Box of Illusions para suporte completo a criaturas vanilla do Minecraft via catalisadores, sem dependência de mods externos.
+- Dragão do End em miniatura (0.18x) transformável com Ovo de Dragão, com asas batendo e articulação contínua.
+- Animações autênticas para criaturas: batimento de asas em queda para galinhas e morcegos, rabo e postura sentada ao agachar para lobos, órbitas de varas de blaze, compressão de pulo em slimes e movimento de tentáculos em lulas.
+- Sistema de áudio do mob com sons de dano, morte e ambiente controlados, com cooldown mínimo de 30 segundos para sons ociosos e volumes amigáveis, evitando poluição sonora.
+- Reversão instantânea para humano via Shift + Clique Direito e compêndio arcano atualizado com lista bilíngue de catalisadores.
+
+## 1.6.11-LE-CR21 — 2026-11-05
+
+- Estabilização da Box of Illusions em servidores multiplayer, evitando reinfecção de skins antigas por pacotes de outros clientes.
+- Renderização correta do item na mão do jogador em todas as transformações de criaturas e skins maid.
+
 ## 1.6.11-LE-CR20 — 2026-11-04
 
 - Vara Arcana verifica jogador e item na mão antes de escolher o ícone lançado,

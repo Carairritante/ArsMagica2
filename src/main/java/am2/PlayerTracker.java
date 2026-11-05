@@ -6,6 +6,7 @@ import am2.customdata.CustomWorldData;
 import am2.enchantments.AMEnchantments;
 import am2.network.AMDataWriter;
 import am2.network.AMNetHandler;
+import am2.network.AMPacketIDs;
 import am2.playerextensions.AffinityData;
 import am2.playerextensions.ExtendedProperties;
 import am2.playerextensions.RiftStorage;
@@ -31,6 +32,7 @@ import net.minecraft.nbt.NBTTagCompound;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class PlayerTracker{
@@ -82,10 +84,25 @@ public class PlayerTracker{
 		AMNetHandler.INSTANCE.syncLoginData((EntityPlayerMP)event.player, data);
 		if (ServerTickHandler.lastWorldName != null)
 			AMNetHandler.INSTANCE.syncWorldName((EntityPlayerMP)event.player, ServerTickHandler.lastWorldName);
+
+		if (!net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.isEmpty()) {
+			AMDataWriter mapWriter = new AMDataWriter();
+			mapWriter.add(net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.size());
+			for (Map.Entry<String, String> entry : net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.entrySet()) {
+				mapWriter.add(entry.getKey());
+				mapWriter.add(entry.getValue());
+			}
+			AMNetHandler.INSTANCE.sendPacketToClientPlayer((EntityPlayerMP)event.player, AMPacketIDs.SYNCMAPTOCLIENTS, mapWriter.generate());
+		}
 	}
 
 	@SubscribeEvent
 	public void onPlayerLogout(PlayerLoggedOutEvent event){
+		String name = event.player.getCommandSenderName();
+		if (name != null) {
+			net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.remove(name);
+			am2.items.renderers.IllusionEntityHelper.clearPlayerCache(name);
+		}
 		//kill any summoned creatures
 		if (!event.player.worldObj.isRemote){
 			List list = event.player.worldObj.loadedEntityList;

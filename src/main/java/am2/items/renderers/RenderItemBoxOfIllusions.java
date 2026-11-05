@@ -79,20 +79,7 @@ public class RenderItemBoxOfIllusions implements IItemRenderer {
     private static long lastToggleTimeMs = 0L;
 
     public static boolean isValidIllusionModel(String model) {
-        if (model == null || model.isEmpty()) {
-            return false;
-        }
-        if (model.startsWith("maid")) {
-            return model.length() == 5 && model.charAt(4) >= '0' && model.charAt(4) <= '7';
-        }
-        return model.equalsIgnoreCase("spider")
-                || model.equalsIgnoreCase("zombie")
-                || model.equalsIgnoreCase("witch")
-                || model.equalsIgnoreCase("snowman")
-                || model.equalsIgnoreCase("creeper")
-                || model.equalsIgnoreCase("chicken")
-                || model.equalsIgnoreCase("cow")
-                || model.equalsIgnoreCase("ender");
+        return IllusionEntityHelper.isValidMob(model);
     }
 
     public static void enforceLocalPlayerModel(net.minecraft.entity.player.EntityPlayer localPlayer) {
@@ -103,6 +90,7 @@ public class RenderItemBoxOfIllusions implements IItemRenderer {
         if (localPlayerModel == null || !isValidIllusionModel(localPlayerModel)) {
             localPlayerModel = null;
             MysteriumPatchesFixesMagicka.playerModelMap.remove(name);
+            IllusionEntityHelper.clearPlayerCache(name);
         } else {
             MysteriumPatchesFixesMagicka.playerModelMap.put(name, localPlayerModel);
         }
@@ -205,6 +193,7 @@ public class RenderItemBoxOfIllusions implements IItemRenderer {
         if (localPlayerModel != null || current != null || player.isSneaking()) {
             localPlayerModel = null;
             MysteriumPatchesFixesMagicka.playerModelMap.remove(playerName);
+            IllusionEntityHelper.clearPlayerCache(playerName);
             syncLocalModelToServer(playerName, "");
             return;
         }
@@ -237,30 +226,7 @@ public class RenderItemBoxOfIllusions implements IItemRenderer {
     }
 
     private static String getModelForCatalyst(ItemStack stack, net.minecraft.entity.player.EntityPlayer player) {
-        if (stack == null || stack.getItem() == null) {
-            return null;
-        }
-        if (stack.getItem() == Items.spider_eye) {
-            return "spider";
-        } else if (stack.getItem() == Items.rotten_flesh) {
-            return "zombie";
-        } else if (stack.getItem() == Items.redstone) {
-            return "witch";
-        } else if (stack.getItem() == Items.snowball) {
-            return "snowman";
-        } else if (stack.getItem() == Items.gunpowder) {
-            return "creeper";
-        } else if (stack.getItem() == Items.feather) {
-            return "chicken";
-        } else if (stack.getItem() == Items.leather) {
-            return "cow";
-        } else if (stack.getItem() == Items.ender_eye) {
-            return "ender";
-        } else if (stack.getItem() == Items.emerald) {
-            int idx = (player.worldObj != null && player.worldObj.rand != null) ? player.worldObj.rand.nextInt(8) : 0;
-            return "maid" + idx;
-        }
-        return null;
+        return IllusionEntityHelper.getModelForCatalyst(stack, player);
     }
 
     public static void syncLocalModelToServer(String playerName, String modelValue) {
