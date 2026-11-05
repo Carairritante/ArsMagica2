@@ -1,5 +1,18 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR20 — 2026-11-04
+
+- Vara Arcana verifica jogador e item na mão antes de escolher o ícone lançado,
+  evitando o crash ao desenhá-la com a mão vazia ou sem jogador disponível.
+- Shrunken usa uma única redução visual no renderer, ancorada nos pés, sem
+  escalar novamente a posição do jogador em relação à câmera, e reduz o tamanho
+  final a um quarto do tamanho normal (2x menor que o tamanho anterior).
+- Jogadores remotos conservam offset zero; apenas o cliente local ajusta seu
+  offset de visão. Alterar e restaurar o tamanho preserva os pés e a interpolação.
+- Câmera em primeira pessoa acompanha a redução proporcional da altura; eventos
+  de salto deixam de avançar a transição como se fossem ticks adicionais.
+- Mudanças nativas do AM2.5; Playground e o addon do Cérebro permanecem separados.
+
 ## 1.6.11-LE-CR19 — 2026-11-03
 
 - Rotina das molduras do Compêndio separa estados e filas do cliente e servidor,

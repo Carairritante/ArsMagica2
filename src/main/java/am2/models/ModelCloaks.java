@@ -169,7 +169,7 @@ public class ModelCloaks extends ModelBase{
 
 		float pct = ExtendedProperties.For(player).getShrinkPct();
 		if (pct > 0){
-			float amt = 0.5f * pct;
+			float amt = 0.75f * pct;
 			GL11.glTranslatef(0, 1 * 1 - pct, 0);
 			GL11.glScalef(1 - amt, 1 - amt, 1 - amt);
 		}

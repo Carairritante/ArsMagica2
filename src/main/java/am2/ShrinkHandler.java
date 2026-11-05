@@ -14,7 +14,7 @@ public class ShrinkHandler{
 
 	@SubscribeEvent
 	public void onEntityLiving(LivingEvent event){
-		if (!(event.entityLiving instanceof EntityPlayer)) return;
+		if (!(event instanceof LivingEvent.LivingUpdateEvent) || !(event.entityLiving instanceof EntityPlayer)) return;
 
 		EntityPlayer player = (EntityPlayer) event.entityLiving;
 
@@ -35,15 +35,17 @@ public class ShrinkHandler{
 		}
 
 		boolean shrunk = exProps.getIsShrunk();
+		boolean wasResized = exProps.shrinkAmount != 0f;
+		double feetY = player.boundingBox.minY;
+		double centerX = player.posX, centerZ = player.posZ;
+		float previousOffset = player.yOffset;
 
 		if (!player.worldObj.isRemote && shrunk && !player.isPotionActive(BuffList.shrink)){
 			exProps.setIsShrunk(false);
 			shrunk = false;
-			player.yOffset = (float)exProps.getOriginalSize().y * 0.9f;
 		}else if (!player.worldObj.isRemote && !shrunk && player.isPotionActive(BuffList.shrink)){
 			exProps.setIsShrunk(true);
 			shrunk = true;
-			player.yOffset = 0.0F;
 		}
 
 		float shrinkPct = exProps.getShrinkPct();
@@ -56,10 +58,10 @@ public class ShrinkHandler{
 
 		if (exProps.getShrinkPct() > 0f){
 			if (exProps.shrinkAmount == 0f || //shrink hasn't yet been applied
-					exProps.getOriginalSize().x * 0.5 != player.width || //width has changed through other means
-					exProps.getOriginalSize().y * 0.5 != player.height){ //height has changed through other means
+					exProps.getOriginalSize().x * 0.25 != player.width || //width has changed through other means
+					exProps.getOriginalSize().y * 0.25 != player.height){ //height has changed through other means
 				exProps.setOriginalSize(new AMVector2(player.width, player.height));
-				exProps.shrinkAmount = 0.5f;
+				exProps.shrinkAmount = 0.25f;
 				EntityUtilities.setSize(player, player.width * exProps.shrinkAmount, player.height * exProps.shrinkAmount);
 				player.eyeHeight = player.getDefaultEyeHeight() * exProps.shrinkAmount;
 				player.yOffset = 0.0f;
@@ -73,14 +75,22 @@ public class ShrinkHandler{
 				player.yOffset = 0.0f;
 				if (exProps.getIsFlipped()){
 					event.entityLiving.moveEntity(0, -1, 0);
+					feetY = player.boundingBox.minY;
 				}
 			}
 		}
 
-		// update Y offset
-		if (player.worldObj.isRemote && exProps.getPrevShrinkPct() != exProps.getShrinkPct()){
-			// Vanilla player is 1.8f height with 1.62f yOffset => 0.9f
-			player.yOffset = (float)exProps.getOriginalSize().y * 0.9f * (1f - 0.5f * exProps.getShrinkPct());
+		if (exProps.getShrinkPct() > 0f || wasResized){
+			// Remote players and server players use feet coordinates (zero offset).
+			// Only the local client stores its eye offset in posY. Keep the ground
+			// anchor and interpolation stable when resizing or changing that offset.
+			boolean local = player.worldObj.isRemote && player == AMCore.proxy.getLocalPlayer();
+			float offset = local ? (float)exProps.getOriginalSize().y * 0.9f * (1f - 0.75f * exProps.getShrinkPct()) : 0f;
+			player.yOffset = offset;
+			player.setPosition(centerX, feetY + offset - player.ySize, centerZ);
+			double shift = offset - previousOffset;
+			player.prevPosY += shift;
+			player.lastTickPosY += shift;
 		}
 	}
 }

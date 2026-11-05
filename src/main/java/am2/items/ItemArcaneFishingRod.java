@@ -66,7 +66,9 @@ public class ItemArcaneFishingRod extends ArsMagicaRotatedItem {
     @Override
     @SideOnly(Side.CLIENT)
     public IIcon getIconFromDamage(int damage){
-        if (Minecraft.getMinecraft().thePlayer.fishEntity != null && Minecraft.getMinecraft().thePlayer.getHeldItem().getItem() instanceof ItemArcaneFishingRod){
+        EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+        ItemStack held = player == null ? null : player.getHeldItem();
+        if (player != null && player.fishEntity != null && held != null && held.getItem() instanceof ItemArcaneFishingRod){
             return this.theIcon;
         }else{
             return this.itemIcon;

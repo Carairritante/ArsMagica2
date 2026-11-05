@@ -101,7 +101,7 @@ public class RenderUtilities{
 		ExtendedProperties exProps = ExtendedProperties.For(entity);
 		if (exProps.getShrinkPct() > 0f){
 
-			float amt = 0.5f * exProps.getShrinkPct();
+			float amt = 0.75f * exProps.getShrinkPct();
 			GL11.glScalef(1 - amt, 1 - amt, 1 - amt);
 		}
 	}

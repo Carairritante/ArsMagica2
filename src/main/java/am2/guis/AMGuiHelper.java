@@ -76,7 +76,7 @@ public class AMGuiHelper{
 	//=========================================
 
 	public EntityItem dummyItem;
-	
+
 	private static final Random rand = new Random();
 
 	public void blackoutArmorPiece(int index, int duration){
@@ -632,7 +632,8 @@ public class AMGuiHelper{
 			ExtendedProperties exProps = ExtendedProperties.For(entity);
 			if (exProps.getShrinkPct() > 0f){
 				float amt = exProps.getPrevShrinkPct() + (exProps.getShrinkPct() - exProps.getPrevShrinkPct()) * f;
-				GL11.glTranslatef(0, 1 * amt, 0);
+				float baseHeight = exProps.getOriginalSize() == null ? 1.62f : (float)exProps.getOriginalSize().y * 0.9f;
+				GL11.glTranslatef(0, baseHeight * 0.75f * amt, 0);
 			}
 		}
 

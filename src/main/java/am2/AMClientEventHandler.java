@@ -239,12 +239,8 @@ public class AMClientEventHandler{
 			GL11.glTranslatef(0, -offset, 0);
 		}
 
-		float shrink = ExtendedProperties.For(event.entityPlayer).getShrinkPct();
-		if (shrink > 0){
-			GL11.glPushMatrix();
-			GL11.glTranslatef(0, 0 - 0.5f * shrink, 0);
-			GL11.glScalef(1 - 0.5f * shrink, 1 - 0.5f * shrink, 1 - 0.5f * shrink);
-		}
+		// The living renderer scales once, after translating to the entity's feet.
+		// Scaling here would also scale its world position around the camera.
 
 	}
 
@@ -258,9 +254,6 @@ public class AMClientEventHandler{
 		}
 
 		if (ExtendedProperties.For(event.entityPlayer).getFlipRotation() > 0){
-			GL11.glPopMatrix();
-		}
-		if (ExtendedProperties.For(event.entityPlayer).getShrinkPct() > 0){
 			GL11.glPopMatrix();
 		}
 
@@ -336,18 +329,18 @@ public class AMClientEventHandler{
 			}
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onPlayerInteract(PlayerInteractEvent event){
 		if(event.face == -1){
 			return;
 		}
-		
+
 		Block block = event.world.getBlock(event.x + Facing.offsetsXForSide[event.face], event.y + Facing.offsetsYForSide[event.face], event.z + Facing.offsetsZForSide[event.face]);
-		
+
 		if (block == BlocksCommonProxy.particleEmitter){
 			TileEntity te = event.world.getTileEntity(event.x + Facing.offsetsXForSide[event.face], event.y + Facing.offsetsYForSide[event.face], event.z + Facing.offsetsZForSide[event.face]);
-			
+
 			if (te != null && te instanceof TileEntityParticleEmitter && !((TileEntityParticleEmitter)te).getShow()){
 				event.setCanceled(true);
 		  }
