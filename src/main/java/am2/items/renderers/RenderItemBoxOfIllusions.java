@@ -194,6 +194,7 @@ public class RenderItemBoxOfIllusions implements IItemRenderer {
             localPlayerModel = null;
             MysteriumPatchesFixesMagicka.playerModelMap.remove(playerName);
             IllusionEntityHelper.clearPlayerCache(playerName);
+            IllusionEntityHelper.cleanupDisguisePhysics(player);
             syncLocalModelToServer(playerName, "");
             return;
         }

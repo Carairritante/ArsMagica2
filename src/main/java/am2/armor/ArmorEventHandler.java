@@ -49,6 +49,7 @@ import net.minecraftforge.client.event.*;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.item.ItemTossEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
@@ -73,11 +74,14 @@ public class ArmorEventHandler{
 		doInfusions(ImbuementApplicationTypes.ON_TICK, event, (EntityPlayer)event.entityLiving);
 
 		EntityPlayer livingP = (EntityPlayer) event.entityLiving;
-		if (!livingP.worldObj.isRemote) {
-			String mob = net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.get(livingP.getCommandSenderName());
-			if (mob != null && am2.items.renderers.IllusionEntityHelper.isValidMob(mob)) {
+		String mob = net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.get(livingP.getCommandSenderName());
+		if (mob != null && am2.items.renderers.IllusionEntityHelper.isValidMob(mob)) {
+			if (!livingP.worldObj.isRemote) {
 				am2.items.renderers.IllusionEntityHelper.handleLivingSound(livingP, mob);
 			}
+			am2.items.renderers.IllusionEntityHelper.applyDisguisePhysics(livingP, mob);
+		} else {
+			am2.items.renderers.IllusionEntityHelper.cleanupDisguisePhysics(livingP);
 		}
 
 		EntityPlayer player = (EntityPlayer)event.entityLiving;
@@ -145,6 +149,24 @@ public class ArmorEventHandler{
 			return;
 
 		doInfusions(ImbuementApplicationTypes.ON_JUMP, event, (EntityPlayer)event.entityLiving);
+
+		EntityPlayer player = (EntityPlayer) event.entityLiving;
+		String mob = net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.get(player.getCommandSenderName());
+		if (mob != null && am2.items.renderers.IllusionEntityHelper.isValidMob(mob)) {
+			am2.items.renderers.IllusionEntityHelper.handleJumpSound(player, mob);
+		}
+	}
+
+	@SubscribeEvent
+	public void onEntityFall(LivingFallEvent event){
+		if (event.entityLiving instanceof EntityPlayer){
+			EntityPlayer player = (EntityPlayer) event.entityLiving;
+			String mob = net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.get(player.getCommandSenderName());
+			if (mob != null && (mob.equalsIgnoreCase("chicken") || mob.equalsIgnoreCase("blaze"))){
+				event.setCanceled(true);
+				player.fallDistance = 0.0F;
+			}
+		}
 	}
 
 	@SubscribeEvent
@@ -296,6 +318,8 @@ public class ArmorEventHandler{
 					GL11.glScalef(witherScale, witherScale, witherScale);
 					((RendererLivingEntity) rle).doRender(elb, 0.0D, 0.0D, 0.0D, f1, event.partialRenderTick);
 					GL11.glPopMatrix();
+				} else if (toMob.equalsIgnoreCase("slime")) {
+					am2.items.renderers.RenderIllusionSlime.render(elb, rx, ry, rz, f1, event.partialRenderTick);
 				} else {
 					((RendererLivingEntity) rle).doRender(elb, rx, ry, rz, f1, event.partialRenderTick);
 				}
@@ -397,9 +421,9 @@ public class ArmorEventHandler{
 			handZ = -0.25F;
 			mobItemScale = 0.85F;
 		} else if (toMob.equalsIgnoreCase("slime") || toMob.equalsIgnoreCase("magma_cube")) {
-			handX = -0.18F;
-			handY = 0.78F;
-			handZ = -0.20F;
+			handX = -0.55F;
+			handY = 0.75F;
+			handZ = -0.10F;
 			mobItemScale = 0.70F;
 		} else if (toMob.equalsIgnoreCase("ghast")) {
 			handX = -0.45F;

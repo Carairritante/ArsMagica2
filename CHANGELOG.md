@@ -1,5 +1,16 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR23 — 2026-11-05
+
+- Velocidade de animacao do bater de asas do Dragao do End e da Galinha reduzida pela metade, tornando o movimento suave e visualmente natural.
+- Velocidade de rotacao das 12 hastes orbitais do Blaze reduzida pela metade.
+- Fisica de queda lenta (slowfall continuo sem dano de queda) aplicada tanto para Galinha quanto para Blaze enquanto transformado.
+- Adicionado som autentico de pulo do slime (mob.slime.big) acionado a cada salto do jogador disfarcado.
+- Renderizador dedicado de ilusao para Slime (RenderIllusionSlime) com textura otimizada de alta claridade: camada externa translucida em gelatina cristalina e olhos/boca destacados com contraste perfeito e visualizacao nitida em qualquer angulo ou iluminacao.
+- Orientacao e rotacao da face do slime sincronizadas com a visao da camera/jogador (incluindo visao em terceira pessoa selfie F5).
+- Posicionamento aprimorado de itens empunhados (como varinhas) ao lado do corpo do slime, sem colidir ou cortar o cubo.
+- Pagina inicial da Caixa de Ilusoes no Arcane Compendium atualizada para exibir instrucoes diretas de uso e principais catalisadores ja na primeira pagina de forma bilingue (pt-BR e en-US).
+
 ## 1.6.11-LE-CR22 — 2026-11-05
 
 - Expansão da Box of Illusions para suporte completo a criaturas vanilla do Minecraft via catalisadores, sem dependência de mods externos.

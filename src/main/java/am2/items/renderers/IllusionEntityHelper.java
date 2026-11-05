@@ -2,6 +2,8 @@ package am2.items.renderers;
 
 import am2.bosses.EntityArcaneGuardian;
 import am2.items.ItemBoxOfIllusions;
+import am2.buffs.BuffList;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.boss.EntityDragon;
 import net.minecraft.entity.boss.EntityWither;
@@ -249,22 +251,27 @@ public class IllusionEntityHelper {
             chicken.field_70888_h = chicken.field_70886_e;
             chicken.field_70884_g = chicken.destPos;
 
+            // Velocidade das asas da galinha reduzida pela metade
             if (inAir) {
-                chicken.destPos = Math.min(1.0F, chicken.destPos + 0.25F);
-                chicken.field_70886_e += 0.75F;
+                chicken.destPos = Math.min(1.0F, chicken.destPos + 0.12F);
+                chicken.field_70886_e += 0.375F;
             } else {
-                chicken.destPos = Math.max(0.0F, chicken.destPos - 0.15F);
+                chicken.destPos = Math.max(0.0F, chicken.destPos - 0.10F);
                 if (horizSpeed > 0.05D) {
-                    chicken.field_70886_e += 0.25F;
+                    chicken.field_70886_e += 0.125F;
                 } else {
-                    chicken.field_70886_e += 0.03F;
+                    chicken.field_70886_e += 0.015F;
                 }
             }
         } else if (elb instanceof EntityDragon) {
             EntityDragon dragon = (EntityDragon) elb;
             dragon.prevAnimTime = dragon.animTime;
-            float wingSpeed = inAir ? (0.08F + (float) horizSpeed * 0.15F) : 0.03F;
+            // Velocidade das asas do dragao reduzida pela metade
+            float wingSpeed = inAir ? (0.04F + (float) horizSpeed * 0.075F) : 0.015F;
             dragon.animTime += wingSpeed;
+        } else if (elb instanceof EntityBlaze) {
+            // Animacao de rotacao das hastes do blaze reduzida pela metade
+            elb.ticksExisted = player.ticksExisted / 2;
         } else if (elb instanceof EntityBat) {
             EntityBat bat = (EntityBat) elb;
             bat.setIsBatHanging(player.isSneaking() && player.onGround);
@@ -281,6 +288,13 @@ public class IllusionEntityHelper {
             }
         } else if (elb instanceof EntitySlime) {
             EntitySlime slime = (EntitySlime) elb;
+            // Garante que a face e olhos do slime acompanhem a visao/camera do jogador (inclusive selfie F5)
+            slime.rotationYaw = player.rotationYawHead;
+            slime.prevRotationYaw = player.prevRotationYawHead;
+            slime.renderYawOffset = player.rotationYawHead;
+            slime.prevRenderYawOffset = player.prevRotationYawHead;
+            slime.rotationYawHead = player.rotationYawHead;
+            slime.prevRotationYawHead = player.prevRotationYawHead;
             slime.prevSquishFactor = slime.squishFactor;
             if (inAir) {
                 slime.squishFactor = Math.min(0.6F, slime.squishFactor + 0.1F);
@@ -299,6 +313,54 @@ public class IllusionEntityHelper {
         } else if (elb instanceof EntitySheep) {
             EntitySheep sheep = (EntitySheep) elb;
             sheep.setSheared(false);
+        }
+    }
+
+    public static void handleJumpSound(EntityPlayer player, String mob) {
+        if (player == null || player.worldObj == null || mob == null) {
+            return;
+        }
+        if (mob.equalsIgnoreCase("slime")) {
+            float pitch = ((player.getRNG().nextFloat() - player.getRNG().nextFloat()) * 0.2F + 1.0F) * 0.8F;
+            if (player.worldObj.isRemote) {
+                player.worldObj.playSound(player.posX, player.posY, player.posZ, "mob.slime.big", 0.65F, pitch, false);
+            } else {
+                player.worldObj.playSoundAtEntity(player, "mob.slime.big", 0.65F, pitch);
+            }
+        } else if (mob.equalsIgnoreCase("magma_cube")) {
+            float pitch = ((player.getRNG().nextFloat() - player.getRNG().nextFloat()) * 0.2F + 1.0F) * 0.8F;
+            if (player.worldObj.isRemote) {
+                player.worldObj.playSound(player.posX, player.posY, player.posZ, "mob.magmacube.big", 0.65F, pitch, false);
+            } else {
+                player.worldObj.playSoundAtEntity(player, "mob.magmacube.big", 0.65F, pitch);
+            }
+        }
+    }
+
+    public static void applyDisguisePhysics(EntityPlayer player, String mob) {
+        if (player == null || mob == null) {
+            return;
+        }
+        if (mob.equalsIgnoreCase("chicken") || mob.equalsIgnoreCase("blaze")) {
+            // Queda lenta suave estilo galinha / blaze / quantum suit ao cair no ar sem estar agachado
+            if (!player.onGround && player.motionY < 0.0D && !player.isSneaking()) {
+                player.motionY *= 0.6D;
+                player.fallDistance = 0.0F;
+            }
+            // Efeito visual e logico de queda lenta (Slowfall) continuo enquanto estiver transformado
+            if (!player.isPotionActive(BuffList.slowfall.id)) {
+                player.addPotionEffect(new PotionEffect(BuffList.slowfall.id, 60, 0, true));
+            }
+        }
+    }
+
+    public static void cleanupDisguisePhysics(EntityPlayer player) {
+        if (player == null) {
+            return;
+        }
+        PotionEffect active = player.getActivePotionEffect(BuffList.slowfall);
+        if (active != null && active.getDuration() <= 60 && active.getIsAmbient()) {
+            player.removePotionEffect(BuffList.slowfall.id);
         }
     }
 
