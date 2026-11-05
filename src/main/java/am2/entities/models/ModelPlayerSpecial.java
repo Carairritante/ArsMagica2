@@ -81,8 +81,18 @@ public class ModelPlayerSpecial extends ModelBiped {
     public void render(Entity p_render_1_, float p_render_2_, float p_render_3_, float p_render_4_, float p_render_5_, float p_render_6_, float p_render_7_)
     {
         super.render(p_render_1_, p_render_2_, p_render_3_, p_render_4_, p_render_5_, p_render_6_, p_render_7_);
+    }
 
-        if (smallArms)
-            bipedRightArm.rotationPointX += 1.0F;
+    @Override
+    public void setRotationAngles(float p_78087_1_, float p_78087_2_, float p_78087_3_, float p_78087_4_, float p_78087_5_, float p_78087_6_, Entity p_78087_7_)
+    {
+        super.setRotationAngles(p_78087_1_, p_78087_2_, p_78087_3_, p_78087_4_, p_78087_5_, p_78087_6_, p_78087_7_);
+        if (smallArms && this.bipedBody.rotateAngleY == 0.0F)
+        {
+            this.bipedRightArm.rotationPointX = -5.0F;
+            this.bipedLeftArm.rotationPointX = 5.0F;
+            this.bipedRightArm.rotationPointY = 2.5F;
+            this.bipedLeftArm.rotationPointY = 2.5F;
+        }
     }
 }

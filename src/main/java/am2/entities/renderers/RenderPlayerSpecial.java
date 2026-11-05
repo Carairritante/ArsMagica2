@@ -47,7 +47,11 @@ public class RenderPlayerSpecial extends RenderPlayer {
 
     @Override
     protected ResourceLocation getEntityTexture(AbstractClientPlayer player) {
-        return new ResourceLocation("arsmagica2", "textures/models/" + playerModelMap.get(((EntityPlayer)player).getCommandSenderName()) + ".png");
+        String modelName = playerModelMap.get(((EntityPlayer)player).getCommandSenderName());
+        if (modelName == null || !modelName.startsWith("maid")) {
+            return player.getLocationSkin();
+        }
+        return new ResourceLocation("arsmagica2", "textures/models/" + modelName + ".png");
     }
 
     @Override

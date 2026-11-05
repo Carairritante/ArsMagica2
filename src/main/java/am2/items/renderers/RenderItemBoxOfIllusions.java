@@ -11,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.EnumRarity;
@@ -74,10 +75,58 @@ public class RenderItemBoxOfIllusions implements IItemRenderer {
 
     public static boolean doRotations = false;
     public static int rotationTick = 0;
+    public static volatile String localPlayerModel = null;
+    private static long lastToggleTimeMs = 0L;
+
+    public static boolean isValidIllusionModel(String model) {
+        if (model == null || model.isEmpty()) {
+            return false;
+        }
+        if (model.startsWith("maid")) {
+            return model.length() == 5 && model.charAt(4) >= '0' && model.charAt(4) <= '7';
+        }
+        return model.equalsIgnoreCase("spider")
+                || model.equalsIgnoreCase("zombie")
+                || model.equalsIgnoreCase("witch")
+                || model.equalsIgnoreCase("snowman")
+                || model.equalsIgnoreCase("creeper")
+                || model.equalsIgnoreCase("chicken")
+                || model.equalsIgnoreCase("cow")
+                || model.equalsIgnoreCase("ender");
+    }
+
+    public static void enforceLocalPlayerModel(net.minecraft.entity.player.EntityPlayer localPlayer) {
+        if (localPlayer == null) {
+            return;
+        }
+        String name = localPlayer.getCommandSenderName();
+        if (localPlayerModel == null || !isValidIllusionModel(localPlayerModel)) {
+            localPlayerModel = null;
+            MysteriumPatchesFixesMagicka.playerModelMap.remove(name);
+        } else {
+            MysteriumPatchesFixesMagicka.playerModelMap.put(name, localPlayerModel);
+        }
+    }
+
+    public static void onBoxRightClick(net.minecraft.entity.player.EntityPlayer player) {
+        EntityPlayer local = Minecraft.getMinecraft().thePlayer;
+        if (local == null || player != local) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (now - lastToggleTimeMs < 250L) {
+            return;
+        }
+        lastToggleTimeMs = now;
+        doRotations = true;
+        rotationTick = 0;
+        toggleLocalPlayerIllusion(local);
+    }
 
     @Override
     public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
         Minecraft.getMinecraft().renderEngine.bindTexture(texture1);
+        boolean isLocalHolder = data != null && data.length > 1 && data[1] == Minecraft.getMinecraft().thePlayer;
 
         if (type == EQUIPPED_FIRST_PERSON) { // yes, I know switches exist. Don't want them.
             if (cooldown > 0) cooldown--;
@@ -86,13 +135,12 @@ public class RenderItemBoxOfIllusions implements IItemRenderer {
             GL11.glRotated(130, 0, -1 ,0);
             GL11.glTranslated(-0.02, 0.5, -0.6);
             GL11.glPushMatrix();
-            if (doRotations) {
+            if (doRotations && isLocalHolder) {
                 rotationTick++;
-                GL11.glRotated(rotationTick*3, 0, 1 ,0);
-                if (rotationTick > 120) {
+                GL11.glRotated(rotationTick * 9, 0, 1, 0);
+                if (rotationTick > 40) {
                     doRotations = false;
                     rotationTick = 0;
-                    setCustomRenderer();
                 }
             }
             model.renderAll();
@@ -114,13 +162,12 @@ public class RenderItemBoxOfIllusions implements IItemRenderer {
             GL11.glScalef(1.1f, 1.1f, 1.1f);
             GL11.glTranslated(0.415, 0.4, 0.615);
             GL11.glPushMatrix();
-            if (doRotations) {
+            if (doRotations && isLocalHolder) {
                 rotationTick++;
-                GL11.glRotated(rotationTick*3, 0, 1 ,0);
-                if (rotationTick > 120) {
+                GL11.glRotated(rotationTick * 9, 0, 1, 0);
+                if (rotationTick > 40) {
                     doRotations = false;
                     rotationTick = 0;
-                    setCustomRenderer();
                 }
             }
             model.renderAll();
@@ -142,49 +189,88 @@ public class RenderItemBoxOfIllusions implements IItemRenderer {
 
     private void setCustomRenderer() {
         if (cooldown > 0) return;
-        if (MysteriumPatchesFixesMagicka.playerModelMap.get(Minecraft.getMinecraft().thePlayer.getCommandSenderName()) != null) {
-            MysteriumPatchesFixesMagicka.playerModelMap.remove(Minecraft.getMinecraft().thePlayer.getCommandSenderName());
+        EntityPlayer local = Minecraft.getMinecraft().thePlayer;
+        if (local != null) {
+            toggleLocalPlayerIllusion(local);
+            cooldown = 20;
+        }
+    }
+
+    public static void toggleLocalPlayerIllusion(net.minecraft.entity.player.EntityPlayer player) {
+        if (player == null) {
             return;
         }
-        for (ItemStack stack : Minecraft.getMinecraft().thePlayer.inventory.mainInventory){
-            if (stack != null) {
-                if (stack.getItem() == Items.spider_eye) {
-                    MysteriumPatchesFixesMagicka.playerModelMap.put(Minecraft.getMinecraft().thePlayer.getCommandSenderName(), "spider");
-                    return;
-                } else if (stack.getItem() == Items.rotten_flesh) {
-                    MysteriumPatchesFixesMagicka.playerModelMap.put(Minecraft.getMinecraft().thePlayer.getCommandSenderName(), "zombie");
-                    return;
-                } else if (stack.getItem() == Items.redstone) {
-                    MysteriumPatchesFixesMagicka.playerModelMap.put(Minecraft.getMinecraft().thePlayer.getCommandSenderName(), "witch");
-                    return;
-                } else if (stack.getItem() == Items.snowball) {
-                    MysteriumPatchesFixesMagicka.playerModelMap.put(Minecraft.getMinecraft().thePlayer.getCommandSenderName(), "snowman");
-                    return;
-                } else if (stack.getItem() == Items.gunpowder) {
-                    MysteriumPatchesFixesMagicka.playerModelMap.put(Minecraft.getMinecraft().thePlayer.getCommandSenderName(), "creeper");
-                    return;
-                } else if (stack.getItem() == Items.feather) {
-                    MysteriumPatchesFixesMagicka.playerModelMap.put(Minecraft.getMinecraft().thePlayer.getCommandSenderName(), "chicken");
-                    return;
-                } else if (stack.getItem() == Items.leather) {
-                    MysteriumPatchesFixesMagicka.playerModelMap.put(Minecraft.getMinecraft().thePlayer.getCommandSenderName(), "cow");
-                    return;
-                } else if (stack.getItem() == Items.ender_eye) {
-                    MysteriumPatchesFixesMagicka.playerModelMap.put(Minecraft.getMinecraft().thePlayer.getCommandSenderName(), "ender");
-                    return;
-                } else if (stack.getItem() == Items.emerald) {
-                    MysteriumPatchesFixesMagicka.playerModelMap.put(Minecraft.getMinecraft().thePlayer.getCommandSenderName(), "maid" + Minecraft.getMinecraft().theWorld.rand.nextInt(8));
-                    return;
-                }
+        String playerName = player.getCommandSenderName();
+        String current = MysteriumPatchesFixesMagicka.playerModelMap.get(playerName);
+        if (localPlayerModel != null || current != null || player.isSneaking()) {
+            localPlayerModel = null;
+            MysteriumPatchesFixesMagicka.playerModelMap.remove(playerName);
+            syncLocalModelToServer(playerName, "");
+            return;
+        }
+
+        String chosenModel = findIllusionModelFromInventory(player);
+        if (chosenModel != null) {
+            localPlayerModel = chosenModel;
+            MysteriumPatchesFixesMagicka.playerModelMap.put(playerName, chosenModel);
+            syncLocalModelToServer(playerName, chosenModel);
+        } else {
+            localPlayerModel = null;
+            MysteriumPatchesFixesMagicka.playerModelMap.remove(playerName);
+            syncLocalModelToServer(playerName, "");
+        }
+    }
+
+    private static String findIllusionModelFromInventory(net.minecraft.entity.player.EntityPlayer player) {
+        ItemStack[] inv = player.inventory.mainInventory;
+        if (inv == null) {
+            return null;
+        }
+        // Check hotbar first (0..8), then main inventory (9..end) so the player can control priority via hotbar
+        for (int i = 0; i < inv.length; i++) {
+            String match = getModelForCatalyst(inv[i], player);
+            if (match != null) {
+                return match;
             }
         }
-        cooldown = 80;
-        AMDataWriter writer = new AMDataWriter();
-        writer.add(MysteriumPatchesFixesMagicka.playerModelMap.size());
-        for (Map.Entry<String, String> entry : MysteriumPatchesFixesMagicka.playerModelMap.entrySet()) {
-            writer.add(entry.getKey());
-            writer.add(entry.getValue());
+        return null;
+    }
+
+    private static String getModelForCatalyst(ItemStack stack, net.minecraft.entity.player.EntityPlayer player) {
+        if (stack == null || stack.getItem() == null) {
+            return null;
         }
+        if (stack.getItem() == Items.spider_eye) {
+            return "spider";
+        } else if (stack.getItem() == Items.rotten_flesh) {
+            return "zombie";
+        } else if (stack.getItem() == Items.redstone) {
+            return "witch";
+        } else if (stack.getItem() == Items.snowball) {
+            return "snowman";
+        } else if (stack.getItem() == Items.gunpowder) {
+            return "creeper";
+        } else if (stack.getItem() == Items.feather) {
+            return "chicken";
+        } else if (stack.getItem() == Items.leather) {
+            return "cow";
+        } else if (stack.getItem() == Items.ender_eye) {
+            return "ender";
+        } else if (stack.getItem() == Items.emerald) {
+            int idx = (player.worldObj != null && player.worldObj.rand != null) ? player.worldObj.rand.nextInt(8) : 0;
+            return "maid" + idx;
+        }
+        return null;
+    }
+
+    public static void syncLocalModelToServer(String playerName, String modelValue) {
+        if (playerName == null || playerName.isEmpty()) {
+            return;
+        }
+        AMDataWriter writer = new AMDataWriter();
+        writer.add(1);
+        writer.add(playerName);
+        writer.add(modelValue != null ? modelValue : "");
         AMNetHandler.INSTANCE.sendPacketToServer(AMPacketIDs.SYNCMAPTOSERVER, writer.generate());
     }
 

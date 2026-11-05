@@ -179,14 +179,25 @@ public class MysteriumPatchesFixesMagicka{
 	public static boolean getEntityRenderObject(RenderManager rm, Entity ent)
 	{
 		if (ent instanceof EntityPlayer) {
-			if (playerModelMap.get(((EntityPlayer)ent).getCommandSenderName()) != null && playerModelMap.get(((EntityPlayer)ent).getCommandSenderName()).startsWith("maid")) return true;
+			EntityPlayer player = (EntityPlayer)ent;
+			if (Minecraft.getMinecraft() != null && player == Minecraft.getMinecraft().thePlayer) {
+				am2.items.renderers.RenderItemBoxOfIllusions.enforceLocalPlayerModel(player);
+			}
+			String model = playerModelMap.get(player.getCommandSenderName());
+			if (model != null && am2.items.renderers.RenderItemBoxOfIllusions.isValidIllusionModel(model) && model.startsWith("maid")) return true;
 		}
 		return false;
 	}
 
 	@SideOnly(Side.CLIENT)
+	private static Render cachedRenderPlayerSpecial;
+
+	@SideOnly(Side.CLIENT)
 	public static Render renderPlayerSpecial(RenderManager rm, Entity ent) {
-		return new RenderPlayerSpecial();
+		if (cachedRenderPlayerSpecial == null) {
+			cachedRenderPlayerSpecial = new RenderPlayerSpecial();
+		}
+		return cachedRenderPlayerSpecial;
 	}
 
 	// hacky fix for foamfix (foamfix, why must you do this?!)

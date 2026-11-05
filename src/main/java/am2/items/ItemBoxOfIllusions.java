@@ -18,7 +18,9 @@ public class ItemBoxOfIllusions extends ArsMagicaItem {
 
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player){
-        if (world.isRemote) RenderItemBoxOfIllusions.doRotations = true;
+        if (world.isRemote) {
+            RenderItemBoxOfIllusions.onBoxRightClick(player);
+        }
         return super.onItemRightClick(stack, world, player);
     }
 

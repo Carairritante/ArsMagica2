@@ -207,10 +207,35 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 	private void handleSyncMap(byte[] remaining) {
 		AMDataReader rdr = new AMDataReader(remaining, false);
 		int size = rdr.getInt();
+		EntityPlayer localPlayer = Minecraft.getMinecraft().thePlayer;
+		String localName = localPlayer != null ? localPlayer.getCommandSenderName() : null;
+		boolean remoteHadStaleLocalIllusion = false;
 		for (int i = 0; i < size; i++) {
 			String key = rdr.getString();
 			String value = rdr.getString();
-			MysteriumPatchesFixesMagicka.playerModelMap.put(key, value);
+			if (key == null || key.isEmpty()) {
+				continue;
+			}
+			if (localName != null && key.equals(localName)) {
+				String desired = am2.items.renderers.RenderItemBoxOfIllusions.localPlayerModel;
+				if (desired == null || !am2.items.renderers.RenderItemBoxOfIllusions.isValidIllusionModel(desired)) {
+					MysteriumPatchesFixesMagicka.playerModelMap.remove(localName);
+					if (value != null && !value.isEmpty() && !value.equalsIgnoreCase("human") && !value.equalsIgnoreCase("none")) {
+						remoteHadStaleLocalIllusion = true;
+					}
+				} else {
+					MysteriumPatchesFixesMagicka.playerModelMap.put(localName, desired);
+				}
+				continue;
+			}
+			if (value == null || value.isEmpty() || value.equalsIgnoreCase("human") || value.equalsIgnoreCase("none") || !am2.items.renderers.RenderItemBoxOfIllusions.isValidIllusionModel(value)) {
+				MysteriumPatchesFixesMagicka.playerModelMap.remove(key);
+			} else {
+				MysteriumPatchesFixesMagicka.playerModelMap.put(key, value);
+			}
+		}
+		if (remoteHadStaleLocalIllusion && localName != null) {
+			am2.items.renderers.RenderItemBoxOfIllusions.syncLocalModelToServer(localName, "");
 		}
 	}
 

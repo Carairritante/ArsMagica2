@@ -300,33 +300,40 @@ public class AMClientEventHandler{
 	@SideOnly(Side.CLIENT)
 	public void onEntityJoinWorldClient(EntityJoinWorldEvent event){
 		if (event.entity instanceof EntityPlayer) {
-			if (event.entity == Minecraft.getMinecraft().thePlayer) ArcaneCompendium.instance.loadUnlockData();
-		}
-		if (event.entity instanceof EntityPlayer) {
-			if (event.entity != Minecraft.getMinecraft().thePlayer) {
-				AMDataWriter writer = new AMDataWriter();
-				writer.add(MysteriumPatchesFixesMagicka.playerModelMap.size());
-				for (Map.Entry<String, String> entry : MysteriumPatchesFixesMagicka.playerModelMap.entrySet()) {
-					writer.add(entry.getKey());
-					writer.add(entry.getValue());
-				}
-				AMNetHandler.INSTANCE.sendPacketToServer(AMPacketIDs.SYNCMAPTOSERVER, writer.generate());
+			net.minecraft.client.entity.EntityClientPlayerMP localPlayer = Minecraft.getMinecraft().thePlayer;
+			if (event.entity == localPlayer) {
+				ArcaneCompendium.instance.loadUnlockData();
+			}
+			if (localPlayer == null) {
 				return;
-				// syncs the map to everyone, and as a consequence, the new player too
+			}
+			String localName = localPlayer.getCommandSenderName();
+			if (event.entity != localPlayer) {
+				am2.items.renderers.RenderItemBoxOfIllusions.enforceLocalPlayerModel(localPlayer);
+				String ourModel = am2.items.renderers.RenderItemBoxOfIllusions.localPlayerModel;
+				if (ourModel != null && am2.items.renderers.RenderItemBoxOfIllusions.isValidIllusionModel(ourModel)) {
+					am2.items.renderers.RenderItemBoxOfIllusions.syncLocalModelToServer(localName, ourModel);
+				}
+				return;
 			}
 			ServerData serverData = Minecraft.getMinecraft().func_147104_D();
 			if (serverData == null) {
 				MysteriumPatchesFixesMagicka.playerModelMap.clear();
+				am2.items.renderers.RenderItemBoxOfIllusions.enforceLocalPlayerModel(localPlayer);
 				return; // singleplayer
 			}
 
-			List<String> tablist = ((List<GuiPlayerInfo>) Minecraft.getMinecraft().thePlayer.sendQueue.playerInfoList).stream().map(r -> r.name).collect(Collectors.toList());
-			if (tablist.contains(Minecraft.getMinecraft().thePlayer.getDisplayName())) tablist.remove(Minecraft.getMinecraft().thePlayer.getDisplayName());
-			if (tablist.contains(Minecraft.getMinecraft().thePlayer.getCommandSenderName())) tablist.remove(Minecraft.getMinecraft().thePlayer.getCommandSenderName());
-			if (event.entity == Minecraft.getMinecraft().thePlayer && tablist.size() == 0) { // no players to sync the map from, clear it instead
-				MysteriumPatchesFixesMagicka.playerModelMap.clear();
-				return;
+			if (localPlayer.sendQueue != null && localPlayer.sendQueue.playerInfoList != null) {
+				List<String> tablist = ((List<GuiPlayerInfo>) localPlayer.sendQueue.playerInfoList).stream().map(r -> r.name).collect(Collectors.toList());
+				if (tablist.contains(localPlayer.getDisplayName())) tablist.remove(localPlayer.getDisplayName());
+				if (tablist.contains(localName)) tablist.remove(localName);
+				if (tablist.size() == 0) {
+					MysteriumPatchesFixesMagicka.playerModelMap.clear();
+				}
 			}
+			am2.items.renderers.RenderItemBoxOfIllusions.enforceLocalPlayerModel(localPlayer);
+			String ourModel = am2.items.renderers.RenderItemBoxOfIllusions.localPlayerModel;
+			am2.items.renderers.RenderItemBoxOfIllusions.syncLocalModelToServer(localName, ourModel != null ? ourModel : "");
 		}
 	}
 
