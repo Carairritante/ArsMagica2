@@ -3,7 +3,7 @@ plugins {
     id 'com.gtnewhorizons.retrofuturagradle' version '1.4.9'
 }
 group = 'am2'
-version = '1.6.11-LE-CR23'
+version = '1.6.11-LE-CR24'
 base { archivesName = 'AM2.5-LTS' }
 java { toolchain { languageVersion = JavaLanguageVersion.of(8) } }
 minecraft {
