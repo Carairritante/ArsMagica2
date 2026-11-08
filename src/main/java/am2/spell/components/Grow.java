@@ -10,6 +10,9 @@ import am2.items.ItemsCommonProxy;
 import am2.particles.AMParticle;
 import am2.particles.ParticleFadeOut;
 import am2.particles.ParticleFloatUpward;
+import am2.entities.EntitySpellEffect;
+import net.minecraft.util.AxisAlignedBB;
+import java.util.List;
 import am2.particles.ParticleOrbitPoint;
 import am2.utility.DummyEntityPlayer;
 import cpw.mods.fml.common.eventhandler.Event.Result;
@@ -147,17 +150,76 @@ public class Grow implements ISpellComponent{
 
 	@Override
 	public void spawnParticles(World world, double x, double y, double z, EntityLivingBase caster, Entity target, Random rand, int colorModifier){
-		for (int i = 0; i < 25; ++i){
-			AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(world, "plant", x + 0.5, y + 1, z + 0.5);
+		if (!world.isRemote) return;
+
+		double groundY = y + 1.02;
+		if (world.getBlock((int)Math.floor(x), (int)Math.floor(y + 1), (int)Math.floor(z)).isOpaqueCube()){
+			groundY = y + 2.02;
+		}else if (!world.getBlock((int)Math.floor(x), (int)Math.floor(y), (int)Math.floor(z)).isOpaqueCube()
+				&& world.getBlock((int)Math.floor(x), (int)Math.floor(y - 1), (int)Math.floor(z)).isOpaqueCube()){
+			groundY = y + 0.02;
+		}
+
+		// 1. Starfall-style Fusion: Coalesce all Grow activations in a wide 24-block radius into ONE evolving mandala
+		double fusionRadius = 24.0;
+		@SuppressWarnings("unchecked")
+		List<EntitySpellEffect> nearby = world.getEntitiesWithinAABB(EntitySpellEffect.class,
+				AxisAlignedBB.getBoundingBox(x - fusionRadius, y - 10.0, z - fusionRadius, x + fusionRadius, y + 10.0, z + fusionRadius));
+
+		EntitySpellEffect primary = null;
+		for (EntitySpellEffect effect : nearby){
+			if (effect.isGrowMandala() && !effect.isDead){
+				if (primary == null){
+					primary = effect;
+				}else{
+					// Merge secondary mandala into primary!
+					primary.addMerged(effect.getMergeCount());
+					effect.setDead();
+				}
+			}
+		}
+
+		if (primary != null){
+			int oldTier = primary.getGrowTier();
+			primary.addMerged(1);
+			int newTier = primary.getGrowTier();
+
+			// Smoothly gravitate the mandala center towards the average center of all merged blocks!
+			double count = primary.getMergeCount();
+			primary.posX = (primary.posX * (count - 1.0) + (x + 0.5)) / count;
+			primary.posZ = (primary.posZ * (count - 1.0) + (z + 0.5)) / count;
+			primary.posY = Math.max(primary.posY, groundY);
+			primary.setPosition(primary.posX, primary.posY, primary.posZ);
+
+			// Refresh lifetime so sustained zone / multi-block casts stay active and fade out cleanly
+			primary.setTicksToExist(Math.max(primary.getTicksToExist(), primary.ticksExisted + 30));
+
+			// Sound feedback on tier progression (subtle nature harmonic surge)
+			if (newTier > oldTier){
+				float pitch = newTier >= 4 ? 0.70f : (newTier >= 3 ? 0.85f : 1.05f);
+				world.playSound(primary.posX, primary.posY, primary.posZ, "arsmagica2:spell.cast.nature", 1.2f, pitch, false);
+			}
+		}else{
+			// Spawn the initial botanical magic circle
+			EntitySpellEffect mandala = new EntitySpellEffect(world);
+			mandala.setPosition(x + 0.5, groundY, z + 0.5);
+			mandala.setGrowMandala(3.0f, colorModifier);
+			world.spawnEntityInWorld(mandala);
+		}
+
+		// 2. Subtle ambient sparkle: only 1 in 8 blocks spawns 1 gentle floating sparkle (zero orbit controllers)
+		if (rand.nextInt(8) == 0){
+			AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(world, "plant", x + 0.5, y + 1.0, z + 0.5);
 			if (particle != null){
-				particle.addRandomOffset(1, 1, 1);
-				particle.AddParticleController(new ParticleFloatUpward(particle, 0, 0.1f, 1, false));
-				particle.AddParticleController(new ParticleOrbitPoint(particle, x + 0.5, y + 0.5, z + 0.5, 2, false).setIgnoreYCoordinate(true).SetOrbitSpeed(0.1f).SetTargetDistance(0.3f + rand.nextDouble() * 0.3));
-				particle.AddParticleController(new ParticleFadeOut(particle, 1, false).setFadeSpeed(0.05f).setKillParticleOnFinish(true));
-				particle.setMaxAge(20);
-				particle.setParticleScale(0.1f);
+				particle.addRandomOffset(0.6, 0.4, 0.6);
+				particle.AddParticleController(new ParticleFloatUpward(particle, 0, 0.05f, 1, false));
+				particle.AddParticleController(new ParticleFadeOut(particle, 1, false).setFadeSpeed(0.06f).setKillParticleOnFinish(true));
+				particle.setMaxAge(24);
+				particle.setParticleScale(0.12f);
 				if (colorModifier > -1){
 					particle.setRGBColorF(((colorModifier >> 16) & 0xFF) / 255.0f, ((colorModifier >> 8) & 0xFF) / 255.0f, (colorModifier & 0xFF) / 255.0f);
+				}else{
+					particle.setRGBColorF(0.40f, 1.0f, 0.55f);
 				}
 			}
 		}

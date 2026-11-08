@@ -70,7 +70,6 @@ public class RenderPlayerSpecial extends RenderPlayer {
 
         super.renderFirstPersonArm(player);
 
-        // This call is not needed at all due to bipedRightArmwear being a Child of bipedRightArm, therefore moving and rendering with it automatically already.
-        //((ModelPlayer) modelBipedMain).bipedRightArmwear.render(0.0625F);
+        am2.client.vfx.ManaShieldVFX.renderFirstPersonArm(player, this);
     }
 }

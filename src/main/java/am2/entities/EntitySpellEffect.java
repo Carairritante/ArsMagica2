@@ -7,14 +7,20 @@ import am2.api.spell.component.interfaces.ISpellModifier;
 import am2.api.spell.enums.SpellModifiers;
 import am2.buffs.BuffEffectFrostSlowed;
 import am2.damage.DamageSources;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionEffect;
+import am2.network.AMNetHandler;
 import am2.particles.*;
 import am2.spell.SpellHelper;
 import am2.spell.SpellUtils;
 import am2.spell.modifiers.Colour;
 import am2.utility.DummyEntityPlayer;
+import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.boss.EntityDragonPart;
+import net.minecraft.entity.monster.IMob;
+import net.minecraft.util.MathHelper;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
@@ -24,7 +30,10 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class EntitySpellEffect extends Entity{
 
@@ -48,12 +57,22 @@ public class EntitySpellEffect extends Entity{
 	private static final int WATCHER_TYPE = 25; //0 == zone, 1 == rain of fire, 2 == blizzard, 3 == wall, 4 == wave
 	private static final int WATCHER_ROF_IGNITE = 26;
 	private static final int WATCHER_DAMAGEBONUS = 27;
+	private static final int WATCHER_TICKS_TO_EXIST = 28;
 
 	private static final int TYPE_ZONE = 0;
 	private static final int TYPE_ROF = 1;
 	private static final int TYPE_BLIZ = 2;
 	private static final int TYPE_WALL = 3;
 	private static final int TYPE_WAVE = 4;
+	public static final int TYPE_STARFALL_IMPACT = 5;
+	public static final int TYPE_GROW_MANDALA = 6;
+	public static final int TYPE_EXPLOSION_IMPACT = 7;
+	public static final int TYPE_EXPLOSION_FUSION = 8;
+	public static final int TYPE_LIGHTNING_FUSION = 9;
+	public static final int TYPE_LIGHTNING_IMPACT = 10;
+	public static final int TYPE_ORBITAL_STORM = 11;
+
+	private int explicitColor = -1;
 
 	private boolean firstApply = true;
 
@@ -62,6 +81,8 @@ public class EntitySpellEffect extends Entity{
 		this.rotation = 0;
 		this.rotationSpeed = 10f;
 		this.setSize(0.25f, 0.25f);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
 	}
 
 	public void SetCasterAndStack(EntityLivingBase caster, ItemStack spellScroll){
@@ -76,6 +97,10 @@ public class EntitySpellEffect extends Entity{
 		this.dataWatcher.updateObject(WATCHER_RADIUS, newRadius);
 	}
 
+	public float getRadius(){
+		return this.dataWatcher.getWatchableObjectFloat(WATCHER_RADIUS);
+	}
+
 	public void setTickRate(int newTickRate){
 		this.maxTicksToEffect = newTickRate;
 		this.ticksToEffect = newTickRate;
@@ -83,13 +108,9 @@ public class EntitySpellEffect extends Entity{
 	private int wavePulsesRemaining = -1;
 	private int wavePulseInterval = 1;
 
-	public int getTicksToExist(){
-		return this.ticksToExist;
-	}
-
 	public void setWavePulseLimit(int maxPulses){
 		this.wavePulsesRemaining = maxPulses;
-		int duration = this.ticksToExist > 0 ? this.ticksToExist : 20;
+		int duration = this.getTicksToExist();
 		this.wavePulseInterval = Math.max(1, duration / maxPulses);
 		this.ticksToEffect = 0;
 	}
@@ -97,6 +118,44 @@ public class EntitySpellEffect extends Entity{
 
 	public void setTicksToExist(int ticks){
 		this.ticksToExist = ticks;
+		this.dataWatcher.updateObject(WATCHER_TICKS_TO_EXIST, ticks);
+	}
+
+	public int getTicksToExist(){
+		int dw = this.dataWatcher.getWatchableObjectInt(WATCHER_TICKS_TO_EXIST);
+		if (dw > 0 && dw != 100) return dw;
+		if (this.spellStack == null){
+			this.spellStack = this.dataWatcher.getWatchableObjectItemStack(WATCHER_STACK);
+		}
+		if (this.spellStack != null){
+			int calcDuration = SpellUtils.instance.getModifiedInt_Mul(100, this.spellStack, null, null, worldObj, 0, SpellModifiers.DURATION);
+			if (calcDuration > 0) return calcDuration;
+		}
+		return dw > 0 ? dw : this.ticksToExist;
+	}
+
+	public void setExplicitColor(int color){
+		this.explicitColor = color;
+	}
+
+	public int getSpellColor(){
+		if (this.explicitColor != -1){
+			return this.explicitColor;
+		}
+		if (spellStack == null){
+			spellStack = this.dataWatcher.getWatchableObjectItemStack(WATCHER_STACK);
+		}
+		if (spellStack != null && SpellUtils.instance.modifierIsPresent(SpellModifiers.COLOR, spellStack, 0)){
+			ISpellModifier[] mods = SpellUtils.instance.getModifiersForStage(spellStack, 0);
+			int ordinalCount = 0;
+			for (ISpellModifier mod : mods){
+				if (mod instanceof Colour){
+					byte[] meta = SpellUtils.instance.getModifierMetadataFromStack(spellStack, mod, 0, ordinalCount++);
+					return (int)mod.getModifier(SpellModifiers.COLOR, null, null, null, meta);
+				}
+			}
+		}
+		return -1;
 	}
 
 	public void setGravity(double gravity){
@@ -133,6 +192,7 @@ public class EntitySpellEffect extends Entity{
 		this.dataWatcher.addObject(WATCHER_TYPE, 0);
 		this.dataWatcher.addObject(WATCHER_ROF_IGNITE, (byte)0);
 		this.dataWatcher.addObject(WATCHER_DAMAGEBONUS, 1.0f);
+		this.dataWatcher.addObject(WATCHER_TICKS_TO_EXIST, 100);
 	}
 
 	@Override
@@ -157,9 +217,21 @@ public class EntitySpellEffect extends Entity{
 		case TYPE_WAVE:
 			waveUpdate();
 			break;
+		case TYPE_EXPLOSION_FUSION:
+			detonateExplosionFusion();
+			break;
+		case TYPE_LIGHTNING_FUSION:
+			detonateLightningFusion();
+			break;
+		case TYPE_LIGHTNING_IMPACT:
+			lightningImpactUpdate();
+			break;
+		case TYPE_ORBITAL_STORM:
+			orbitalStormUpdate();
+			break;
 		}
 
-		if (!worldObj.isRemote && this.ticksExisted >= this.ticksToExist){
+		if ((!worldObj.isRemote || isStarfallImpact() || isGrowMandala() || isExplosionImpact() || isLightningImpact()) && this.ticksExisted >= this.getTicksToExist()){
 			this.setDead();
 		}
 	}
@@ -278,18 +350,19 @@ public class EntitySpellEffect extends Entity{
 				}
 			}
 
-			for (int i = 0; i < 10; ++i){
+			if (rand.nextInt(3) == 0){
 				double x = this.posX - radius + (rand.nextDouble() * radius * 2);
 				double z = this.posZ - radius + (rand.nextDouble() * radius * 2);
-				double y = this.posY + 10;
+				double y = this.posY + 0.5 + rand.nextDouble() * 1.5;
 
-				AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "explosion_2", x, y, z);
+				AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "ember", x, y, z);
 				if (particle != null){
-					particle.setMaxAge(20);
-					particle.addVelocity(rand.nextDouble() * 0.2f, 0, rand.nextDouble() * 0.2f);
-					particle.setAffectedByGravity();
+					particle.setMaxAge(16);
+					particle.addVelocity((rand.nextDouble() - 0.5) * 0.05f, 0.04f, (rand.nextDouble() - 0.5) * 0.05f);
 					particle.setDontRequireControllers();
-					particle.setRGBColorI(color);
+					int col = getSpellColor();
+					if (col != -1) particle.setRGBColorI(col);
+					else particle.setRGBColorI(0xFF6600);
 					particle.noClip = false;
 				}
 			}
@@ -346,34 +419,22 @@ public class EntitySpellEffect extends Entity{
 				}
 			}
 
-			for (int i = 0; i < 20; ++i){
+			if (rand.nextInt(3) == 0){
 				double x = this.posX - radius + (rand.nextDouble() * radius * 2);
 				double z = this.posZ - radius + (rand.nextDouble() * radius * 2);
-				double y = this.posY + 10;
+				double y = this.posY + 0.5 + rand.nextDouble() * 2.5;
 
 				AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "snowflakes", x, y, z);
 				if (particle != null){
-					particle.setMaxAge(20);
-					particle.setParticleScale(0.1f);
-					particle.addVelocity(rand.nextDouble() * 0.2f - 0.1f, 0, rand.nextDouble() * 0.2f - 0.1f);
-					particle.setAffectedByGravity();
-					particle.setRGBColorI(color);
+					particle.setMaxAge(18);
+					particle.setParticleScale(0.12f);
+					particle.addVelocity((rand.nextDouble() - 0.5) * 0.08f, -0.04f, (rand.nextDouble() - 0.5) * 0.08f);
 					particle.setDontRequireControllers();
+					int col = getSpellColor();
+					if (col != -1) particle.setRGBColorI(col);
+					else particle.setRGBColorI(0x99EEFF);
 					particle.noClip = false;
 				}
-			}
-
-			double x = this.posX - radius + (rand.nextDouble() * radius * 2);
-			double z = this.posZ - radius + (rand.nextDouble() * radius * 2);
-			double y = this.posY + rand.nextDouble();
-			AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "smoke", x, y, z);
-			if (particle != null){
-				particle.setParticleScale(2.0f);
-				particle.setMaxAge(20);
-				//particle.setRGBColorF(0.5f, 0.92f, 0.92f);
-				particle.setRGBColorF(0.5098f, 0.7843f, 0.7843f);
-				particle.SetParticleAlpha(0.6f);
-				particle.AddParticleController(new ParticleFleePoint(particle, new AMVector3(x, y, z), 0.1f, 3f, 1, false));
 			}
 
 			//TODO: SoundHelper.instance.loopSound(worldObj, (float)posX, (float)posY, (float)posZ, "arsmagica2:spell.loop.air", 1.0f);
@@ -628,8 +689,26 @@ public class EntitySpellEffect extends Entity{
 			this.dataWatcher.updateObject(WATCHER_ROF_IGNITE, (byte)1);
 	}
 
+	@Override
+	@cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
+	public boolean isInRangeToRenderDist(double distanceSq){
+		return distanceSq < 65536.0D;
+	}
+
+	@Override
+	@cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
+	public boolean isInRangeToRender3d(double x, double y, double z){
+		double dx = this.posX - x;
+		double dy = this.posY - y;
+		double dz = this.posZ - z;
+		return (dx * dx + dy * dy + dz * dz) < 65536.0D;
+	}
+
+
+
 	public void setBlizzard(){
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_BLIZ);
+		this.ignoreFrustumCheck = true;
 	}
 
 	public boolean isBlizzard(){
@@ -638,6 +717,533 @@ public class EntitySpellEffect extends Entity{
 
 	public boolean isRainOfFire(){
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_ROF;
+	}
+
+	public void setStarfallImpact(ItemStack stack, int mergeCount){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_STARFALL_IMPACT);
+		this.setTicksToExist(16);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
+		float scale = 1.0f;
+		if (mergeCount >= 25){
+			scale = 4.2f + (float)Math.min(1.0f, (mergeCount - 25) * 0.03f);
+		}else if (mergeCount >= 10){
+			scale = 2.8f + (float)Math.min(0.9f, (mergeCount - 10) * 0.05f);
+		}else if (mergeCount >= 5){
+			scale = 1.8f + (mergeCount - 5) * 0.18f;
+		}else if (mergeCount > 1){
+			scale = 1.0f + (mergeCount - 1) * 0.15f;
+		}
+		this.setRadius(scale);
+		if (stack != null) {
+			this.dataWatcher.updateObject(WATCHER_STACK, stack);
+		}
+	}
+
+	public void setStarfallImpact(ItemStack stack){
+		setStarfallImpact(stack, 1);
+	}
+
+	public boolean isStarfallImpact(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_STARFALL_IMPACT;
+	}
+
+	private int mergeCount = 1;
+
+	public void addMerged(int count){
+		this.mergeCount += count;
+	}
+
+	public int getMergeCount(){
+		return this.mergeCount;
+	}
+
+	public int getGrowTier(){
+		if (this.mergeCount >= 25) return 4;
+		if (this.mergeCount >= 10) return 3;
+		if (this.mergeCount >= 5) return 2;
+		return 1;
+	}
+
+	public float getGrowVisualScale(){
+		int count = this.mergeCount;
+		if (count >= 25){
+			return 4.5f + (float)Math.min(1.5f, (count - 25) * 0.02f);
+		}else if (count >= 10){
+			return 3.0f + (float)Math.min(1.2f, (count - 10) * 0.08f);
+		}else if (count >= 5){
+			return 1.8f + (count - 5) * 0.20f;
+		}else if (count > 1){
+			return 1.0f + (count - 1) * 0.15f;
+		}
+		return 1.0f;
+	}
+
+	public void setGrowMandala(float radius, int colorModifier){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_GROW_MANDALA);
+		this.setTicksToExist(32);
+		this.setRadius(radius);
+		this.mergeCount = 1;
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
+		if (colorModifier != -1){
+			this.setExplicitColor(colorModifier);
+		}
+	}
+
+	public boolean isGrowMandala(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_GROW_MANDALA;
+	}
+
+	private final List<int[]> blocksToDestroy = new ArrayList<int[]>();
+
+	public int getCasterEntityID(){
+		return this.casterEntityID;
+	}
+
+	public void setExplosionFusion(EntityLivingBase caster, ItemStack stack, float basePower, int bx, int by, int bz){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_EXPLOSION_FUSION);
+		this.setTicksToExist(5);
+		this.setRadius(basePower);
+		this.mergeCount = 1;
+		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster);
+		this.casterEntityID = caster != null ? caster.getEntityId() : -1;
+		this.spellStack = stack;
+		this.ignoreFrustumCheck = true;
+		this.blocksToDestroy.clear();
+		this.blocksToDestroy.add(new int[]{bx, by, bz});
+	}
+
+	public void addMergedExplosion(double x, double y, double z, float extraPower, int bx, int by, int bz){
+		this.mergeCount++;
+		double count = this.mergeCount;
+		this.posX = (this.posX * (count - 1.0) + x) / count;
+		this.posY = (this.posY * (count - 1.0) + y) / count;
+		this.posZ = (this.posZ * (count - 1.0) + z) / count;
+		this.setPosition(this.posX, this.posY, this.posZ);
+		this.blocksToDestroy.add(new int[]{bx, by, bz});
+	}
+
+	public boolean isExplosionFusion(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_EXPLOSION_FUSION;
+	}
+
+	private void detonateExplosionFusion(){
+		if (this.worldObj.isRemote) return;
+
+		int count = this.mergeCount;
+		float basePower = this.dataWatcher.getWatchableObjectFloat(WATCHER_RADIUS);
+		if (basePower <= 0.5f) basePower = 2.5f;
+
+		// 4 Tiers of Blast Power
+		float finalPower = basePower;
+		if (count >= 25){
+			finalPower = basePower * 2.8f + 4.5f; // Tier 4 (Primordial Supernova)
+		}else if (count >= 10){
+			finalPower = basePower * 2.0f + 2.5f; // Tier 3 (Heavy Blast)
+		}else if (count >= 5){
+			finalPower = basePower * 1.4f + 1.2f; // Tier 2 (Medium Blast)
+		}else if (count > 1){
+			finalPower = basePower + (count - 1) * 0.15f;
+		}
+
+		finalPower = Math.min(14.0f, finalPower);
+
+		if (count <= 1){
+			// Single target cast: standard vanilla explosion
+			this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, finalPower, false, false);
+		}else{
+			// Multi-block AoE cast: break all targeted blocks across the entire area!
+			int miningPower = 0;
+			if (this.spellStack != null){
+				miningPower = SpellUtils.instance.countModifiers(SpellModifiers.MINING_POWER, this.spellStack, 0);
+			}
+
+			int maxDepth = 2 + miningPower;
+			for (int[] pos : this.blocksToDestroy){
+				int bx = pos[0];
+				int by = pos[1];
+				int bz = pos[2];
+
+				for (int dy = 0; dy < maxDepth; dy++){
+					int curY = by - dy;
+					if (curY < 1) break;
+					Block block = this.worldObj.getBlock(bx, curY, bz);
+					if (block != Blocks.air && block.getBlockHardness(this.worldObj, bx, curY, bz) >= 0){
+						if (block.getExplosionResistance(this) <= 45.0f){
+							block.dropBlockAsItem(this.worldObj, bx, curY, bz, this.worldObj.getBlockMetadata(bx, curY, bz), 0);
+							this.worldObj.setBlock(bx, curY, bz, Blocks.air, 0, 2);
+						}
+					}
+				}
+			}
+
+			// Single centralized explosion for entity damage, knockback and central crater
+			this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, Math.min(8.0f, finalPower), false, false);
+		}
+
+		// Send visual effect packet to all clients in 96-block radius!
+		AMNetHandler.INSTANCE.sendExplosionImpactToClients(this.posX, this.posY, this.posZ, this.worldObj, this.spellStack, count);
+
+		this.setDead();
+	}
+
+	public void setExplosionImpact(ItemStack stack, int mergeCount){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_EXPLOSION_IMPACT);
+		this.setTicksToExist(20);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
+		float scale = 1.0f;
+		if (mergeCount >= 25){
+			scale = 4.5f + (float)Math.min(1.5f, (mergeCount - 25) * 0.03f);
+		}else if (mergeCount >= 10){
+			scale = 3.0f + (float)Math.min(1.0f, (mergeCount - 10) * 0.06f);
+		}else if (mergeCount >= 5){
+			scale = 1.8f + (mergeCount - 5) * 0.20f;
+		}else if (mergeCount > 1){
+			scale = 1.0f + (mergeCount - 1) * 0.15f;
+		}
+		this.setRadius(scale);
+		this.mergeCount = mergeCount;
+		if (stack != null){
+			this.dataWatcher.updateObject(WATCHER_STACK, stack);
+		}
+	}
+
+	public boolean isExplosionImpact(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_EXPLOSION_IMPACT;
+	}
+
+	private double lightningAoERadius = 4.0;
+
+	public void setLightningFusion(EntityLivingBase caster, ItemStack stack, double x, double y, double z, int bx, int by, int bz){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_LIGHTNING_FUSION);
+		this.setTicksToExist(5);
+		this.mergeCount = 1;
+		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster);
+		this.casterEntityID = caster != null ? caster.getEntityId() : -1;
+		this.spellStack = stack;
+		this.ignoreFrustumCheck = true;
+		this.lightningAoERadius = 4.0;
+		this.blocksToDestroy.clear();
+		this.blocksToDestroy.add(new int[]{bx, by, bz});
+	}
+
+	public void addMergedLightning(double x, double y, double z, int bx, int by, int bz){
+		this.mergeCount++;
+		double count = this.mergeCount;
+		this.posX = (this.posX * (count - 1.0) + x) / count;
+		this.posY = (this.posY * (count - 1.0) + y) / count;
+		this.posZ = (this.posZ * (count - 1.0) + z) / count;
+		this.setPosition(this.posX, this.posY, this.posZ);
+		this.blocksToDestroy.add(new int[]{bx, by, bz});
+
+		double distSq = (x - this.posX)*(x - this.posX) + (z - this.posZ)*(z - this.posZ);
+		double dist = Math.sqrt(distSq);
+		if (dist > this.lightningAoERadius){
+			this.lightningAoERadius = Math.min(64.0, dist + 2.0);
+		}
+	}
+
+	public boolean isLightningFusion(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_LIGHTNING_FUSION;
+	}
+
+	private void detonateLightningFusion(){
+		if (this.worldObj.isRemote) return;
+
+		int count = this.mergeCount;
+		double radius = Math.max(4.0, this.lightningAoERadius);
+
+		int damageMods = 0;
+		if (this.spellStack != null){
+			damageMods = SpellUtils.instance.countModifiers(SpellModifiers.DAMAGE, this.spellStack, 0);
+		}
+
+		float baseDmg = 8.0f + damageMods * 3.0f;
+		float tierMultiplier = count >= 30 ? 3.5f : (count >= 15 ? 2.4f : (count >= 5 ? 1.6f : 1.0f));
+		float finalDmg = baseDmg * tierMultiplier;
+
+		AxisAlignedBB bb = AxisAlignedBB.getBoundingBox(
+				this.posX - radius, this.posY - 6.0, this.posZ - radius,
+				this.posX + radius, this.posY + 16.0, this.posZ + radius
+		);
+		@SuppressWarnings("unchecked")
+		List<EntityLivingBase> targets = this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, bb);
+		EntityLivingBase sourceCaster = (dummycaster != null) ? dummycaster : null;
+
+		for (EntityLivingBase target : targets){
+			if (target == sourceCaster) continue;
+			double dSq = target.getDistanceSq(this.posX, target.posY, this.posZ);
+			if (dSq <= (radius + 1.5) * (radius + 1.5)){
+				int fireSeconds = count >= 30 ? 10 : (count >= 15 ? 8 : (count >= 5 ? 6 : 5));
+				target.setFire(fireSeconds);
+				target.attackEntityFrom(DamageSources.causeEntityLightningDamage(sourceCaster != null ? sourceCaster : target), finalDmg);
+				if (count >= 15){
+					target.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, count >= 30 ? 100 : 60, count >= 30 ? 3 : 1));
+				}
+			}
+		}
+
+		AMNetHandler.INSTANCE.sendLightningImpactToClients(this.posX, this.posY, this.posZ, this.worldObj, this.spellStack, count, radius);
+		this.setDead();
+	}
+
+	public void setLightningImpact(ItemStack stack, int mergeCount, double radius){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_LIGHTNING_IMPACT);
+		int duration = mergeCount >= 30 ? 70 : (mergeCount >= 15 ? 50 : (mergeCount >= 5 ? 35 : 20));
+		this.setTicksToExist(duration);
+		this.mergeCount = mergeCount;
+		this.lightningAoERadius = radius;
+		this.setRadius((float)radius);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 12.0D;
+		this.boundingBox.setBounds(
+				this.posX - radius - 8.0, this.posY - 4.0, this.posZ - radius - 8.0,
+				this.posX + radius + 8.0, this.posY + 36.0, this.posZ + radius + 8.0
+		);
+		if (stack != null){
+			this.dataWatcher.updateObject(WATCHER_STACK, stack);
+		}
+	}
+
+	public boolean isLightningImpact(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_LIGHTNING_IMPACT;
+	}
+
+	private void lightningImpactUpdate(){
+		if (this.worldObj.isRemote){
+			int count = this.mergeCount;
+			int tier = count >= 30 ? 4 : (count >= 15 ? 3 : (count >= 5 ? 2 : 1));
+			if (tier >= 2){
+				int interval = tier >= 4 ? 8 : (tier >= 3 ? 12 : 16);
+				if (this.ticksExisted % interval == 0 && this.ticksExisted < this.getTicksToExist() * 0.85f){
+					float pitch = 0.65f + this.rand.nextFloat() * 0.35f;
+					float vol = tier >= 4 ? 3.5f : 2.0f;
+					this.worldObj.playSound(this.posX, this.posY, this.posZ, "ambient.weather.thunder", vol, pitch, false);
+				}
+			}
+		}
+	}
+
+	private float orbitalDamage = 5.0f;
+	private float orbitalRadius = 160.0f;
+	private boolean orbitalOvercharged = false;
+	private boolean orbitalFollowCaster = false;
+	private int orbitalDuration = 160;
+	private int orbitalStrikeCursor = 0;
+	private final Map<Integer, Integer> orbitalMobCooldowns = new HashMap<Integer, Integer>();
+
+	public void setOrbitalStorm(EntityLivingBase caster, ItemStack stack, double x, double y, double z,
+	                            boolean overcharged, float damage, float radius, int durationTicks, boolean followCaster){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_ORBITAL_STORM);
+		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster);
+		this.casterEntityID = caster != null ? caster.getEntityId() : -1;
+		this.spellStack = stack;
+		if (stack != null){
+			this.dataWatcher.updateObject(WATCHER_STACK, stack);
+		}
+		this.orbitalOvercharged = overcharged;
+		this.orbitalDamage = damage;
+		this.orbitalRadius = radius;
+		this.orbitalFollowCaster = followCaster;
+		this.orbitalDuration = durationTicks == 100 ? 101 : Math.max(80, durationTicks);
+		this.setTicksToExist(this.orbitalDuration);
+		this.setRadius(radius);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 16.0D;
+		this.setPosition(x, y, z);
+		this.orbitalMobCooldowns.clear();
+		dispatchOrbitalWave(true);
+	}
+
+	public void refreshOrbitalStorm(double x, double y, double z, int durationTicks,
+	                                boolean overcharged, float damage, float radius, boolean followCaster){
+		if (followCaster){
+			this.setPosition(x, y, z);
+		}
+		int dur = Math.max(80, durationTicks);
+		this.orbitalFollowCaster = this.orbitalFollowCaster || followCaster;
+		this.orbitalDuration = Math.max(this.orbitalDuration, dur);
+		int nextEnd = this.ticksExisted + dur;
+		if (nextEnd == 100) nextEnd = 101;
+		this.setTicksToExist(nextEnd);
+		if (overcharged) this.orbitalOvercharged = true;
+		this.orbitalDamage = Math.max(this.orbitalDamage, damage);
+		this.orbitalRadius = radius;
+	}
+
+	public boolean isOrbitalStorm(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_ORBITAL_STORM;
+	}
+
+	private void orbitalStormUpdate(){
+		if (this.worldObj.isRemote) return;
+
+		// Decrement per-mob strike cooldowns
+		if (!this.orbitalMobCooldowns.isEmpty()){
+			Iterator<Map.Entry<Integer, Integer>> it = this.orbitalMobCooldowns.entrySet().iterator();
+			while (it.hasNext()){
+				Map.Entry<Integer, Integer> e = it.next();
+				int rem = e.getValue() - 1;
+				if (rem <= 0){
+					it.remove();
+				}else{
+					e.setValue(rem);
+				}
+			}
+		}
+
+		EntityLivingBase liveCaster = null;
+		if (this.casterEntityID != -1){
+			Entity cEnt = this.worldObj.getEntityByID(this.casterEntityID);
+			if (cEnt instanceof EntityLivingBase){
+				liveCaster = (EntityLivingBase) cEnt;
+			}
+		}
+		EntityLivingBase sourceCaster = liveCaster != null ? liveCaster : this.dummycaster;
+
+		if (this.orbitalFollowCaster && liveCaster != null && !liveCaster.isDead){
+			this.setPosition(liveCaster.posX, liveCaster.posY, liveCaster.posZ);
+		}
+
+		if (!this.worldObj.getWorldInfo().isRaining()){
+			this.worldObj.getWorldInfo().setRaining(true);
+		}
+
+		int interval = this.orbitalOvercharged ? 2 : 3;
+		if (this.ticksExisted <= 1 || this.ticksExisted % interval == 0){
+			dispatchOrbitalWave(false);
+		}
+	}
+
+	private void dispatchOrbitalWave(boolean syncOnlyIfEmpty){
+		if (this.worldObj.isRemote) return;
+
+		EntityLivingBase liveCaster = null;
+		if (this.casterEntityID != -1){
+			Entity cEnt = this.worldObj.getEntityByID(this.casterEntityID);
+			if (cEnt instanceof EntityLivingBase){
+				liveCaster = (EntityLivingBase) cEnt;
+			}
+		}
+		EntityLivingBase sourceCaster = liveCaster != null ? liveCaster : this.dummycaster;
+
+		double r = Math.min(160.0, Math.max(48.0, this.orbitalRadius));
+		AxisAlignedBB scanBox = AxisAlignedBB.getBoundingBox(
+				this.posX - r, Math.max(0.0, this.posY - 96.0), this.posZ - r,
+				this.posX + r, Math.min(256.0, this.posY + 128.0), this.posZ + r
+		);
+
+		@SuppressWarnings("unchecked")
+		List<Entity> rawEntities = this.worldObj.getEntitiesWithinAABB(IMob.class, scanBox);
+		List<EntityLivingBase> candidates = new ArrayList<EntityLivingBase>();
+
+		for (Entity ent : rawEntities){
+			if (!(ent instanceof EntityLivingBase)) continue;
+			if (ent == sourceCaster || ent == liveCaster || ent.isDead) continue;
+			EntityLivingBase mob = (EntityLivingBase) ent;
+			if (mob.getHealth() <= 0.0f) continue;
+
+			double dx = mob.posX - this.posX;
+			double dz = mob.posZ - this.posZ;
+			if (dx * dx + dz * dz > r * r) continue;
+
+			int mx = MathHelper.floor_double(mob.posX);
+			int mz = MathHelper.floor_double(mob.posZ);
+			if (!this.worldObj.blockExists(mx, 64, mz)) continue;
+
+			int topY = this.worldObj.getPrecipitationHeight(mx, mz);
+			if (mob.posY < topY - 12 && !this.worldObj.canBlockSeeTheSky(mx, MathHelper.floor_double(mob.posY), mz)){
+				continue;
+			}
+
+			if (!this.orbitalMobCooldowns.containsKey(mob.getEntityId())){
+				candidates.add(mob);
+			}
+		}
+
+		double[] sx = new double[48];
+		double[] sy = new double[48];
+		double[] sz = new double[48];
+		boolean[] hitMob = new boolean[48];
+		int strikeCount = 0;
+
+		int maxMobStrikes = this.orbitalOvercharged ? 14 : 9;
+		if (!candidates.isEmpty()){
+			int n = candidates.size();
+			int toHit = Math.min(maxMobStrikes, n);
+			int cooldownTicks = this.orbitalOvercharged ? 4 : 6;
+			int fireSec = this.orbitalOvercharged ? 7 : 5;
+
+			for (int i = 0; i < toHit && strikeCount < 34; i++){
+				int idx = (this.orbitalStrikeCursor + i) % n;
+				EntityLivingBase target = candidates.get(idx);
+
+				this.orbitalMobCooldowns.put(target.getEntityId(), cooldownTicks);
+				target.setFire(fireSec);
+				target.hurtResistantTime = 0;
+
+				EntityLivingBase attacker = sourceCaster != null ? sourceCaster : target;
+				if (this.spellStack != null && sourceCaster != null){
+					SpellHelper.instance.attackTargetSpecial(this.spellStack, target, DamageSources.causeEntityLightningDamage(attacker), this.orbitalDamage);
+				}else{
+					target.attackEntityFrom(DamageSources.causeEntityLightningDamage(attacker), this.orbitalDamage);
+				}
+
+				sx[strikeCount] = target.posX;
+				sy[strikeCount] = target.posY;
+				sz[strikeCount] = target.posZ;
+				hitMob[strikeCount] = true;
+				strikeCount++;
+
+				// Cascading multi-bolt barrage on targeted mobs
+				int extraBolts = this.orbitalOvercharged ? 2 : 1;
+				for (int eb = 0; eb < extraBolts && strikeCount < 36; eb++){
+					sx[strikeCount] = target.posX + (this.rand.nextDouble() - 0.5) * 2.8;
+					sy[strikeCount] = target.posY;
+					sz[strikeCount] = target.posZ + (this.rand.nextDouble() - 0.5) * 2.8;
+					hitMob[strikeCount] = true;
+					strikeCount++;
+				}
+			}
+			this.orbitalStrikeCursor = (this.orbitalStrikeCursor + toHit) % n;
+		}
+
+		// Heavy simultaneous lightning barrage across the 10 chunks
+		int ambientBolts = this.orbitalOvercharged ? 12 : 8;
+		if (!syncOnlyIfEmpty){
+			for (int a = 0; a < ambientBolts && strikeCount < 48; a++){
+				double ang = this.rand.nextDouble() * Math.PI * 2.0;
+				double maxHorizon = Math.min(160.0, r);
+				double dist;
+				if (a % 3 == 0){
+					dist = 8.0 + this.rand.nextDouble() * Math.min(56.0, maxHorizon - 8.0);
+				}else{
+					dist = 14.0 + Math.sqrt(this.rand.nextDouble()) * (maxHorizon - 14.0);
+				}
+				int ax = MathHelper.floor_double(this.posX + Math.cos(ang) * dist);
+				int az = MathHelper.floor_double(this.posZ + Math.sin(ang) * dist);
+				if (this.worldObj.blockExists(ax, 64, az)){
+					int ay = this.worldObj.getPrecipitationHeight(ax, az);
+					sx[strikeCount] = ax + 0.5 + (this.rand.nextDouble() - 0.5) * 0.6;
+					sy[strikeCount] = ay;
+					sz[strikeCount] = az + 0.5 + (this.rand.nextDouble() - 0.5) * 0.6;
+					hitMob[strikeCount] = false;
+					strikeCount++;
+				}
+			}
+		}
+
+		int remTicks = Math.max(0, this.getTicksToExist() - this.ticksExisted);
+		int customColor = this.getSpellColor();
+		AMNetHandler.INSTANCE.sendOrbitalStormToClients(
+				this.worldObj, this.getEntityId(),
+				this.posX, this.posY, this.posZ,
+				(float) r, remTicks, this.orbitalDuration,
+				customColor, this.orbitalOvercharged,
+				sx, sy, sz, hitMob, strikeCount
+		);
 	}
 
 	@Override

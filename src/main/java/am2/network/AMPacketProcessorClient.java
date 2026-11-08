@@ -9,6 +9,7 @@ import am2.api.spell.enums.SpellModifiers;
 import am2.blocks.tileentities.*;
 import am2.bosses.BossActions;
 import am2.bosses.IArsMagicaBoss;
+import am2.entities.EntitySpellEffect;
 import am2.buffs.BuffList;
 import am2.containers.ContainerMagiciansWorkbench;
 import am2.customdata.CustomWorldData;
@@ -148,6 +149,18 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 				break;
 			case AMPacketIDs.STAR_FALL:
 				handleStarFall(remaining);
+				break;
+			case AMPacketIDs.EXPLOSION_IMPACT:
+				handleExplosionImpact(remaining);
+				break;
+			case AMPacketIDs.MANA_SHIELD_HIT:
+				handleManaShieldHit(remaining);
+				break;
+			case AMPacketIDs.LIGHTNING_IMPACT:
+				handleLightningImpact(remaining);
+				break;
+			case AMPacketIDs.ORBITAL_STORM_STRIKE:
+				handleOrbitalStormStrike(remaining);
 				break;
 			case AMPacketIDs.HIDDEN_COMPONENT_UNLOCK:
 				Minecraft.getMinecraft().guiAchievement.func_146256_a(ArcaneCompendium.componentUnlock);
@@ -368,6 +381,10 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 		SpellHelper.instance.applyStackStage(spellStack, (EntityLivingBase)caster, (EntityLivingBase)target, x, y, z, 0, Minecraft.getMinecraft().theWorld, false, false, 0);
 	}
 
+	private static long lastStarSoundTime = 0;
+	private static double lastStarSoundX = 0;
+	private static double lastStarSoundZ = 0;
+
 	private void handleStarFall(byte[] data){
 		AMDataReader rdr = new AMDataReader(data, false);
 		double x = rdr.getDouble();
@@ -378,50 +395,148 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 		if (rdr.getBoolean())
 			spellStack = rdr.getItemStack();
 
-		int color = -1;
-		if (spellStack != null){
-			if (SpellUtils.instance.modifierIsPresent(SpellModifiers.COLOR, spellStack, 0)){
-				ISpellModifier[] mods = SpellUtils.instance.getModifiersForStage(spellStack, 0);
-				int ordinalCount = 0;
-				for (ISpellModifier mod : mods){
-					if (mod instanceof Colour){
-						byte[] meta = SpellUtils.instance.getModifierMetadataFromStack(spellStack, mod, 0, ordinalCount++);
-						color = (int)mod.getModifier(SpellModifiers.COLOR, null, null, null, meta);
-					}
-				}
+		int mergeCount = 1;
+		try{
+			mergeCount = rdr.getInt();
+		}catch(Exception ignored){}
+
+		if (Minecraft.getMinecraft().theWorld != null){
+			EntitySpellEffect impact = new EntitySpellEffect(Minecraft.getMinecraft().theWorld);
+			impact.setPosition(x, y, z);
+			impact.setStarfallImpact(spellStack, mergeCount);
+			Minecraft.getMinecraft().theWorld.spawnEntityInWorld(impact);
+
+			long now = Minecraft.getMinecraft().theWorld.getTotalWorldTime();
+			if (now != lastStarSoundTime || Math.abs(x - lastStarSoundX) > 14.0 || Math.abs(z - lastStarSoundZ) > 14.0){
+				lastStarSoundTime = now;
+				lastStarSoundX = x;
+				lastStarSoundZ = z;
+				float pitch = mergeCount >= 25 ? 0.60f : (mergeCount >= 10 ? 0.72f : (mergeCount >= 5 ? 0.85f : 1.0f));
+				float volume = mergeCount >= 25 ? 3.8f : (mergeCount >= 10 ? 3.0f : 2.0f);
+				Minecraft.getMinecraft().theWorld.playSound(x, y, z, "arsmagica2:spell.special.starfall", volume, pitch, false);
 			}
 		}
+	}
 
-		for (int i = 0; i < 360; i += AMCore.config.FullGFX() ? 5 : AMCore.config.LowGFX() ? 10 : 20){
-			AMParticle effect = (AMParticle)AMCore.instance.proxy.particleManager.spawn(Minecraft.getMinecraft().theWorld, "sparkle2", x, y + 1.5, z);
-			if (effect != null){
-				effect.setIgnoreMaxAge(true);
-				effect.AddParticleController(new ParticleMoveOnHeading(effect, i, 0, 0.7f, 1, false));
-				float clrMod = Minecraft.getMinecraft().theWorld.rand.nextFloat();
-				int finalColor = -1;
-				if (color == -1)
-					finalColor = MathUtilities.colorFloatsToInt(0.24f * clrMod, 0.58f * clrMod, 0.71f * clrMod);
-				else{
-					float[] colors = MathUtilities.colorIntToFloats(color);
-					for (int c = 0; c < colors.length; ++c)
-						colors[c] = colors[c] * clrMod;
-					finalColor = MathUtilities.colorFloatsToInt(colors[0], colors[1], colors[2]);
-				}
-				effect.setParticleScale(1.2f);
-				effect.noClip = false;
-				effect.setRGBColorI(finalColor);
-				effect.AddParticleController(new ParticleFadeOut(effect, 1, false).setFadeSpeed(0.05f).setKillParticleOnFinish(true));
-				effect.AddParticleController(
-						new ParticleLeaveParticleTrail(effect, "sparkle2", false, 15, 1, false)
-								.addControllerToParticleList(new ParticleChangeSize(effect, 1.2f, 0.01f, 15, 1, false))
-								.setParticleRGB_I(finalColor)
-								.setChildAffectedByGravity()
-								.addRandomOffset(0.2f, 0.2f, 0.2f)
-				);
-			}
+	private static long lastExplosionSoundTime = 0;
+	private static double lastExplosionSoundX = 0;
+	private static double lastExplosionSoundZ = 0;
+
+	private void handleManaShieldHit(byte[] data){
+		AMDataReader rdr = new AMDataReader(data, false);
+		int entityId = rdr.getInt();
+		am2.client.vfx.ManaShieldVFX.triggerHitFlash(entityId);
+	}
+
+	private void handleLightningImpact(byte[] data){
+		AMDataReader rdr = new AMDataReader(data, false);
+		double x = rdr.getDouble();
+		double y = rdr.getDouble();
+		double z = rdr.getDouble();
+
+		ItemStack spellStack = null;
+		if (rdr.getBoolean())
+			spellStack = rdr.getItemStack();
+
+		int mergeCount = 1;
+		try{
+			mergeCount = rdr.getInt();
+		}catch(Exception ignored){}
+
+		double radius = 8.0;
+		try{
+			radius = rdr.getDouble();
+		}catch(Exception ignored){}
+
+		if (Minecraft.getMinecraft().theWorld != null){
+			EntitySpellEffect impact = new EntitySpellEffect(Minecraft.getMinecraft().theWorld);
+			impact.setPosition(x, y, z);
+			impact.setLightningImpact(spellStack, mergeCount, radius);
+			Minecraft.getMinecraft().theWorld.spawnEntityInWorld(impact);
+
+			float pitch = mergeCount >= 30 ? 0.60f : (mergeCount >= 15 ? 0.75f : (mergeCount >= 5 ? 0.88f : 1.0f));
+			float volume = mergeCount >= 30 ? 5.0f : (mergeCount >= 15 ? 3.5f : (mergeCount >= 5 ? 2.5f : 1.8f));
+			Minecraft.getMinecraft().theWorld.playSound(x, y, z, "ambient.weather.thunder", volume, pitch, false);
+		}
+	}
+
+	private static long lastOrbitalThunderMs = 0L;
+	private static long lastOrbitalZapMs = 0L;
+
+	private void handleOrbitalStormStrike(byte[] data){
+		AMDataReader rdr = new AMDataReader(data, false);
+		int stormId = rdr.getInt();
+		double cx = rdr.getDouble();
+		double cy = rdr.getDouble();
+		double cz = rdr.getDouble();
+		float radius = rdr.getFloat();
+		int remainingTicks = rdr.getInt();
+		int totalDuration = rdr.getInt();
+		int customColor = rdr.getInt();
+		boolean overcharged = rdr.getBoolean();
+		int count = rdr.getByte() & 0xFF;
+
+		double[] sx = new double[count];
+		double[] sy = new double[count];
+		double[] sz = new double[count];
+		boolean[] hitMob = new boolean[count];
+		for (int i = 0; i < count; i++){
+			sx[i] = rdr.getFloat();
+			sy[i] = rdr.getFloat();
+			sz[i] = rdr.getFloat();
+			hitMob[i] = rdr.getBoolean();
 		}
 
-		Minecraft.getMinecraft().theWorld.playSound(x, y, z, "arsmagica2:spell.special.starfall", 2.0f, 1.0f, false);
+		am2.client.vfx.OrbitalStormVFX.handleOrbitalStormPacket(stormId, cx, cy, cz, radius, remainingTicks, totalDuration, customColor, overcharged, sx, sy, sz, hitMob);
+
+		Minecraft mc = Minecraft.getMinecraft();
+		if (mc != null && mc.theWorld != null && count > 0){
+			long now = Minecraft.getSystemTime();
+			if (now - lastOrbitalThunderMs > 1100L){
+				lastOrbitalThunderMs = now;
+				float pitch = overcharged ? (0.60f + mc.theWorld.rand.nextFloat() * 0.25f) : (0.72f + mc.theWorld.rand.nextFloat() * 0.25f);
+				mc.theWorld.playSound(cx, cy, cz, "ambient.weather.thunder", overcharged ? 2.8f : 1.9f, pitch, false);
+			}
+			if (now - lastOrbitalZapMs > 280L){
+				lastOrbitalZapMs = now;
+				double zX = sx[0], zY = sy[0], zZ = sz[0];
+				float zapPitch = 0.85f + mc.theWorld.rand.nextFloat() * 0.35f;
+				mc.theWorld.playSound(zX, zY, zZ, "arsmagica2:spell.cast.lightning", 1.2f, zapPitch, false);
+			}
+		}
+	}
+
+	private void handleExplosionImpact(byte[] data){
+		AMDataReader rdr = new AMDataReader(data, false);
+		double x = rdr.getDouble();
+		double y = rdr.getDouble();
+		double z = rdr.getDouble();
+
+		ItemStack spellStack = null;
+		if (rdr.getBoolean())
+			spellStack = rdr.getItemStack();
+
+		int mergeCount = 1;
+		try{
+			mergeCount = rdr.getInt();
+		}catch(Exception ignored){}
+
+		if (Minecraft.getMinecraft().theWorld != null){
+			EntitySpellEffect impact = new EntitySpellEffect(Minecraft.getMinecraft().theWorld);
+			impact.setPosition(x, y, z);
+			impact.setExplosionImpact(spellStack, mergeCount);
+			Minecraft.getMinecraft().theWorld.spawnEntityInWorld(impact);
+
+			long now = Minecraft.getMinecraft().theWorld.getTotalWorldTime();
+			if (now != lastExplosionSoundTime || Math.abs(x - lastExplosionSoundX) > 16.0 || Math.abs(z - lastExplosionSoundZ) > 16.0){
+				lastExplosionSoundTime = now;
+				lastExplosionSoundX = x;
+				lastExplosionSoundZ = z;
+				float pitch = mergeCount >= 25 ? 0.55f : (mergeCount >= 10 ? 0.70f : (mergeCount >= 5 ? 0.85f : 1.0f));
+				float volume = mergeCount >= 25 ? 4.0f : (mergeCount >= 10 ? 3.0f : (mergeCount >= 5 ? 2.2f : 1.5f));
+				Minecraft.getMinecraft().theWorld.playSound(x, y, z, "random.explode", volume, pitch, false);
+			}
+		}
 	}
 
 	private void handleSyncWorldName(byte[] data){

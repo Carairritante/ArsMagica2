@@ -29,8 +29,11 @@ public class LightningStrike implements ISpellComponent{
 
 	@Override
 	public boolean applyEffectEntity(ItemStack stack, World world, EntityLivingBase caster, Entity target){
-		world.addWeatherEffect(new EntityLightningBolt(world, target.posX, target.posY, target.posZ));
-		return true;
+		if (world.isRemote) return true;
+		if (target instanceof EntityLivingBase){
+			target.setFire(5);
+		}
+		return LightningStrikeRateLimiter.spawnBlockBolt(world, (int)Math.floor(target.posX), (int)Math.floor(target.posY), (int)Math.floor(target.posZ), caster, stack);
 	}
 
 	@Override

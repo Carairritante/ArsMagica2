@@ -28,6 +28,14 @@ public class LightningDamage implements ISpellComponent{
 	@Override
 	public boolean applyEffectEntity(ItemStack stack, World world, EntityLivingBase caster, Entity target){
 		if (!(target instanceof EntityLivingBase)) return false;
+		if (target == caster && stack != null && stack.hasTagCompound()){
+			int stages = SpellUtils.instance.numStages(stack);
+			for (int s = 0; s < stages; s++){
+				if (SpellUtils.instance.componentIsPresent(stack, Storm.class, s)){
+					return true;
+				}
+			}
+		}
 		float baseDamage = 12;
 		double damage = SpellUtils.instance.getModifiedDouble_Add(baseDamage, stack, caster, target, world, 0, SpellModifiers.DAMAGE);
 		return SpellHelper.instance.attackTargetSpecial(stack, target, DamageSources.causeEntityLightningDamage(caster), SpellUtils.instance.modifyDamage(caster, (float)damage));

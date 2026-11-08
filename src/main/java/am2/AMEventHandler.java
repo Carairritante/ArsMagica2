@@ -26,6 +26,8 @@ import am2.items.ItemOre;
 import am2.items.ItemSoulspike;
 import am2.items.ItemsCommonProxy;
 import am2.network.AMNetHandler;
+import am2.network.AMDataWriter;
+import am2.network.AMPacketIDs;
 import am2.playerextensions.AffinityData;
 import am2.playerextensions.ExtendedProperties;
 import am2.playerextensions.RiftStorage;
@@ -1530,6 +1532,16 @@ public class AMEventHandler{
 							event.entityLiving.posY - 1 + event.entityLiving.worldObj.rand.nextFloat() * 2,
 							event.entityLiving.posZ - 1 + event.entityLiving.worldObj.rand.nextFloat() * 2, 6, -1);
 				event.entityLiving.worldObj.playSoundAtEntity(event.entityLiving, "arsmagica2:spell.cast.arcane", 1.0f, event.entityLiving.worldObj.rand.nextFloat() + 0.5f);
+				if (!event.entityLiving.worldObj.isRemote){
+					AMNetHandler.INSTANCE.sendPacketToAllClientsNear(
+							event.entityLiving.worldObj.provider.dimensionId,
+							event.entityLiving.posX,
+							event.entityLiving.posY,
+							event.entityLiving.posZ,
+							32,
+							AMPacketIDs.MANA_SHIELD_HIT,
+							new AMDataWriter().add(event.entityLiving.getEntityId()).generate());
+				}
 				event.setCanceled(true);
 			}
 		}
@@ -1587,6 +1599,16 @@ public class AMEventHandler{
 						event.entityLiving.posY + event.entityLiving.getEyeHeight() - 1 + event.entityLiving.worldObj.rand.nextFloat() * 2,
 						event.entityLiving.posZ - 1 + event.entityLiving.worldObj.rand.nextFloat() * 2, 6, -1);
 			event.entityLiving.worldObj.playSoundAtEntity(event.entityLiving, "arsmagica2:spell.cast.arcane", 1.0f, event.entityLiving.worldObj.rand.nextFloat() + 0.5f);
+			if (!event.entityLiving.worldObj.isRemote && manaToTake > 0){
+				AMNetHandler.INSTANCE.sendPacketToAllClientsNear(
+						event.entityLiving.worldObj.provider.dimensionId,
+						event.entityLiving.posX,
+						event.entityLiving.posY,
+						event.entityLiving.posZ,
+						32,
+						AMPacketIDs.MANA_SHIELD_HIT,
+						new AMDataWriter().add(event.entityLiving.getEntityId()).generate());
+			}
 			if (event.ammount <= 0){
 				event.setCanceled(true);
 				return;

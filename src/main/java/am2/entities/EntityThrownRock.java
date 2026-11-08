@@ -41,12 +41,15 @@ public class EntityThrownRock extends EntityLiving{
 	private static final int IS_MOONSTONE_METEOR = 20;
 	private static final int IS_SHOOTING_STAR = 21;
 	private static final int SPELL_STACK = 22;
+	private static final int STAR_MERGE_COUNT = 23;
 
 	public EntityThrownRock(World par1World){
 		super(par1World);
 		ticksExisted = 0;
 		maxTicksToExist = 120;
 		this.noClip = true;
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
 	}
 
 	public void setMoonstoneMeteor(){
@@ -56,6 +59,8 @@ public class EntityThrownRock extends EntityLiving{
 	public void setShootingStar(float damage){
 		this.dataWatcher.updateObject(IS_SHOOTING_STAR, (byte)1);
 		this.damage = damage;
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
 	}
 
 	public void setMoonstoneMeteorTarget(AMVector3 target){
@@ -118,9 +123,34 @@ public class EntityThrownRock extends EntityLiving{
 		this.dataWatcher.addObject(IS_MOONSTONE_METEOR, (byte)0);
 		this.dataWatcher.addObject(IS_SHOOTING_STAR, (byte)0);
 		this.dataWatcher.addObject(SPELL_STACK, new ItemStack(ItemsCommonProxy.spell));
+		this.dataWatcher.addObject(STAR_MERGE_COUNT, 1);
 	}
 
-	private ItemStack getSpellStack(){
+	public void addMergedStar(float extraDamage){
+		int current = getStarMergeCount();
+		this.dataWatcher.updateObject(STAR_MERGE_COUNT, current + 1);
+		this.damage += extraDamage;
+	}
+
+	public int getStarMergeCount(){
+		return this.dataWatcher.getWatchableObjectInt(STAR_MERGE_COUNT);
+	}
+
+	public float getVisualScale(){
+		int count = getStarMergeCount();
+		if (count >= 25){
+			return 4.2f + (float)Math.min(1.0f, (count - 25) * 0.03f);
+		}else if (count >= 10){
+			return 2.8f + (float)Math.min(0.9f, (count - 10) * 0.05f);
+		}else if (count >= 5){
+			return 1.8f + (count - 5) * 0.18f;
+		}else if (count > 1){
+			return 1.0f + (count - 1) * 0.15f;
+		}
+		return 1.0f;
+	}
+
+	public ItemStack getSpellStack(){
 		return this.dataWatcher.getWatchableObjectItemStack(SPELL_STACK);
 	}
 
@@ -198,26 +228,7 @@ public class EntityThrownRock extends EntityLiving{
 					}
 				}
 
-				for (float i = 0; i < Math.abs(motionY); i += 0.1f){
-					AMParticle star = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "ember", posX + motionX * i, posY + motionY * i, posZ + motionZ * i);
-					if (star != null){
-						star.setMaxAge(22);
-						float clr = rand.nextFloat();
-						float clrMod = Minecraft.getMinecraft().theWorld.rand.nextFloat();
-						int finalColor = -1;
-						if (color == -1)
-							finalColor = MathUtilities.colorFloatsToInt(0.24f * clrMod, 0.58f * clrMod, 0.71f * clrMod);
-						else{
-							float[] colors = MathUtilities.colorIntToFloats(color);
-							for (int c = 0; c < colors.length; ++c)
-								colors[c] = colors[c] * clrMod;
-							finalColor = MathUtilities.colorFloatsToInt(colors[0], colors[1], colors[2]);
-						}
-						star.setRGBColorI(finalColor);
-						star.AddParticleController(new ParticleHoldPosition(star, 20, 1, false));
-						star.AddParticleController(new ParticleChangeSize(star, 0.5f, 0.05f, 20, 1, false));
-					}
-				}
+
 			}
 		}
 
@@ -282,8 +293,14 @@ public class EntityThrownRock extends EntityLiving{
 		}
 
 		if (getIsShootingStar()){
-			AMNetHandler.INSTANCE.sendStarImpactToClients(posX, posY + ((movingobjectposition.typeOfHit == MovingObjectType.ENTITY) ? -movingobjectposition.entityHit.getEyeHeight() : 1.5f), posZ, worldObj, this.getSpellStack());
-			List<EntityLivingBase> ents = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, boundingBox.expand(5, 5, 5));
+			int count = getStarMergeCount();
+			float impactRadius = 5.0f;
+			if (count >= 25) impactRadius = 18.0f;
+			else if (count >= 10) impactRadius = 13.0f;
+			else if (count >= 5) impactRadius = 8.5f;
+
+			AMNetHandler.INSTANCE.sendStarImpactToClients(posX, posY + ((movingobjectposition.typeOfHit == MovingObjectType.ENTITY) ? -movingobjectposition.entityHit.getEyeHeight() : 1.5f), posZ, worldObj, this.getSpellStack(), count);
+			List<EntityLivingBase> ents = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, boundingBox.expand(impactRadius, impactRadius, impactRadius));
 			for (EntityLivingBase e : ents){
 				if (e == throwingEntity) continue;
 				if (this.getEntitySenses().canSee(e))
@@ -352,5 +369,34 @@ public class EntityThrownRock extends EntityLiving{
 		super.writeEntityToNBT(par1nbtTagCompound);
 
 		par1nbtTagCompound.setFloat("star_damage", damage);
+	}
+
+	@Override
+	@cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
+	public boolean isInRangeToRenderDist(double distanceSq){
+		if (getIsShootingStar()) return distanceSq < 65536.0D;
+		return super.isInRangeToRenderDist(distanceSq);
+	}
+
+	@Override
+	@cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
+	public boolean isInRangeToRender3d(double x, double y, double z){
+		if (getIsShootingStar()){
+			double dx = this.posX - x;
+			double dy = this.posY - y;
+			double dz = this.posZ - z;
+			return (dx * dx + dy * dy + dz * dz) < 65536.0D;
+		}
+		return super.isInRangeToRender3d(x, y, z);
+	}
+
+	@Override
+	public boolean canBeCollidedWith(){
+		return !getIsShootingStar();
+	}
+
+	@Override
+	public boolean canBePushed(){
+		return !getIsShootingStar();
 	}
 }

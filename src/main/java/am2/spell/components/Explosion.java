@@ -6,7 +6,10 @@ import am2.api.spell.enums.Affinity;
 import am2.api.spell.enums.SpellModifiers;
 import am2.items.ItemsCommonProxy;
 import am2.particles.AMParticle;
+import am2.entities.EntitySpellEffect;
 import am2.spell.SpellUtils;
+import net.minecraft.util.AxisAlignedBB;
+import java.util.List;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFlower;
 import net.minecraft.entity.Entity;
@@ -21,34 +24,58 @@ import java.util.Random;
 
 public class Explosion implements ISpellComponent{
 
-	@Override
-	public boolean applyEffectBlock(ItemStack stack, World world, int blockx, int blocky, int blockz, int blockFace, double impactX, double impactY, double impactZ, EntityLivingBase caster){
-
-		switch (blockFace){
-		case 5:
-			blockx++;
-			break;
-		case 2:
-			blockz--;
-			break;
-		case 3:
-			blockz++;
-			break;
-		case 4:
-			blockx--;
-			break;
-		}
-
+	private boolean triggerExplosion(ItemStack stack, World world, double x, double y, double z, EntityLivingBase caster, int bx, int by, int bz){
 		int explosion = 2 + SpellUtils.instance.countModifiers(SpellModifiers.MINING_POWER, stack, 0);
-		if (!world.isRemote) world.newExplosion(null, blockx, blocky, blockz, explosion, false, true);
+
+		if (!world.isRemote){
+			// Broad 64-block fusion radius: ensures all blocks in any size AoE merge into ONE central explosion
+			double fusionRadius = 64.0;
+			@SuppressWarnings("unchecked")
+			List<EntitySpellEffect> nearby = world.getEntitiesWithinAABB(EntitySpellEffect.class,
+					AxisAlignedBB.getBoundingBox(x - fusionRadius, y - 24.0, z - fusionRadius, x + fusionRadius, y + 24.0, z + fusionRadius));
+
+			for (EntitySpellEffect effect : nearby){
+				if (effect.isExplosionFusion() && !effect.isDead && (caster == null || effect.getCasterEntityID() == caster.getEntityId())){
+					effect.addMergedExplosion(x, y, z, explosion, bx, by, bz);
+					return true;
+				}
+			}
+
+			EntitySpellEffect fusion = new EntitySpellEffect(world);
+			fusion.setPosition(x, y, z);
+			fusion.setExplosionFusion(caster, stack, explosion, bx, by, bz);
+			world.spawnEntityInWorld(fusion);
+		}
 		return true;
 	}
 
 	@Override
+	public boolean applyEffectBlock(ItemStack stack, World world, int blockx, int blocky, int blockz, int blockFace, double impactX, double impactY, double impactZ, EntityLivingBase caster){
+		int targetX = blockx;
+		int targetY = blocky;
+		int targetZ = blockz;
+
+		switch (blockFace){
+		case 5:
+			targetX++;
+			break;
+		case 2:
+			targetZ--;
+			break;
+		case 3:
+			targetZ++;
+			break;
+		case 4:
+			targetX--;
+			break;
+		}
+
+		return triggerExplosion(stack, world, targetX + 0.5, targetY + 0.5, targetZ + 0.5, caster, blockx, blocky, blockz);
+	}
+
+	@Override
 	public boolean applyEffectEntity(ItemStack stack, World world, EntityLivingBase caster, Entity target){
-		int explosion = 2 + SpellUtils.instance.countModifiers(SpellModifiers.MINING_POWER, stack, 0);
-		if (!world.isRemote) world.newExplosion(target, target.posX, target.posY, target.posZ, explosion, false, true);
-		return true;
+		return triggerExplosion(stack, world, target.posX, target.posY, target.posZ, caster, (int)Math.floor(target.posX), (int)Math.floor(target.posY), (int)Math.floor(target.posZ));
 	}
 
 	@Override
@@ -68,20 +95,7 @@ public class Explosion implements ISpellComponent{
 
 	@Override
 	public void spawnParticles(World world, double x, double y, double z, EntityLivingBase caster, Entity target, Random rand, int colorModifier){
-		for (int i = 0; i < 2; ++i){
-			AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(world, "explosion_2", x + 0.5, y + 0.5, z + 0.5);
-			if (particle != null){
-				particle.addRandomOffset(1, 0.5, 1);
-				particle.addVelocity(rand.nextDouble() * 0.2 - 0.1, 0.3, rand.nextDouble() * 0.2 - 0.1);
-				particle.setAffectedByGravity();
-				particle.setDontRequireControllers();
-				particle.setMaxAge(5);
-				particle.setParticleScale(0.1f);
-				if (colorModifier > -1){
-					particle.setRGBColorF(((colorModifier >> 16) & 0xFF) / 255.0f, ((colorModifier >> 8) & 0xFF) / 255.0f, (colorModifier & 0xFF) / 255.0f);
-				}
-			}
-		}
+		// Zero particle lag: custom client impact entity handles 4-tier visual effects
 	}
 
 	@Override
