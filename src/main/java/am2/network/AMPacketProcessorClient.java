@@ -156,6 +156,9 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			case AMPacketIDs.MANA_SHIELD_HIT:
 				handleManaShieldHit(remaining);
 				break;
+			case AMPacketIDs.LIGHTNING_IMPACT:
+				handleLightningImpact(remaining);
+				break;
 			case AMPacketIDs.HIDDEN_COMPONENT_UNLOCK:
 				Minecraft.getMinecraft().guiAchievement.func_146256_a(ArcaneCompendium.componentUnlock);
 				break;
@@ -420,6 +423,38 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 		AMDataReader rdr = new AMDataReader(data, false);
 		int entityId = rdr.getInt();
 		am2.client.vfx.ManaShieldVFX.triggerHitFlash(entityId);
+	}
+
+	private void handleLightningImpact(byte[] data){
+		AMDataReader rdr = new AMDataReader(data, false);
+		double x = rdr.getDouble();
+		double y = rdr.getDouble();
+		double z = rdr.getDouble();
+
+		ItemStack spellStack = null;
+		if (rdr.getBoolean())
+			spellStack = rdr.getItemStack();
+
+		int mergeCount = 1;
+		try{
+			mergeCount = rdr.getInt();
+		}catch(Exception ignored){}
+
+		double radius = 8.0;
+		try{
+			radius = rdr.getDouble();
+		}catch(Exception ignored){}
+
+		if (Minecraft.getMinecraft().theWorld != null){
+			EntitySpellEffect impact = new EntitySpellEffect(Minecraft.getMinecraft().theWorld);
+			impact.setPosition(x, y, z);
+			impact.setLightningImpact(spellStack, mergeCount, radius);
+			Minecraft.getMinecraft().theWorld.spawnEntityInWorld(impact);
+
+			float pitch = mergeCount >= 30 ? 0.60f : (mergeCount >= 15 ? 0.75f : (mergeCount >= 5 ? 0.88f : 1.0f));
+			float volume = mergeCount >= 30 ? 5.0f : (mergeCount >= 15 ? 3.5f : (mergeCount >= 5 ? 2.5f : 1.8f));
+			Minecraft.getMinecraft().theWorld.playSound(x, y, z, "ambient.weather.thunder", volume, pitch, false);
+		}
 	}
 
 	private void handleExplosionImpact(byte[] data){

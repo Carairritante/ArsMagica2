@@ -196,6 +196,18 @@ public class AMNetHandler{
 		sendPacketToAllClientsNear(world.provider.dimensionId, x, y, z, 96, AMPacketIDs.EXPLOSION_IMPACT, writer.generate());
 	}
 
+	public void sendLightningImpactToClients(double x, double y, double z, World world, ItemStack spellStack, int mergeCount, double radius){
+		AMDataWriter writer = new AMDataWriter().add(x).add(y).add(z);
+		if (spellStack != null)
+			writer.add(true).add(spellStack);
+		else
+			writer.add(false);
+		writer.add(mergeCount);
+		writer.add(radius);
+
+		sendPacketToAllClientsNear(world.provider.dimensionId, x, y, z, 128, AMPacketIDs.LIGHTNING_IMPACT, writer.generate());
+	}
+
 	public void sendStarImpactToClients(double x, double y, double z, World world, ItemStack spellStack){
 		sendStarImpactToClients(x, y, z, world, spellStack, 1);
 	}

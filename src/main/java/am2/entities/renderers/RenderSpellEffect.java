@@ -45,6 +45,12 @@ public class RenderSpellEffect extends Render {
 	private static final ResourceLocation texExplosionGround = new ResourceLocation("arsmagica2", "textures/misc/vfx/explosion_ground.png");
 	private static final ResourceLocation texExplosionShockwave = new ResourceLocation("arsmagica2", "textures/misc/vfx/explosion_shockwave.png");
 
+	// Lightning Impact textures
+	private static final ResourceLocation texLightningSigil = new ResourceLocation("arsmagica2", "textures/misc/vfx/lightning_sigil.png");
+	private static final ResourceLocation texLightningShockwave = new ResourceLocation("arsmagica2", "textures/misc/vfx/lightning_shockwave.png");
+	private static final ResourceLocation texLightningBolt = new ResourceLocation("arsmagica2", "textures/misc/vfx/lightning_bolt.png");
+	private static final ResourceLocation texLightningDragon = new ResourceLocation("arsmagica2", "textures/misc/vfx/lightning_dragon.png");
+
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float yaw, float partialTicks) {
 		if (!(entity instanceof EntitySpellEffect)) {
@@ -63,6 +69,8 @@ public class RenderSpellEffect extends Render {
 			renderGrowMandala(effect, x, y, z, partialTicks);
 		} else if (effect.isExplosionImpact()) {
 			renderExplosionImpact(effect, x, y, z, partialTicks);
+		} else if (effect.isLightningImpact()) {
+			renderLightningImpact(effect, x, y, z, partialTicks);
 		}
 	}
 
@@ -988,7 +996,251 @@ public class RenderSpellEffect extends Render {
 		GL11.glPopMatrix();
 	}
 
-	@Override
+	private void renderLightningImpact(EntitySpellEffect effect, double x, double y, double z, float partialTicks) {
+		float age = effect.ticksExisted + partialTicks;
+		int maxTicks = effect.getTicksToExist();
+		if (maxTicks <= 0) maxTicks = 40;
+		float progress = Math.min(1.0f, age / (float) maxTicks);
+
+		int count = effect.getMergeCount();
+		int tier = count >= 30 ? 4 : (count >= 15 ? 3 : (count >= 5 ? 2 : 1));
+		float aoeRadius = effect.getRadius();
+		if (aoeRadius < 3.5f) aoeRadius = 3.5f;
+
+		int customColor = effect.getSpellColor();
+		float rLight = 0.0f, gLight = 0.90f, bLight = 1.0f;
+		float rCore = 1.0f, gCore = 1.0f, bCore = 1.0f;
+		float rEdge = 0.22f, gEdge = 0.74f, bEdge = 0.98f;
+
+		if (tier == 3) {
+			rLight = 0.05f; gLight = 0.85f; bLight = 1.0f;
+			rEdge = 0.38f; gEdge = 0.40f; bEdge = 0.95f;
+		} else if (tier >= 4) {
+			rCore = 1.0f; gCore = 1.0f; bCore = 1.0f;
+			rLight = 1.0f; gLight = 0.88f; bLight = 0.35f;
+			rEdge = 0.70f; gEdge = 0.30f; bEdge = 0.98f;
+		}
+
+		if (customColor != -1) {
+			rLight = ((customColor >> 16) & 0xFF) / 255.0f;
+			gLight = ((customColor >> 8) & 0xFF) / 255.0f;
+			bLight = (customColor & 0xFF) / 255.0f;
+			rCore = Math.min(1.0f, rLight * 1.3f + 0.2f);
+			gCore = Math.min(1.0f, gLight * 1.3f + 0.2f);
+			bCore = Math.min(1.0f, bLight * 1.3f + 0.2f);
+		}
+
+		Tessellator t = Tessellator.instance;
+
+		GL11.glPushMatrix();
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+
+		GL11.glDisable(GL11.GL_LIGHTING);
+		RenderHelper.disableStandardItemLighting();
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0f, 240.0f);
+
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+		GL11.glDepthMask(false);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+
+		// 1. SKY VORTEX (Tiers 2, 3, 4)
+		if (tier >= 2) {
+			float vortexRadius = (tier >= 4 ? 24.0f : (tier >= 3 ? 16.0f : 10.0f));
+			float vortexAlpha = (float) Math.sin((1.0f - progress) * Math.PI * 0.5) * (tier >= 4 ? 0.95f : 0.80f);
+
+			GL11.glPushMatrix();
+			GL11.glTranslatef((float) x, (float) y + 36.0f, (float) z);
+			GL11.glRotatef(age * (tier >= 4 ? 12.0f : 8.0f), 0.0f, 1.0f, 0.0f);
+
+			this.bindTexture(texGrowPulse);
+			GL11.glColor4f(rEdge, gEdge, bEdge, vortexAlpha * 0.65f);
+			renderHorizontalQuad(t, -vortexRadius, vortexRadius, -vortexRadius, vortexRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+
+			this.bindTexture(texLightningShockwave);
+			GL11.glColor4f(rLight, gLight, bLight, vortexAlpha * 0.85f);
+			renderHorizontalQuad(t, -vortexRadius * 0.75f, vortexRadius * 0.75f, -vortexRadius * 0.75f, vortexRadius * 0.75f, 0.05f, 0.0f, 1.0f, 0.0f, 1.0f);
+			GL11.glPopMatrix();
+		}
+
+		// 2. TIER 4: PILLARS OF JUDGEMENT (Perimeter Containment Cage)
+		if (tier >= 4) {
+			float cageDuration = 18.0f;
+			if (age < cageDuration) {
+				float cNorm = age / cageDuration;
+				float cAlpha = (float) Math.sin(cNorm * Math.PI) * 0.95f;
+				float pillarDist = aoeRadius * 0.88f;
+
+				this.bindTexture(texLightningBolt);
+				for (int i = 0; i < 6; i++) {
+					double angle = i * (Math.PI * 2.0 / 6.0) + (age * 0.02);
+					float px = (float) (x + pillarDist * Math.cos(angle));
+					float pz = (float) (z + pillarDist * Math.sin(angle));
+					float pWidth = 2.4f;
+
+					GL11.glColor4f(rLight, gLight, bLight, cAlpha);
+					renderVerticalQuadCross3(t, px, y, y + 42.0f, pz, pWidth, 1.0f, 0.0f);
+
+					GL11.glPushMatrix();
+					GL11.glTranslatef(px, (float) y + 0.04f, pz);
+					this.bindTexture(texLightningShockwave);
+					GL11.glColor4f(rCore, gCore, bCore, cAlpha * 0.75f);
+					renderHorizontalQuad(t, -2.5f, 2.5f, -2.5f, 2.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+					GL11.glPopMatrix();
+				}
+			}
+		}
+
+		// 3. THE DRAGON DESCENT (Tiers 3 & 4)
+		float impactTime = tier >= 4 ? 20.0f : (tier >= 3 ? 15.0f : 0.0f);
+		if (tier >= 3 && age < impactTime) {
+			float dNorm = age / impactTime;
+			float dragonY = (float) y + 38.0f * (1.0f - dNorm * dNorm);
+			float spiralAngle = age * 0.45f;
+			float spiralRadius = (1.0f - dNorm) * (tier >= 4 ? 5.5f : 3.5f);
+			float dX = (float) x + spiralRadius * (float) Math.cos(spiralAngle);
+			float dZ = (float) z + spiralRadius * (float) Math.sin(spiralAngle);
+
+			float dragonScale = tier >= 4 ? 7.2f : 4.4f;
+			float dAlpha = Math.min(1.0f, age / 4.0f);
+
+			this.bindTexture(texLightningDragon);
+			GL11.glPushMatrix();
+			GL11.glTranslatef(dX, dragonY, dZ);
+			GL11.glRotatef(spiralAngle * (180.0f / (float) Math.PI), 0.0f, 1.0f, 0.0f);
+			GL11.glRotatef(75.0f, 1.0f, 0.0f, 0.0f);
+
+			GL11.glColor4f(rLight, gLight, bLight, dAlpha * 0.95f);
+			renderVerticalQuadCross3(t, 0.0, -dragonScale * 0.5, dragonScale * 0.5, 0.0, dragonScale, 0.0f, 0.5f);
+
+			if (tier >= 4) {
+				float wingSpan = dragonScale * 2.4f;
+				float wingFlap = (float) Math.sin(age * 0.8f) * 20.0f;
+				GL11.glPushMatrix();
+				GL11.glRotatef(wingFlap, 0.0f, 0.0f, 1.0f);
+				GL11.glColor4f(rCore, gCore, bCore, dAlpha * 0.90f);
+				renderHorizontalQuad(t, -wingSpan * 0.5f, wingSpan * 0.5f, -dragonScale * 0.4f, dragonScale * 0.4f, 0.1f, 0.0f, 1.0f, 0.5f, 1.0f);
+				GL11.glPopMatrix();
+			}
+			GL11.glPopMatrix();
+
+			int numSegments = tier >= 4 ? 5 : 3;
+			for (int seg = 1; seg <= numSegments; seg++) {
+				float trailNorm = Math.max(0.0f, dNorm - seg * 0.06f);
+				float segY = (float) y + 38.0f * (1.0f - trailNorm * trailNorm) + seg * 1.5f;
+				float segAngle = spiralAngle - seg * 0.35f;
+				float segRadius = (1.0f - trailNorm) * (tier >= 4 ? 5.5f : 3.5f);
+				float segX = (float) x + segRadius * (float) Math.cos(segAngle);
+				float segZ = (float) z + segRadius * (float) Math.sin(segAngle);
+				float segScale = dragonScale * (1.0f - seg * 0.12f);
+
+				GL11.glPushMatrix();
+				GL11.glTranslatef(segX, segY, segZ);
+				GL11.glRotatef(segAngle * (180.0f / (float) Math.PI), 0.0f, 1.0f, 0.0f);
+				GL11.glColor4f(rEdge, gEdge, bEdge, dAlpha * (0.85f - seg * 0.12f));
+			renderVerticalQuadCross3(t, 0.0, -segScale * 0.4, segScale * 0.4, 0.0, segScale * 0.8f, 0.0f, 0.5f);
+				GL11.glPopMatrix();
+			}
+		}
+
+		// 4. TIER 2: THUNDERSTORM CASCADE (Multi-Bolts)
+		if (tier == 2) {
+			this.bindTexture(texLightningBolt);
+			java.util.Random rnd = new java.util.Random(effect.getEntityId());
+			for (int b = 0; b < 7; b++) {
+				float boltStrikeTick = 1.0f + b * 3.0f;
+				float boltAge = age - boltStrikeTick;
+				if (boltAge >= 0.0f && boltAge < 8.0f) {
+					float bAlpha = (1.0f - boltAge / 8.0f);
+					float ang = rnd.nextFloat() * (float) Math.PI * 2.0f;
+					float dist = rnd.nextFloat() * (aoeRadius * 0.75f);
+					float bx = (float) (x + dist * Math.cos(ang));
+					float bz = (float) (z + dist * Math.sin(ang));
+
+					GL11.glColor4f(rLight, gLight, bLight, bAlpha);
+					renderVerticalQuadCross3(t, bx, y, y + 36.0f, bz, 2.0f, 1.0f, 0.0f);
+
+					GL11.glPushMatrix();
+					GL11.glTranslatef(bx, (float) y + 0.03f, bz);
+					this.bindTexture(texLightningShockwave);
+					GL11.glColor4f(rCore, gCore, bCore, bAlpha * 0.7f);
+					float spR = 1.6f + boltAge * 0.3f;
+					renderHorizontalQuad(t, -spR, spR, -spR, spR, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+					GL11.glPopMatrix();
+					this.bindTexture(texLightningBolt);
+				}
+			}
+		}
+
+		// 5. POST-IMPACT: PLASMA PILLAR, SHOCKWAVES & RUNIC SIGIL
+		if (age >= impactTime) {
+			float postAge = age - impactTime;
+			float postDuration = (float) maxTicks - impactTime;
+			if (postDuration <= 0.0f) postDuration = 20.0f;
+			float pProgress = Math.min(1.0f, postAge / postDuration);
+			float fadeAlpha = (float) Math.sin((1.0f - pProgress) * Math.PI * 0.5);
+
+			float pillarDuration = tier >= 4 ? 24.0f : (tier >= 3 ? 18.0f : (tier == 2 ? 12.0f : 8.0f));
+			if (postAge < pillarDuration) {
+				float pilNorm = postAge / pillarDuration;
+				float pilAlpha = (float) Math.sin((1.0f - pilNorm) * Math.PI * 0.5);
+				float pilWidth = tier >= 4 ? 6.5f : (tier >= 3 ? 4.4f : (tier == 2 ? 2.8f : 2.0f));
+				float pilHeight = 44.0f + aoeRadius * 1.5f;
+
+				this.bindTexture(texLightningBolt);
+				GL11.glColor4f(rCore, gCore, bCore, pilAlpha * 0.95f);
+				renderVerticalQuadCross3(t, x, y, y + pilHeight, z, pilWidth, 1.0f, 0.0f);
+
+				GL11.glColor4f(rLight, gLight, bLight, pilAlpha * 0.70f);
+				renderVerticalQuadCross3(t, x, y, y + pilHeight, z, pilWidth * 1.5f, 1.0f, 0.0f);
+			}
+
+			float shockRadius = (0.5f + (aoeRadius * 1.1f) * (float) Math.sqrt(pProgress));
+			float shockAlpha = fadeAlpha * 0.90f;
+
+			GL11.glPushMatrix();
+			GL11.glTranslatef((float) x, (float) y + 0.04f, (float) z);
+			this.bindTexture(texLightningShockwave);
+			GL11.glColor4f(rLight, gLight, bLight, shockAlpha);
+			renderHorizontalQuad(t, -shockRadius, shockRadius, -shockRadius, shockRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+
+			if (tier >= 4) {
+				float shockR2 = shockRadius * 0.75f;
+				GL11.glColor4f(rEdge, gEdge, bEdge, shockAlpha * 0.85f);
+				renderHorizontalQuad(t, -shockR2, shockR2, -shockR2, shockR2, 0.01f, 0.0f, 1.0f, 0.0f, 1.0f);
+			}
+			GL11.glPopMatrix();
+
+			if (tier >= 4) {
+				float sigilRadius = aoeRadius * 1.05f;
+				GL11.glPushMatrix();
+				GL11.glTranslatef((float) x, (float) y + 0.03f, (float) z);
+				GL11.glRotatef(age * 1.8f, 0.0f, 1.0f, 0.0f);
+				this.bindTexture(texLightningSigil);
+				GL11.glColor4f(rLight, gLight, bLight, fadeAlpha * 0.92f);
+				renderHorizontalQuad(t, -sigilRadius, sigilRadius, -sigilRadius, sigilRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+
+				GL11.glRotatef(-age * 3.5f, 0.0f, 1.0f, 0.0f);
+				GL11.glColor4f(rCore, gCore, bCore, fadeAlpha * 0.70f);
+				renderHorizontalQuad(t, -sigilRadius * 0.5f, sigilRadius * 0.5f, -sigilRadius * 0.5f, sigilRadius * 0.5f, 0.01f, 0.0f, 1.0f, 0.0f, 1.0f);
+				GL11.glPopMatrix();
+			} else if (tier >= 3) {
+				float sigilR3 = aoeRadius * 0.85f;
+				GL11.glPushMatrix();
+				GL11.glTranslatef((float) x, (float) y + 0.03f, (float) z);
+				GL11.glRotatef(age * 2.2f, 0.0f, 1.0f, 0.0f);
+				this.bindTexture(texLightningSigil);
+				GL11.glColor4f(rLight, gLight, bLight, fadeAlpha * 0.75f);
+				renderHorizontalQuad(t, -sigilR3, sigilR3, -sigilR3, sigilR3, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+				GL11.glPopMatrix();
+			}
+		}
+
+		GL11.glPopAttrib();
+		GL11.glPopMatrix();
+	}
+
+		@Override
 	protected ResourceLocation getEntityTexture(Entity entity) {
 		if (entity instanceof EntitySpellEffect) {
 			EntitySpellEffect effect = (EntitySpellEffect) entity;
@@ -996,6 +1248,7 @@ public class RenderSpellEffect extends Render {
 			if (effect.isStarfallImpact()) return texStarfallShockwave;
 			if (effect.isGrowMandala()) return texGrowGround;
 			if (effect.isExplosionImpact()) return texExplosionShockwave;
+			if (effect.isLightningImpact()) return texLightningShockwave;
 		}
 		return texOuter;
 	}

@@ -7,6 +7,8 @@ import am2.api.spell.component.interfaces.ISpellModifier;
 import am2.api.spell.enums.SpellModifiers;
 import am2.buffs.BuffEffectFrostSlowed;
 import am2.damage.DamageSources;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionEffect;
 import am2.network.AMNetHandler;
 import am2.particles.*;
 import am2.spell.SpellHelper;
@@ -61,6 +63,8 @@ public class EntitySpellEffect extends Entity{
 	public static final int TYPE_GROW_MANDALA = 6;
 	public static final int TYPE_EXPLOSION_IMPACT = 7;
 	public static final int TYPE_EXPLOSION_FUSION = 8;
+	public static final int TYPE_LIGHTNING_FUSION = 9;
+	public static final int TYPE_LIGHTNING_IMPACT = 10;
 
 	private int explicitColor = -1;
 
@@ -210,9 +214,12 @@ public class EntitySpellEffect extends Entity{
 		case TYPE_EXPLOSION_FUSION:
 			detonateExplosionFusion();
 			break;
+		case TYPE_LIGHTNING_FUSION:
+			detonateLightningFusion();
+			break;
 		}
 
-		if ((!worldObj.isRemote || isStarfallImpact() || isGrowMandala() || isExplosionImpact()) && this.ticksExisted >= this.getTicksToExist()){
+		if ((!worldObj.isRemote || isStarfallImpact() || isGrowMandala() || isExplosionImpact() || isLightningImpact()) && this.ticksExisted >= this.getTicksToExist()){
 			this.setDead();
 		}
 	}
@@ -893,6 +900,95 @@ public class EntitySpellEffect extends Entity{
 
 	public boolean isExplosionImpact(){
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_EXPLOSION_IMPACT;
+	}
+
+	private double lightningAoERadius = 4.0;
+
+	public void setLightningFusion(EntityLivingBase caster, ItemStack stack, double x, double y, double z, int bx, int by, int bz){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_LIGHTNING_FUSION);
+		this.setTicksToExist(5);
+		this.mergeCount = 1;
+		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster);
+		this.casterEntityID = caster != null ? caster.getEntityId() : -1;
+		this.spellStack = stack;
+		this.ignoreFrustumCheck = true;
+		this.lightningAoERadius = 4.0;
+		this.blocksToDestroy.clear();
+		this.blocksToDestroy.add(new int[]{bx, by, bz});
+	}
+
+	public void addMergedLightning(double x, double y, double z, int bx, int by, int bz){
+		this.mergeCount++;
+		double count = this.mergeCount;
+		this.posX = (this.posX * (count - 1.0) + x) / count;
+		this.posY = (this.posY * (count - 1.0) + y) / count;
+		this.posZ = (this.posZ * (count - 1.0) + z) / count;
+		this.setPosition(this.posX, this.posY, this.posZ);
+		this.blocksToDestroy.add(new int[]{bx, by, bz});
+
+		double distSq = (x - this.posX)*(x - this.posX) + (z - this.posZ)*(z - this.posZ);
+		double dist = Math.sqrt(distSq);
+		if (dist > this.lightningAoERadius){
+			this.lightningAoERadius = Math.min(64.0, dist + 2.0);
+		}
+	}
+
+	public boolean isLightningFusion(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_LIGHTNING_FUSION;
+	}
+
+	private void detonateLightningFusion(){
+		if (this.worldObj.isRemote) return;
+
+		int count = this.mergeCount;
+		double radius = Math.max(4.0, this.lightningAoERadius);
+
+		int damageMods = 0;
+		if (this.spellStack != null){
+			damageMods = SpellUtils.instance.countModifiers(SpellModifiers.DAMAGE, this.spellStack, 0);
+		}
+
+		float baseDmg = 8.0f + damageMods * 3.0f;
+		float tierMultiplier = count >= 30 ? 3.5f : (count >= 15 ? 2.4f : (count >= 5 ? 1.6f : 1.0f));
+		float finalDmg = baseDmg * tierMultiplier;
+
+		AxisAlignedBB bb = AxisAlignedBB.getBoundingBox(
+				this.posX - radius, this.posY - 6.0, this.posZ - radius,
+				this.posX + radius, this.posY + 16.0, this.posZ + radius
+		);
+		@SuppressWarnings("unchecked")
+		List<EntityLivingBase> targets = this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, bb);
+		EntityLivingBase sourceCaster = (dummycaster != null) ? dummycaster : null;
+
+		for (EntityLivingBase target : targets){
+			if (target == sourceCaster) continue;
+			double dSq = target.getDistanceSq(this.posX, target.posY, this.posZ);
+			if (dSq <= (radius + 1.5) * (radius + 1.5)){
+				target.attackEntityFrom(DamageSources.causeEntityLightningDamage(sourceCaster != null ? sourceCaster : target), finalDmg);
+				if (count >= 15){
+					target.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, count >= 30 ? 100 : 60, count >= 30 ? 3 : 1));
+				}
+			}
+		}
+
+		AMNetHandler.INSTANCE.sendLightningImpactToClients(this.posX, this.posY, this.posZ, this.worldObj, this.spellStack, count, radius);
+		this.setDead();
+	}
+
+	public void setLightningImpact(ItemStack stack, int mergeCount, double radius){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_LIGHTNING_IMPACT);
+		int duration = mergeCount >= 30 ? 60 : (mergeCount >= 15 ? 45 : (mergeCount >= 5 ? 30 : 20));
+		this.setTicksToExist(duration);
+		this.mergeCount = mergeCount;
+		this.lightningAoERadius = radius;
+		this.setRadius((float)radius);
+		if (stack != null){
+			this.dataWatcher.updateObject(WATCHER_STACK, stack);
+		}
+	}
+
+	public boolean isLightningImpact(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_LIGHTNING_IMPACT;
 	}
 
 	@Override

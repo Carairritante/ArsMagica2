@@ -39,13 +39,33 @@ public final class LightningStrikeRateLimiter {
 				if (!state.allow(caster, stack, x, y, z)) return false;
 			}
 
-			Class<?> boltClass = Class.forName("net.minecraft.entity.effect.EntityLightningBolt");
-			Class<?> worldBase = Class.forName("net.minecraft.world.World");
-			Constructor<?> constructor = boltClass.getConstructor(worldBase, double.class, double.class, double.class);
-			Object bolt = constructor.newInstance(world, (double)x, (double)y, (double)z);
-			Method addWeatherEffect = findAddWeatherEffect(world.getClass(), boltClass);
-			if (addWeatherEffect == null) throw new NoSuchMethodException("World.addWeatherEffect");
-			addWeatherEffect.invoke(world, bolt);
+			net.minecraft.world.World mcWorld = (net.minecraft.world.World)world;
+			if (!mcWorld.isRemote){
+				double searchRadius = 64.0;
+				net.minecraft.entity.EntityLivingBase livingCaster = (caster instanceof net.minecraft.entity.EntityLivingBase) ? (net.minecraft.entity.EntityLivingBase)caster : null;
+				net.minecraft.item.ItemStack itemStack = (stack instanceof net.minecraft.item.ItemStack) ? (net.minecraft.item.ItemStack)stack : null;
+				int casterID = livingCaster != null ? livingCaster.getEntityId() : -1;
+				net.minecraft.util.AxisAlignedBB bb = net.minecraft.util.AxisAlignedBB.getBoundingBox(x - searchRadius, y - 24, z - searchRadius, x + searchRadius, y + 24, z + searchRadius);
+				@SuppressWarnings("unchecked")
+				java.util.List<am2.entities.EntitySpellEffect> existing = mcWorld.getEntitiesWithinAABB(am2.entities.EntitySpellEffect.class, bb);
+				am2.entities.EntitySpellEffect activeFusion = null;
+
+				for (am2.entities.EntitySpellEffect effect : existing){
+					if (effect.isLightningFusion() && effect.getCasterEntityID() == casterID){
+						activeFusion = effect;
+						break;
+					}
+				}
+
+				if (activeFusion != null){
+					activeFusion.addMergedLightning(x + 0.5, y, z + 0.5, x, y, z);
+				}else{
+					am2.entities.EntitySpellEffect fusion = new am2.entities.EntitySpellEffect(mcWorld);
+					fusion.setPosition(x + 0.5, y, z + 0.5);
+					fusion.setLightningFusion(livingCaster, itemStack, x + 0.5, y, z + 0.5, x, y, z);
+					mcWorld.spawnEntityInWorld(fusion);
+				}
+			}
 			return true;
 		} catch (Throwable error){
 			logFailureOnce(error);
