@@ -372,34 +372,22 @@ public class EntitySpellEffect extends Entity{
 				}
 			}
 
-			for (int i = 0; i < 20; ++i){
+			if (rand.nextInt(3) == 0){
 				double x = this.posX - radius + (rand.nextDouble() * radius * 2);
 				double z = this.posZ - radius + (rand.nextDouble() * radius * 2);
-				double y = this.posY + 10;
+				double y = this.posY + 0.5 + rand.nextDouble() * 2.5;
 
 				AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "snowflakes", x, y, z);
 				if (particle != null){
-					particle.setMaxAge(20);
-					particle.setParticleScale(0.1f);
-					particle.addVelocity(rand.nextDouble() * 0.2f - 0.1f, 0, rand.nextDouble() * 0.2f - 0.1f);
-					particle.setAffectedByGravity();
-					particle.setRGBColorI(color);
+					particle.setMaxAge(18);
+					particle.setParticleScale(0.12f);
+					particle.addVelocity((rand.nextDouble() - 0.5) * 0.08f, -0.04f, (rand.nextDouble() - 0.5) * 0.08f);
 					particle.setDontRequireControllers();
+					int col = getSpellColor();
+					if (col != -1) particle.setRGBColorI(col);
+					else particle.setRGBColorI(0x99EEFF);
 					particle.noClip = false;
 				}
-			}
-
-			double x = this.posX - radius + (rand.nextDouble() * radius * 2);
-			double z = this.posZ - radius + (rand.nextDouble() * radius * 2);
-			double y = this.posY + rand.nextDouble();
-			AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "smoke", x, y, z);
-			if (particle != null){
-				particle.setParticleScale(2.0f);
-				particle.setMaxAge(20);
-				//particle.setRGBColorF(0.5f, 0.92f, 0.92f);
-				particle.setRGBColorF(0.5098f, 0.7843f, 0.7843f);
-				particle.SetParticleAlpha(0.6f);
-				particle.AddParticleController(new ParticleFleePoint(particle, new AMVector3(x, y, z), 0.1f, 3f, 1, false));
 			}
 
 			//TODO: SoundHelper.instance.loopSound(worldObj, (float)posX, (float)posY, (float)posZ, "arsmagica2:spell.loop.air", 1.0f);
@@ -650,6 +638,7 @@ public class EntitySpellEffect extends Entity{
 
 	public void setBlizzard(){
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_BLIZ);
+		this.ignoreFrustumCheck = true;
 	}
 
 	public boolean isBlizzard(){
