@@ -9,6 +9,7 @@ import am2.blocks.BlocksCommonProxy;
 import am2.entities.EntitySpellEffect;
 import am2.items.ItemsCommonProxy;
 import am2.spell.SpellUtils;
+import am2.spell.components.LightningStrikeRateLimiter;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
@@ -46,6 +47,7 @@ public class Wave implements ISpellShape{
 		wave.setWave(caster.rotationYaw, (float)speed);
 		wave.noClip = hasPiercing;
 		wave.setGravity(gravityModifiers * 0.5f);
+		LightningStrikeRateLimiter.configureWave(stack, wave);
 		world.spawnEntityInWorld(wave);
 		return SpellCastResult.SUCCESS;
 	}

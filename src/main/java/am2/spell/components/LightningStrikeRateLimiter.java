@@ -54,7 +54,84 @@ public final class LightningStrikeRateLimiter {
 	}
 
 	/** Set Lightning Strike and Explosion zones to one pulse every 30 ticks. */
-	public static void configureZone(Object stack, Object zone){
+	
+	/** Set Lightning Strike, Explosion, and Dig waves to at most 3 pulses during travel. */
+	public static void configureWave(Object stack, Object wave){
+		if (stack == null || wave == null) return;
+		try {
+			if (!containsWaveLimitedComponent(stack)) return;
+			Method setter = findMethod(wave.getClass(), new String[]{"setWavePulseLimit"}, int.class);
+			if (setter != null){
+				setter.invoke(wave, Integer.valueOf(3));
+			}
+		} catch (Throwable error){
+			logFailureOnce(error);
+		}
+	}
+
+	public static boolean containsWaveLimitedComponent(Object stack){
+		try {
+			if (getWaveLimitedComponentNameViaSpellUtils(stack) != null) return true;
+			return getWaveLimitedComponentNameFromNBT(stack) != null;
+		} catch (Throwable t){
+			return false;
+		}
+	}
+
+	private static String getWaveLimitedComponentNameFromNBT(Object stack) throws Exception{
+		Object tag = invokeNoArgs(stack, "getTagCompound", "func_77978_p");
+		if (tag == null) return null;
+		Method hasKey = findMethod(tag.getClass(), new String[]{"hasKey", "func_74764_b"}, String.class);
+		Method getInt = findMethod(tag.getClass(), new String[]{"getInteger", "func_74762_e"}, String.class);
+		Method getIntArray = findMethod(tag.getClass(), new String[]{"getIntArray", "func_74759_k"}, String.class);
+		if (hasKey == null || getInt == null || getIntArray == null) return null;
+		String stagesKey = ((Boolean)hasKey.invoke(tag, "NumStages")).booleanValue() ? "NumStages" : "ShapeOrdinal_";
+		if (!((Boolean)hasKey.invoke(tag, stagesKey)).booleanValue()) return null;
+		int stages = Math.min(Math.max(((Integer)getInt.invoke(tag, stagesKey)).intValue(), 0), 64);
+		for (int stage = 0; stage < stages; stage++){
+			String key = "SpellComponentIDs_" + stage;
+			if (!((Boolean)hasKey.invoke(tag, key)).booleanValue()) continue;
+			int[] ids = (int[])getIntArray.invoke(tag, key);
+			if (ids == null) continue;
+			for (int id : ids){
+				if (id == LIGHTNING_COMPONENT_ID || id == EXPLOSION_COMPONENT_ID || id == DIG_COMPONENT_ID){
+					return componentNameForId(id);
+				}
+			}
+		}
+		return null;
+	}
+
+	private static String getWaveLimitedComponentNameViaSpellUtils(Object stack){
+		try {
+			Class<?> spellUtilsClass = Class.forName("am2.spell.SpellUtils");
+			Field instanceField = findField(spellUtilsClass, "instance");
+			if (instanceField == null) return null;
+			Object spellUtils = instanceField.get(null);
+			Class<?> itemStackClass = Class.forName("net.minecraft.item.ItemStack");
+			Method numStages = findMethod(spellUtilsClass, new String[]{"numStages"}, itemStackClass);
+			Method getComponents = findMethod(spellUtilsClass, new String[]{"getComponentsForStage"}, itemStackClass, int.class);
+			if (spellUtils == null || numStages == null || getComponents == null) return null;
+			int stages = Math.min(Math.max(((Number)numStages.invoke(spellUtils, stack)).intValue(), 0), 64);
+			Class<?> lightningClass = Class.forName("am2.spell.components.LightningStrike");
+			Class<?> explosionClass = Class.forName("am2.spell.components.Explosion");
+			Class<?> digClass = Class.forName("am2.spell.components.Dig");
+			for (int stage = 0; stage < stages; stage++){
+				Object[] components = (Object[])getComponents.invoke(spellUtils, stack, Integer.valueOf(stage));
+				if (components == null) continue;
+				for (Object component : components){
+					if (component != null){
+						if (lightningClass.isInstance(component)) return "Lightning Strike";
+						if (explosionClass.isInstance(component)) return "Explosion";
+						if (digClass.isInstance(component)) return "Dig";
+					}
+				}
+			}
+		} catch (Throwable ignored){ }
+		return null;
+	}
+
+public static void configureZone(Object stack, Object zone){
 		if (stack == null || zone == null) return;
 		try {
 			if (!containsZoneLimitedComponent(stack)) return;
@@ -247,7 +324,7 @@ public final class LightningStrikeRateLimiter {
 			if (!((Boolean)hasKey.invoke(tag, key)).booleanValue()) continue;
 			int[] ids = (int[])getIntArray.invoke(tag, key);
 			if (ids == null) continue;
-			for (int id : ids) if (id == LIGHTNING_COMPONENT_ID || id == EXPLOSION_COMPONENT_ID) return componentNameForId(id);
+			for (int id : ids) if (id == LIGHTNING_COMPONENT_ID || id == EXPLOSION_COMPONENT_ID || id == DIG_COMPONENT_ID) return componentNameForId(id);
 		}
 		return null;
 	}
@@ -265,12 +342,14 @@ public final class LightningStrikeRateLimiter {
 			int stages = Math.min(Math.max(((Number)numStages.invoke(spellUtils, stack)).intValue(), 0), 64);
 			Class<?> lightningClass = Class.forName("am2.spell.components.LightningStrike");
 			Class<?> explosionClass = Class.forName("am2.spell.components.Explosion");
+			Class<?> digClass = Class.forName("am2.spell.components.Dig");
 			for (int stage = 0; stage < stages; stage++){
 				Object[] components = (Object[])getComponents.invoke(spellUtils, stack, Integer.valueOf(stage));
 				if (components == null) continue;
 				for (Object component : components){
 					if (component != null && lightningClass.isInstance(component)) return "Lightning Strike";
 					if (component != null && explosionClass.isInstance(component)) return "Explosion";
+					if (component != null && digClass.isInstance(component)) return "Dig";
 				}
 			}
 		} catch (Throwable ignored){ }
