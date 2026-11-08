@@ -41,6 +41,7 @@ public class EntityThrownRock extends EntityLiving{
 	private static final int IS_MOONSTONE_METEOR = 20;
 	private static final int IS_SHOOTING_STAR = 21;
 	private static final int SPELL_STACK = 22;
+	private static final int STAR_MERGE_COUNT = 23;
 
 	public EntityThrownRock(World par1World){
 		super(par1World);
@@ -122,6 +123,29 @@ public class EntityThrownRock extends EntityLiving{
 		this.dataWatcher.addObject(IS_MOONSTONE_METEOR, (byte)0);
 		this.dataWatcher.addObject(IS_SHOOTING_STAR, (byte)0);
 		this.dataWatcher.addObject(SPELL_STACK, new ItemStack(ItemsCommonProxy.spell));
+		this.dataWatcher.addObject(STAR_MERGE_COUNT, 1);
+	}
+
+	public void addMergedStar(float extraDamage){
+		int current = getStarMergeCount();
+		this.dataWatcher.updateObject(STAR_MERGE_COUNT, current + 1);
+		this.damage += extraDamage;
+	}
+
+	public int getStarMergeCount(){
+		return this.dataWatcher.getWatchableObjectInt(STAR_MERGE_COUNT);
+	}
+
+	public float getVisualScale(){
+		int count = getStarMergeCount();
+		if (count >= 10){
+			return 2.8f + (float)Math.min(1.2f, (count - 10) * 0.05f);
+		}else if (count >= 5){
+			return 1.8f + (count - 5) * 0.18f;
+		}else if (count > 1){
+			return 1.0f + (count - 1) * 0.15f;
+		}
+		return 1.0f;
 	}
 
 	public ItemStack getSpellStack(){
@@ -267,8 +291,11 @@ public class EntityThrownRock extends EntityLiving{
 		}
 
 		if (getIsShootingStar()){
-			AMNetHandler.INSTANCE.sendStarImpactToClients(posX, posY + ((movingobjectposition.typeOfHit == MovingObjectType.ENTITY) ? -movingobjectposition.entityHit.getEyeHeight() : 1.5f), posZ, worldObj, this.getSpellStack());
-			List<EntityLivingBase> ents = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, boundingBox.expand(5, 5, 5));
+			int count = getStarMergeCount();
+			float impactRadius = count >= 10 ? 13.0f : (count >= 5 ? 8.5f : 5.0f);
+
+			AMNetHandler.INSTANCE.sendStarImpactToClients(posX, posY + ((movingobjectposition.typeOfHit == MovingObjectType.ENTITY) ? -movingobjectposition.entityHit.getEyeHeight() : 1.5f), posZ, worldObj, this.getSpellStack(), count);
+			List<EntityLivingBase> ents = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, boundingBox.expand(impactRadius, impactRadius, impactRadius));
 			for (EntityLivingBase e : ents){
 				if (e == throwingEntity) continue;
 				if (this.getEntitySenses().canSee(e))

@@ -527,11 +527,14 @@ public class RenderSpellEffect extends Render {
 	private void renderStarfallImpact(EntitySpellEffect effect, double x, double y, double z, float partialTicks) {
 		float age = effect.ticksExisted + partialTicks;
 		int maxTicks = effect.getTicksToExist();
-		if (maxTicks <= 0) maxTicks = 22;
+		if (maxTicks <= 0) maxTicks = 16;
 
 		float progress = Math.min(1.0f, age / (float) maxTicks);
-		float fadeAlpha = (float) Math.pow(1.0f - progress, 1.4);
+		float fadeAlpha = (float) Math.pow(1.0f - progress, 1.3);
 		if (fadeAlpha <= 0.005f) return;
+
+		float scale = effect.getRadius();
+		if (scale <= 0.1f) scale = 1.0f;
 
 		int customColor = effect.getSpellColor();
 		float rStar = 0.70f, gStar = 0.90f, bStar = 1.0f;
@@ -566,7 +569,7 @@ public class RenderSpellEffect extends Render {
 		GL11.glPushMatrix();
 		GL11.glTranslatef((float) x, (float) y + 0.03f, (float) z);
 		GL11.glRotatef(age * 0.8f, 0.0f, 1.0f, 0.0f);
-		float gRadius = 3.8f;
+		float gRadius = 3.8f * Math.min(2.8f, 0.75f + scale * 0.45f);
 		GL11.glColor4f(rStar, gStar, bStar, 0.65f * fadeAlpha);
 		renderHorizontalQuad(t, -gRadius, gRadius, -gRadius, gRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
 		GL11.glPopMatrix();
@@ -576,34 +579,34 @@ public class RenderSpellEffect extends Render {
 		GL11.glPushMatrix();
 		GL11.glTranslatef((float) x, (float) y + 0.05f, (float) z);
 		float shockExpansion = (float) Math.sin(progress * Math.PI * 0.5);
-		float shockRadius = 0.8f + shockExpansion * 8.5f;
+		float shockRadius = (0.8f + shockExpansion * 8.5f) * (0.75f + scale * 0.35f);
 		GL11.glColor4f(rShock, gShock, bShock, 0.90f * fadeAlpha);
 		renderHorizontalQuad(t, -shockRadius, shockRadius, -shockRadius, shockRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
 		GL11.glPopMatrix();
 
-		// 3. Ascending Pillar of Holy Starlight (shoots straight up to y + 36.0)
+		// 3. Ascending Pillar of Holy Starlight (shoots straight up)
 		float pillarDuration = 0.70f;
 		if (progress < pillarDuration) {
 			float pNorm = progress / pillarDuration;
 			float pAlpha = (float) Math.sin((1.0f - pNorm) * Math.PI * 0.5);
-			float pWidth = 3.2f * (1.0f - pNorm * 0.4f);
-			float pillarHeight = 36.0f;
+			float pWidth = 3.2f * scale * (1.0f - pNorm * 0.35f);
+			float pillarHeight = 36.0f + (scale - 1.0f) * 8.0f;
 
 			this.bindTexture(texStarfallPillar);
 			GL11.glColor4f(rPillar, gPillar, bPillar, pAlpha * 0.92f);
 			renderVerticalQuadCross3(t, x, y, y + pillarHeight, z, pWidth, 1.0f, 0.0f);
 		}
 
-		// 4. Initial Supernova Diamond Flash (bursts and vanishes in first 6 ticks)
-		float flashDuration = 0.28f;
+		// 4. Initial Supernova Diamond Flash (bursts and vanishes in first 5 ticks)
+		float flashDuration = 0.30f;
 		if (progress < flashDuration) {
 			float fNorm = progress / flashDuration;
 			float fAlpha = 1.0f - fNorm;
-			float fRadius = 1.2f + fNorm * 3.5f;
+			float fRadius = (1.2f + fNorm * 3.5f) * scale;
 
 			this.bindTexture(texStarfallCore);
 			GL11.glPushMatrix();
-			GL11.glTranslatef((float) x, (float) y + 1.2f, (float) z);
+			GL11.glTranslatef((float) x, (float) y + 1.2f * scale, (float) z);
 			GL11.glRotatef(age * 5.0f, 0.0f, 1.0f, 0.0f);
 			GL11.glColor4f(1.0f, 1.0f, 1.0f, fAlpha);
 			renderVerticalQuadCross3(t, 0.0, -fRadius, fRadius, 0.0, fRadius * 2.0f, 0.0f, 1.0f);

@@ -88,7 +88,10 @@ public class RenderThrownRock extends RenderLiving {
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_CULL_FACE);
 
-		// 3. Ground Astrological Targeting Reticle (directly below the falling star)
+		// 3. Scale computation from Star Fusion tier
+		float visualScale = rock.getVisualScale();
+
+		// Ground Astrological Targeting Reticle (directly below the falling star)
 		int groundY = rock.worldObj.getTopSolidOrLiquidBlock((int) Math.floor(rock.posX), (int) Math.floor(rock.posZ));
 		double viewerY = RenderManager.instance.viewerPosY;
 		double groundYRel = (double) groundY - viewerY;
@@ -102,15 +105,15 @@ public class RenderThrownRock extends RenderLiving {
 		GL11.glPushMatrix();
 		GL11.glTranslatef((float) x, (float) groundYRel + 0.05f, (float) z);
 		GL11.glRotatef(age * spinSpeed, 0.0f, 1.0f, 0.0f);
-		float gRadius = 3.6f;
+		float gRadius = 3.6f * Math.min(2.8f, 0.75f + visualScale * 0.45f);
 		GL11.glColor4f(rGround, gGround, bGround, 0.75f * groundFactor);
 		renderHorizontalQuad(t, -gRadius, gRadius, -gRadius, gRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
 		GL11.glPopMatrix();
 
 		// 4. Volumetric Aerodynamic Comet Tail (stretches upwards along -motion)
 		this.bindTexture(texStarTrail);
-		float trailLength = 12.0f;
-		float trailWidth = 2.4f;
+		float trailLength = 12.0f + (visualScale - 1.0f) * 5.0f;
+		float trailWidth = 2.4f * visualScale;
 		GL11.glColor4f(rTrail, gTrail, bTrail, 0.90f);
 		renderVerticalQuadCross3(t, x, y, y + trailLength, z, trailWidth, 1.0f, 0.0f);
 
@@ -124,7 +127,7 @@ public class RenderThrownRock extends RenderLiving {
 		GL11.glRotatef(age * 4.0f, 0.0f, 1.0f, 0.0f);
 		GL11.glRotatef(28.0f, 1.0f, 0.0f, 0.0f);
 		GL11.glColor4f(rStar, gStar, bStar, 0.85f);
-		float ringScale1 = 2.2f;
+		float ringScale1 = 2.2f * visualScale;
 		renderHorizontalQuad(t, -ringScale1, ringScale1, -ringScale1, ringScale1, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
 		GL11.glPopMatrix();
 
@@ -133,9 +136,20 @@ public class RenderThrownRock extends RenderLiving {
 		GL11.glRotatef(-age * 3.2f, 0.0f, 1.0f, 0.0f);
 		GL11.glRotatef(-38.0f, 0.0f, 0.0f, 1.0f);
 		GL11.glColor4f(rTrail, gTrail, bTrail, 0.75f);
-		float ringScale2 = 2.6f;
+		float ringScale2 = 2.6f * visualScale;
 		renderHorizontalQuad(t, -ringScale2, ringScale2, -ringScale2, ringScale2, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
 		GL11.glPopMatrix();
+
+		// Extra Ring 3 for Cataclysmic Meteor (Tier 3)
+		if (visualScale >= 2.5f){
+			GL11.glPushMatrix();
+			GL11.glRotatef(age * 5.0f, 0.0f, 1.0f, 0.0f);
+			GL11.glRotatef(58.0f, 1.0f, 0.0f, 1.0f);
+			GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.90f);
+			float ringScale3 = 3.2f * visualScale;
+			renderHorizontalQuad(t, -ringScale3, ringScale3, -ringScale3, ringScale3, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+			GL11.glPopMatrix();
+		}
 
 		// 6. 3D Vector Octagram Frame (smooth mathematical celestial lattice)
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -143,14 +157,14 @@ public class RenderThrownRock extends RenderLiving {
 		GL11.glRotatef(age * 2.2f, 0.0f, 1.0f, 0.0f);
 		GL11.glRotatef(15.0f, 1.0f, 0.0f, 1.0f);
 		GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.80f);
-		renderSmoothVectorPolygon(2.4f, 8, 2.0f);
+		renderSmoothVectorPolygon(2.4f * visualScale, 8, 2.0f);
 		GL11.glPopMatrix();
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
 
 		// 7. Radiant Celestial Diamond Star Core
 		this.bindTexture(texStarCore);
 		float corePulse = 1.0f + 0.10f * (float) Math.sin(age * 0.45f);
-		float coreRadius = 2.1f * corePulse;
+		float coreRadius = 2.1f * corePulse * visualScale;
 
 		GL11.glPushMatrix();
 		GL11.glRotatef(age * 1.8f, 0.0f, 1.0f, 0.0f);

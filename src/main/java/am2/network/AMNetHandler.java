@@ -174,14 +174,19 @@ public class AMNetHandler{
 		}
 	}
 
-	public void sendStarImpactToClients(double x, double y, double z, World world, ItemStack spellStack){
+	public void sendStarImpactToClients(double x, double y, double z, World world, ItemStack spellStack, int mergeCount){
 		AMDataWriter writer = new AMDataWriter().add(x).add(y).add(z);
 		if (spellStack != null)
 			writer.add(true).add(spellStack);
 		else
 			writer.add(false);
+		writer.add(mergeCount);
 
-		sendPacketToAllClientsNear(world.provider.dimensionId, x, y, z, 64, AMPacketIDs.STAR_FALL, writer.generate());
+		sendPacketToAllClientsNear(world.provider.dimensionId, x, y, z, 96, AMPacketIDs.STAR_FALL, writer.generate());
+	}
+
+	public void sendStarImpactToClients(double x, double y, double z, World world, ItemStack spellStack){
+		sendStarImpactToClients(x, y, z, world, spellStack, 1);
 	}
 
 	public void sendSilverSkillPointPacket(EntityPlayerMP player){

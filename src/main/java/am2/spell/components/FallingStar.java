@@ -42,6 +42,20 @@ public class FallingStar implements ISpellComponent{
 
 		if (!world.isRemote){
 			double targetY = y - 50.0;
+			float starDamage = 2.0f * damageMultiplier;
+
+			// Star Fusion: Check if a shooting star already exists in this area (12-block radius)
+			double fusionRadius = 12.0;
+			List<EntityThrownRock> nearbyStars = world.getEntitiesWithinAABB(EntityThrownRock.class,
+					AxisAlignedBB.getBoundingBox(x - fusionRadius, targetY - 10.0, z - fusionRadius, x + fusionRadius, targetY + 80.0, z + fusionRadius));
+
+			for (EntityThrownRock rock : nearbyStars){
+				if (rock.getIsShootingStar() && !rock.isDead){
+					rock.addMergedStar(starDamage);
+					return true;
+				}
+			}
+
 			double maxSpawnY = Math.min((double)world.getActualHeight() - 5.0, targetY + 65.0);
 			double spawnY = maxSpawnY;
 
@@ -54,7 +68,7 @@ public class FallingStar implements ISpellComponent{
 
 			EntityThrownRock star = new EntityThrownRock(world);
 			star.setPosition(x, spawnY, z);
-			star.setShootingStar(2 * damageMultiplier);
+			star.setShootingStar(starDamage);
 			star.setThrowingEntity(caster);
 			star.setSpellStack(spellStack.copy());
 			star.motionY = -1.0;

@@ -369,6 +369,10 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 		SpellHelper.instance.applyStackStage(spellStack, (EntityLivingBase)caster, (EntityLivingBase)target, x, y, z, 0, Minecraft.getMinecraft().theWorld, false, false, 0);
 	}
 
+	private static long lastStarSoundTime = 0;
+	private static double lastStarSoundX = 0;
+	private static double lastStarSoundZ = 0;
+
 	private void handleStarFall(byte[] data){
 		AMDataReader rdr = new AMDataReader(data, false);
 		double x = rdr.getDouble();
@@ -379,30 +383,27 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 		if (rdr.getBoolean())
 			spellStack = rdr.getItemStack();
 
-		int color = -1;
-		if (spellStack != null){
-			if (SpellUtils.instance.modifierIsPresent(SpellModifiers.COLOR, spellStack, 0)){
-				ISpellModifier[] mods = SpellUtils.instance.getModifiersForStage(spellStack, 0);
-				int ordinalCount = 0;
-				for (ISpellModifier mod : mods){
-					if (mod instanceof Colour){
-						byte[] meta = SpellUtils.instance.getModifierMetadataFromStack(spellStack, mod, 0, ordinalCount++);
-						color = (int)mod.getModifier(SpellModifiers.COLOR, null, null, null, meta);
-					}
-				}
-			}
-		}
+		int mergeCount = 1;
+		try{
+			mergeCount = rdr.getInt();
+		}catch(Exception ignored){}
 
 		if (Minecraft.getMinecraft().theWorld != null){
 			EntitySpellEffect impact = new EntitySpellEffect(Minecraft.getMinecraft().theWorld);
 			impact.setPosition(x, y, z);
-			impact.setStarfallImpact(spellStack);
+			impact.setStarfallImpact(spellStack, mergeCount);
 			Minecraft.getMinecraft().theWorld.spawnEntityInWorld(impact);
+
+			long now = Minecraft.getMinecraft().theWorld.getTotalWorldTime();
+			if (now != lastStarSoundTime || Math.abs(x - lastStarSoundX) > 14.0 || Math.abs(z - lastStarSoundZ) > 14.0){
+				lastStarSoundTime = now;
+				lastStarSoundX = x;
+				lastStarSoundZ = z;
+				float pitch = mergeCount >= 10 ? 0.72f : (mergeCount >= 5 ? 0.85f : 1.0f);
+				float volume = mergeCount >= 10 ? 3.0f : 2.0f;
+				Minecraft.getMinecraft().theWorld.playSound(x, y, z, "arsmagica2:spell.special.starfall", volume, pitch, false);
+			}
 		}
-
-
-
-		Minecraft.getMinecraft().theWorld.playSound(x, y, z, "arsmagica2:spell.special.starfall", 2.0f, 1.0f, false);
 	}
 
 	private void handleSyncWorldName(byte[] data){

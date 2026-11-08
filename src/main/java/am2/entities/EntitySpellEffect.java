@@ -650,14 +650,27 @@ public class EntitySpellEffect extends Entity{
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_ROF;
 	}
 
-	public void setStarfallImpact(ItemStack stack){
+	public void setStarfallImpact(ItemStack stack, int mergeCount){
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_STARFALL_IMPACT);
-		this.setTicksToExist(22);
+		this.setTicksToExist(16);
 		this.ignoreFrustumCheck = true;
 		this.renderDistanceWeight = 10.0D;
+		float scale = 1.0f;
+		if (mergeCount >= 10){
+			scale = 2.8f + (float)Math.min(1.2f, (mergeCount - 10) * 0.05f);
+		}else if (mergeCount >= 5){
+			scale = 1.8f + (mergeCount - 5) * 0.18f;
+		}else if (mergeCount > 1){
+			scale = 1.0f + (mergeCount - 1) * 0.15f;
+		}
+		this.setRadius(scale);
 		if (stack != null) {
 			this.dataWatcher.updateObject(WATCHER_STACK, stack);
 		}
+	}
+
+	public void setStarfallImpact(ItemStack stack){
+		setStarfallImpact(stack, 1);
 	}
 
 	public boolean isStarfallImpact(){
