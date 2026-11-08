@@ -3,66 +3,71 @@ import random
 from PIL import Image, ImageDraw, ImageFilter
 
 def create_storm_cloud():
-    out_dir = r"src/main/resources/assets/arsmagica2/textures/misc/vfx"
+    out_path = r"c:\Users\PC\Downloads\AM2NEWERA\ArsMagica2\src\main\resources\assets\arsmagica2\textures\misc\vfx\storm_cloud.png"
     W, H = 512, 512
-    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    draw = ImageDraw.Draw(img)
-    random.seed(1337)
+    # Grayscale with alpha: RGB is pure white (255, 255, 255) so glColor4f controls exact shade!
+    # Alpha channel contains the fluffy organic cumulus cloud shape.
+    alpha_img = Image.new("L", (W, H), 0)
+    draw = ImageDraw.Draw(alpha_img)
+    random.seed(42)
 
     cx, cy = W // 2, H // 2
 
-    # Draw multiple overlapping soft cloud puffs
-    # Colors: dark storm navy/charcoal (#0a0f1d, #111827, #1e293b, #1e3a8a)
-    puffs = [
-        # (offset_x, offset_y, radius, alpha)
-        (0, 0, 160, 240),
-        (-60, -40, 130, 220),
-        (60, -35, 125, 220),
-        (-90, 20, 115, 200),
-        (85, 25, 120, 200),
-        (-35, 55, 110, 190),
-        (40, 50, 110, 190),
-        (0, -70, 105, 180),
-        (-120, -10, 95, 170),
-        (120, -10, 95, 170),
-        (0, 75, 90, 160),
+    # Multiple overlapping circular/elliptical lobes
+    lobes = [
+        # (ox, oy, rx, ry, alpha)
+        (0, 0, 160, 150, 255),
+        (-60, -35, 130, 120, 245),
+        (65, -30, 125, 115, 245),
+        (-95, 25, 115, 105, 240),
+        (90, 30, 120, 110, 240),
+        (-40, 60, 110, 100, 235),
+        (45, 55, 110, 100, 235),
+        (0, -75, 105, 95, 230),
+        (-125, -15, 95, 90, 220),
+        (125, -15, 95, 90, 220),
+        (0, 80, 95, 85, 220),
     ]
 
-    # Add small sub-puffs for organic fluffy silhouette
-    for _ in range(25):
+    # Dense clusters of medium & small organic puffs around the periphery
+    for _ in range(40):
         ang = random.uniform(0, 2 * math.pi)
-        dist = random.uniform(50, 170)
+        dist = random.uniform(40, 175)
         px = cx + dist * math.cos(ang)
         py = cy + dist * math.sin(ang)
-        pr = random.uniform(50, 90)
-        draw.ellipse([px - pr, py - pr, px + pr, py + pr], fill=(30, 41, 59, 140))
+        pr = random.uniform(45, 95)
+        a = int(random.uniform(160, 240))
+        draw.ellipse([px - pr, py - pr, px + pr, py + pr], fill=a)
 
-    # Base body puffs
-    for ox, oy, pr, alpha in puffs:
+    for ox, oy, rx, ry, a in lobes:
         px = cx + ox
         py = cy + oy
-        # Gradient fill from core to edge
-        draw.ellipse([px - pr, py - pr, px + pr, py + pr], fill=(15, 23, 42, alpha))
+        draw.ellipse([px - rx, py - ry, px + rx, py + ry], fill=a)
 
-    # Center dense dark core
-    draw.ellipse([cx - 100, cy - 80, cx + 100, cy + 80], fill=(10, 15, 30, 255))
-    draw.ellipse([cx - 70, cy - 50, cx + 70, cy + 50], fill=(5, 8, 20, 255))
+    # Core high-density center
+    draw.ellipse([cx - 110, cy - 90, cx + 110, cy + 90], fill=255)
+    draw.ellipse([cx - 80, cy - 60, cx + 80, cy + 60], fill=255)
 
-    # Heavy blur for perfectly soft volumetric cloud edges
-    blurred = img.filter(ImageFilter.GaussianBlur(radius=18))
-    # Extra pass of fine detail
-    draw_fine = ImageDraw.Draw(blurred)
-    for _ in range(15):
+    # Soft Gaussian blur to turn sharp circles into smooth volumetric cloud puffs
+    smooth_alpha = alpha_img.filter(ImageFilter.GaussianBlur(radius=20))
+
+    # Add a touch of fine organic edge detail
+    draw_fine = ImageDraw.Draw(smooth_alpha)
+    for _ in range(25):
         ang = random.uniform(0, 2 * math.pi)
-        dist = random.uniform(20, 110)
+        dist = random.uniform(60, 190)
         px = cx + dist * math.cos(ang)
         py = cy + dist * math.sin(ang)
-        pr = random.uniform(40, 70)
-        draw_fine.ellipse([px - pr, py - pr, px + pr, py + pr], fill=(30, 58, 138, 50)) # Deep electric blue internal tint
+        pr = random.uniform(30, 60)
+        draw_fine.ellipse([px - pr, py - pr, px + pr, py + pr], fill=120)
 
-    final_cloud = blurred.filter(ImageFilter.GaussianBlur(radius=8))
-    final_cloud.save(f"{out_dir}/storm_cloud.png", "PNG")
-    print("storm_cloud.png generated successfully!")
+    final_alpha = smooth_alpha.filter(ImageFilter.GaussianBlur(radius=10))
+
+    # Combine pure white RGB with the final cumulus alpha map
+    cloud_img = Image.new("RGBA", (W, H), (255, 255, 255, 255))
+    cloud_img.putalpha(final_alpha)
+    cloud_img.save(out_path, "PNG")
+    print("Generated white cumulus storm_cloud.png at:", out_path)
 
 if __name__ == "__main__":
     create_storm_cloud()

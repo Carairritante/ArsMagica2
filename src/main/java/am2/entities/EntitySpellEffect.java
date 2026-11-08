@@ -985,6 +985,12 @@ public class EntitySpellEffect extends Entity{
 		this.mergeCount = mergeCount;
 		this.lightningAoERadius = radius;
 		this.setRadius((float)radius);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 12.0D;
+		this.boundingBox.setBounds(
+				this.posX - radius - 8.0, this.posY - 4.0, this.posZ - radius - 8.0,
+				this.posX + radius + 8.0, this.posY + 36.0, this.posZ + radius + 8.0
+		);
 		if (stack != null){
 			this.dataWatcher.updateObject(WATCHER_STACK, stack);
 		}
