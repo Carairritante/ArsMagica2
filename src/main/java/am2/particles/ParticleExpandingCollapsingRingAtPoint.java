@@ -1,12 +1,13 @@
 package am2.particles;
 
-
 public class ParticleExpandingCollapsingRingAtPoint extends ParticleController{
 
 	private double minDistance;
 	private double maxDistance;
 	private double speed;
-	private CoordStore target;
+	private double targetX;
+	private double targetY;
+	private double targetZ;
 	private boolean collapseOnce;
 	private boolean isCollapsing;
 	private boolean hasCollapsed;
@@ -17,7 +18,9 @@ public class ParticleExpandingCollapsingRingAtPoint extends ParticleController{
 		this.minDistance = minDistance;
 		this.maxDistance = maxDistance;
 		this.speed = speed;
-		this.target = new CoordStore(x, y, z);
+		this.targetX = x;
+		this.targetY = y;
+		this.targetZ = z;
 	}
 
 	public ParticleExpandingCollapsingRingAtPoint setCollapseOnce(){
@@ -32,8 +35,8 @@ public class ParticleExpandingCollapsingRingAtPoint extends ParticleController{
 
 	@Override
 	public void doUpdate(){
-		double deltax = target.x - particle.posX;
-		double deltaz = target.z - particle.posZ;
+		double deltax = targetX - particle.posX;
+		double deltaz = targetZ - particle.posZ;
 
 		double angle = Math.atan2(deltaz, deltax);
 		double distance = Math.sqrt(deltaz * deltaz + deltax * deltax);
@@ -61,19 +64,9 @@ public class ParticleExpandingCollapsingRingAtPoint extends ParticleController{
 		particle.setPosition(particle.posX + posX, particle.posY, particle.posZ + posZ);
 	}
 
-	private class CoordStore{
-		public double x, y, z;
-
-		public CoordStore(double x, double y, double z){
-			this.x = x;
-			this.y = y;
-			this.z = z;
-		}
-	}
-
 	@Override
 	public ParticleController clone(){
-		return new ParticleExpandingCollapsingRingAtPoint(particle, target.x, target.y, target.z, minDistance, maxDistance, speed, priority, collapseOnce);
+		return new ParticleExpandingCollapsingRingAtPoint(particle, targetX, targetY, targetZ, minDistance, maxDistance, speed, priority, collapseOnce);
 	}
 
 }

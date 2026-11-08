@@ -1198,6 +1198,73 @@ public class RenderSpellEffect extends Render {
 		GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
 
 		// ==============================================================
+		// 3.1 SIGILO RÚNICO DO TROVÃO NO CHÃO (Arcane Lightning Sigil)
+		// ==============================================================
+		float sigilR = aoeRadius * (0.50f + 0.40f * intro);
+		float sigilAlpha = stormFade * 0.90f;
+		GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
+		GL11.glPolygonOffset(-3.0f, -3.0f);
+		GL11.glPushMatrix();
+		GL11.glTranslatef((float) x, groundSurfaceY + 0.01f, (float) z);
+		GL11.glRotatef(age * 1.5f, 0.0f, 1.0f, 0.0f);
+		this.bindTexture(texLightningSigil);
+		GL11.glColor4f(rLight, gLight, bLight, sigilAlpha * 0.85f);
+		renderHorizontalQuad(t, -sigilR, sigilR, -sigilR, sigilR, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+
+		// Concentric inner rune ring counter-rotation
+		GL11.glRotatef(-age * 2.8f, 0.0f, 1.0f, 0.0f);
+		GL11.glColor4f(rCore, gCore, bCore, sigilAlpha * 0.75f);
+		renderHorizontalQuad(t, -sigilR * 0.70f, sigilR * 0.70f, -sigilR * 0.70f, sigilR * 0.70f, 0.01f, 0.0f, 1.0f, 0.0f, 1.0f);
+		GL11.glPopMatrix();
+		GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
+
+		// ==============================================================
+		// 3.2 DESCIDA DO DRAGÃO PRIMORDIAL DO TROVÃO (Thunder Dragon VFX)
+		// ==============================================================
+		float dragonStart = (float) maxTicks * 0.08f;
+		float dragonEnd = (float) maxTicks * 0.82f;
+		if (age >= dragonStart && age <= dragonEnd) {
+			float dNorm = (age - dragonStart) / (dragonEnd - dragonStart);
+			float dAlpha = (float) Math.sin(dNorm * Math.PI) * stormFade;
+			float descentY = cloudBaseY - (cloudBaseY - groundSurfaceY - 1.5f) * (float) Math.pow(dNorm, 0.75);
+			float dScale = (tier >= 4 ? 9.0f : (tier >= 3 ? 7.2f : (tier >= 2 ? 5.5f : 4.2f)));
+
+			this.bindTexture(texLightningDragon);
+
+			// Central Thunder Dragon descent
+			GL11.glPushMatrix();
+			GL11.glTranslatef((float) x, descentY, (float) z);
+			GL11.glRotatef(age * 3.0f, 0.0f, 1.0f, 0.0f);
+			GL11.glColor4f(rLight, gLight, bLight, dAlpha * 0.88f);
+			renderVerticalQuadCross3(t, 0, -dScale * 0.5f, dScale * 0.5f, 0, dScale, 1.0f, 0.0f);
+
+			// Inner Plasma Core
+			GL11.glRotatef(-age * 5.0f, 0.0f, 1.0f, 0.0f);
+			GL11.glColor4f(rCore, gCore, bCore, dAlpha * 0.95f);
+			renderVerticalQuadCross3(t, 0, -dScale * 0.35f, dScale * 0.35f, 0, dScale * 0.70f, 1.0f, 0.0f);
+			GL11.glPopMatrix();
+
+			// Tier 4 Primordial Divine Dragon: Dual flanking celestial dragons
+			if (tier >= 4) {
+				for (int dragonSide = -1; dragonSide <= 1; dragonSide += 2) {
+					float sideAngle = age * 0.06f + (dragonSide > 0 ? 0.0f : (float) Math.PI);
+					float sideDist = aoeRadius * 0.45f;
+					float sx = (float) (x + sideDist * Math.cos(sideAngle));
+					float sz = (float) (z + sideDist * Math.sin(sideAngle));
+					float sDescentY = cloudBaseY - (cloudBaseY - groundSurfaceY - 1.0f) * (float) Math.pow(dNorm, 0.65);
+					float subScale = dScale * 0.55f;
+
+					GL11.glPushMatrix();
+					GL11.glTranslatef(sx, sDescentY, sz);
+					GL11.glRotatef(-age * 4.0f * dragonSide, 0.0f, 1.0f, 0.0f);
+					GL11.glColor4f(rDeep, gDeep, bDeep, dAlpha * 0.70f);
+					renderVerticalQuadCross3(t, 0, -subScale * 0.5f, subScale * 0.5f, 0, subScale, 1.0f, 0.0f);
+					GL11.glPopMatrix();
+				}
+			}
+		}
+
+		// ==============================================================
 		// 4. CHUVA MASSIVA DE RAIOS ZIGUE-ZAGUE 3D (3D Jagged Lightning)
 		// ==============================================================
 		int totalBolts = tier >= 4 ? 240 : (tier >= 3 ? 120 : (tier == 2 ? 50 : 18));

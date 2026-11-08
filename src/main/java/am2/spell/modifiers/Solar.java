@@ -88,18 +88,16 @@ public class Solar implements ISpellModifier{
 	}
 
 	public float getSpellTypeBonus(SpellModifiers type){
-		switch (type){
-		case HEALING:
+		if (type == SpellModifiers.HEALING)
 			return 1.3f; //bonus at 90% = 881%
-		case DAMAGE:
+		if (type == SpellModifiers.DAMAGE)
 			return 1.4f; //bonus at 90% = 1152%
-		case RADIUS:
+		if (type == SpellModifiers.RADIUS)
 			return 1.5f; //bonus at 90% = 1477%
-		case RANGE:
+		if (type == SpellModifiers.RANGE)
 			return 1.6f; //bonus at 90% = 1865%
-		case DURATION:
+		if (type == SpellModifiers.DURATION)
 			return 1.7f; //bonus at 90% = 2321%
-		}
 		return 1.2f; //bonus at 90% = 660%
 	}
 	@Override

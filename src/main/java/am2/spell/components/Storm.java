@@ -81,6 +81,10 @@ public class Storm implements ISpellComponent{
 			storm.setPosition(x, y, z);
 			storm.setOrbitalStorm(caster, stack, x, y, z, hasLightningDmg, finalDamage, radius, duration, followCaster);
 			world.spawnEntityInWorld(storm);
+
+			// Trigger ground epicentre dragon & lightning impact VFX for all nearby clients
+			int impactMergeCount = hasLightningDmg ? 30 : 15;
+			am2.network.AMNetHandler.INSTANCE.sendLightningImpactToClients(x, y, z, world, stack, impactMergeCount, 12.0);
 		}
 	}
 

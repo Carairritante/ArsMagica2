@@ -107,18 +107,16 @@ public class Lunar implements ISpellModifier{
 		return null;
 	}
 	public float getSpellTypeBonus(SpellModifiers type){
-		switch (type){
-		case HEALING:
+		if (type == SpellModifiers.HEALING)
 			return 1.3f; //bonus at 100% = 286%
-		case DAMAGE:
+		if (type == SpellModifiers.DAMAGE)
 			return 1.4f; //bonus at 100% = 384%
-		case RADIUS:
+		if (type == SpellModifiers.RADIUS)
 			return 1.5f; //bonus at 100% = 500%
-		case RANGE:
+		if (type == SpellModifiers.RANGE)
 			return 1.6f; //bonus at 100% = 655%
-		case DURATION:
+		if (type == SpellModifiers.DURATION)
 			return 1.7f; //bonus at 100% = 835%
-		}
 		return 1.2f; //bonus at 100% = 207%
 	}
 

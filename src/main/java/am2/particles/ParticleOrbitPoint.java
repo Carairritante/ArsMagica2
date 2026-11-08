@@ -4,10 +4,12 @@ import java.util.Random;
 
 public final class ParticleOrbitPoint extends ParticleController{
 
-	private CoordStore target;
+	private double targetX;
+	private double targetY;
+	private double targetZ;
 	private double distance;
 	private boolean rotateClockwise;
-	private double targetY;
+	private double targetOffsetY;
 	private double targetDistance;
 	private double orbitSpeed;
 	private double orbitAngle;
@@ -19,19 +21,11 @@ public final class ParticleOrbitPoint extends ParticleController{
 	private double shrinkSpeed = 0;
 	private double shrinkTargetDistance = 0;
 
-	private class CoordStore{
-		public double x, y, z;
-
-		public CoordStore(double x, double y, double z){
-			this.x = x;
-			this.y = y;
-			this.z = z;
-		}
-	}
-
 	public ParticleOrbitPoint(AMParticle particleEffect, double orbitX, double orbitY, double orbitZ, int priority, boolean exclusive){
 		super(particleEffect, priority, exclusive);
-		target = new CoordStore(orbitX, orbitY, orbitZ);
+		this.targetX = orbitX;
+		this.targetY = orbitY;
+		this.targetZ = orbitZ;
 		orbitAngle = particle.worldObj.rand.nextInt(360);
 		rotateClockwise = particle.worldObj.rand.nextInt(10) < 5;
 		generateNewTargetY();
@@ -72,19 +66,11 @@ public final class ParticleOrbitPoint extends ParticleController{
 	}
 
 	private void generateNewTargetY(){
-		if (target != null){
-			targetY = particle.worldObj.rand.nextDouble() * 2;
-		}else{
-			targetY = 0;
-		}
+		targetOffsetY = particle.worldObj.rand.nextDouble() * 2;
 	}
 
 	private void generateNewDistance(){
-		if (target != null){
-			targetDistance = particle.worldObj.rand.nextDouble() * 2;
-		}else{
-			targetDistance = 0;
-		}
+		targetDistance = particle.worldObj.rand.nextDouble() * 2;
 	}
 
 	/**
@@ -116,7 +102,7 @@ public final class ParticleOrbitPoint extends ParticleController{
 		double posZ;
 		double posY = particle.posY;
 
-		double relativeTargetY = target.y + targetY;
+		double relativeTargetY = targetY + targetOffsetY;
 
 		if (!ignoreYCoord){
 			if (Math.abs(particle.posY - relativeTargetY) < 0.1){
@@ -125,11 +111,11 @@ public final class ParticleOrbitPoint extends ParticleController{
 		}
 
 		if (useCurrentDistance){
-			double deltaz = target.z - particle.posZ;
-			double deltax = target.x - particle.posX;
+			double deltaz = targetZ - particle.posZ;
+			double deltax = targetX - particle.posX;
 			double currentDistance = Math.sqrt(deltaz * deltaz + deltax * deltax);
-			posX = target.x + (Math.cos(orbitAngle) * currentDistance);
-			posZ = target.z + (Math.sin(orbitAngle) * currentDistance);
+			posX = targetX + (Math.cos(orbitAngle) * currentDistance);
+			posZ = targetZ + (Math.sin(orbitAngle) * currentDistance);
 		}else{
 			if (shrinkingOrbit){
 				if (targetDistance <= shrinkTargetDistance){
@@ -143,8 +129,8 @@ public final class ParticleOrbitPoint extends ParticleController{
 					}
 				}
 			}
-			posX = target.x + (Math.cos(orbitAngle) * targetDistance);
-			posZ = target.z + (Math.sin(orbitAngle) * targetDistance);
+			posX = targetX + (Math.cos(orbitAngle) * targetDistance);
+			posZ = targetZ + (Math.sin(orbitAngle) * targetDistance);
 		}
 
 		if (!ignoreYCoord){
@@ -167,7 +153,7 @@ public final class ParticleOrbitPoint extends ParticleController{
 		}
 
 		if (orbitY != -512){
-			posY = target.y + orbitY;
+			posY = targetY + orbitY;
 		}
 
 		particle.setPosition(posX, posY, posZ);
@@ -180,7 +166,7 @@ public final class ParticleOrbitPoint extends ParticleController{
 
 	@Override
 	public ParticleController clone(){
-		ParticleOrbitPoint clone = new ParticleOrbitPoint(particle, target.x, target.y, target.z, priority, exclusive);
+		ParticleOrbitPoint clone = new ParticleOrbitPoint(particle, targetX, targetY, targetZ, priority, exclusive);
 		if (useCurrentDistance) clone.SetUseCurrentDistance();
 		else clone.SetTargetDistance(targetDistance);
 
