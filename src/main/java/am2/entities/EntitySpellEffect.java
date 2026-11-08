@@ -832,7 +832,7 @@ public class EntitySpellEffect extends Entity{
 
 		if (count <= 1){
 			// Single target cast: standard vanilla explosion
-			this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, finalPower, false, true);
+			this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, finalPower, false, false);
 		}else{
 			// Multi-block AoE cast: break all targeted blocks across the entire area!
 			int miningPower = 0;
@@ -860,7 +860,7 @@ public class EntitySpellEffect extends Entity{
 			}
 
 			// Single centralized explosion for entity damage, knockback and central crater
-			this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, Math.min(8.0f, finalPower), false, true);
+			this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, Math.min(8.0f, finalPower), false, false);
 		}
 
 		// Send visual effect packet to all clients in 96-block radius!
