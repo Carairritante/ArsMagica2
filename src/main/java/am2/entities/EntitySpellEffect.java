@@ -48,6 +48,7 @@ public class EntitySpellEffect extends Entity{
 	private static final int WATCHER_TYPE = 25; //0 == zone, 1 == rain of fire, 2 == blizzard, 3 == wall, 4 == wave
 	private static final int WATCHER_ROF_IGNITE = 26;
 	private static final int WATCHER_DAMAGEBONUS = 27;
+	private static final int WATCHER_TICKS_TO_EXIST = 28;
 
 	private static final int TYPE_ZONE = 0;
 	private static final int TYPE_ROF = 1;
@@ -62,6 +63,8 @@ public class EntitySpellEffect extends Entity{
 		this.rotation = 0;
 		this.rotationSpeed = 10f;
 		this.setSize(0.25f, 0.25f);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
 	}
 
 	public void SetCasterAndStack(EntityLivingBase caster, ItemStack spellScroll){
@@ -74,6 +77,9 @@ public class EntitySpellEffect extends Entity{
 
 	public void setRadius(float newRadius){
 		this.dataWatcher.updateObject(WATCHER_RADIUS, newRadius);
+		if (isRainOfFire()){
+			this.setSize(newRadius * 2.0f + 6.0f, 18.0f);
+		}
 	}
 
 	public float getRadius(){
@@ -87,10 +93,20 @@ public class EntitySpellEffect extends Entity{
 
 	public void setTicksToExist(int ticks){
 		this.ticksToExist = ticks;
+		this.dataWatcher.updateObject(WATCHER_TICKS_TO_EXIST, ticks);
 	}
 
 	public int getTicksToExist(){
-		return this.ticksToExist;
+		int dw = this.dataWatcher.getWatchableObjectInt(WATCHER_TICKS_TO_EXIST);
+		if (dw > 0 && dw != 100) return dw;
+		if (this.spellStack == null){
+			this.spellStack = this.dataWatcher.getWatchableObjectItemStack(WATCHER_STACK);
+		}
+		if (this.spellStack != null){
+			int calcDuration = SpellUtils.instance.getModifiedInt_Mul(100, this.spellStack, null, null, worldObj, 0, SpellModifiers.DURATION);
+			if (calcDuration > 0) return calcDuration;
+		}
+		return dw > 0 ? dw : this.ticksToExist;
 	}
 
 	public int getSpellColor(){
@@ -144,6 +160,7 @@ public class EntitySpellEffect extends Entity{
 		this.dataWatcher.addObject(WATCHER_TYPE, 0);
 		this.dataWatcher.addObject(WATCHER_ROF_IGNITE, (byte)0);
 		this.dataWatcher.addObject(WATCHER_DAMAGEBONUS, 1.0f);
+		this.dataWatcher.addObject(WATCHER_TICKS_TO_EXIST, 100);
 	}
 
 	@Override
@@ -170,7 +187,7 @@ public class EntitySpellEffect extends Entity{
 			break;
 		}
 
-		if (!worldObj.isRemote && this.ticksExisted >= this.ticksToExist){
+		if (!worldObj.isRemote && this.ticksExisted >= this.getTicksToExist()){
 			this.setDead();
 		}
 	}
@@ -615,6 +632,35 @@ public class EntitySpellEffect extends Entity{
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_ROF);
 		if (ignite)
 			this.dataWatcher.updateObject(WATCHER_ROF_IGNITE, (byte)1);
+		float r = getRadius();
+		if (r < 1.0f) r = 3.0f;
+		this.setSize(r * 2.0f + 6.0f, 18.0f);
+		this.ignoreFrustumCheck = true;
+	}
+
+	@Override
+	@cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
+	public boolean isInRangeToRenderDist(double distanceSq){
+		return distanceSq < 65536.0D;
+	}
+
+	@Override
+	@cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
+	public boolean isInRangeToRender3d(double x, double y, double z){
+		double dx = this.posX - x;
+		double dy = this.posY - y;
+		double dz = this.posZ - z;
+		return (dx * dx + dy * dy + dz * dz) < 65536.0D;
+	}
+
+	@Override
+	public AxisAlignedBB getBoundingBox(){
+		if (isRainOfFire()){
+			float r = getRadius() + 4.0f;
+			return AxisAlignedBB.getBoundingBox(this.posX - r, this.posY - 2.0, this.posZ - r,
+					this.posX + r, this.posY + 20.0, this.posZ + r);
+		}
+		return super.getBoundingBox();
 	}
 
 	public void setBlizzard(){

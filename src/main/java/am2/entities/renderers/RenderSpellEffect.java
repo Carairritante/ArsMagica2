@@ -44,11 +44,16 @@ public class RenderSpellEffect extends Render {
 		intro = (float) Math.sin(intro * Math.PI / 2.0); // smooth ease-out
 
 		float remaining = maxTicks - age;
-		float outro = remaining < 16 ? Math.max(0.0f, remaining / 16.0f) : 1.0f;
-		outro = (float) Math.sin(outro * Math.PI / 2.0);
+		float outro = 1.0f;
+		if (remaining < 18.0f && remaining >= 0.0f) {
+			outro = (float) Math.sin(Math.max(0.0f, remaining / 18.0f) * Math.PI / 2.0);
+		} else if (remaining < 0.0f) {
+			// Grace period if server tick pacing differs by a few frames before kill packet
+			outro = Math.max(0.0f, 1.0f + (remaining / 12.0f));
+		}
 
 		float globalScale = intro * outro;
-		if (globalScale <= 0.005f) return;
+		if (globalScale <= 0.002f) return;
 
 		float masterAlpha = globalScale;
 		float radius = effect.getRadius();
