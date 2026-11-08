@@ -37,6 +37,10 @@ public class RenderSpellEffect extends Render {
 	private static final ResourceLocation texStarfallPillar = new ResourceLocation("arsmagica2", "textures/misc/vfx/starfall_pillar.png");
 	private static final ResourceLocation texStarfallGround = new ResourceLocation("arsmagica2", "textures/misc/vfx/starfall_ground.png");
 
+	// Grow Mandala textures
+	private static final ResourceLocation texGrowGround = new ResourceLocation("arsmagica2", "textures/misc/vfx/grow_ground.png");
+	private static final ResourceLocation texGrowPulse = new ResourceLocation("arsmagica2", "textures/misc/vfx/grow_pulse.png");
+
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float yaw, float partialTicks) {
 		if (!(entity instanceof EntitySpellEffect)) {
@@ -51,6 +55,8 @@ public class RenderSpellEffect extends Render {
 			renderBlizzard(effect, x, y, z, partialTicks);
 		} else if (effect.isStarfallImpact()) {
 			renderStarfallImpact(effect, x, y, z, partialTicks);
+		} else if (effect.isGrowMandala()) {
+			renderGrowMandala(effect, x, y, z, partialTicks);
 		}
 	}
 
@@ -647,12 +653,123 @@ public class RenderSpellEffect extends Render {
 		}
 	}
 
+	private void renderGrowMandala(EntitySpellEffect effect, double x, double y, double z, float partialTicks) {
+		float age = effect.ticksExisted + partialTicks;
+		int maxTicks = effect.getTicksToExist();
+		if (maxTicks <= 0) maxTicks = 32;
+
+		// 1. Smooth intro & outro easing
+		float intro = Math.min(1.0f, age / 7.0f);
+		intro = (float) Math.sin(intro * Math.PI / 2.0); // smooth ease-in bloom
+
+		float remaining = maxTicks - age;
+		float outro = 1.0f;
+		if (remaining < 10.0f && remaining >= 0.0f) {
+			outro = (float) Math.sin(Math.max(0.0f, remaining / 10.0f) * Math.PI / 2.0);
+		} else if (remaining < 0.0f) {
+			outro = Math.max(0.0f, 1.0f + (remaining / 6.0f));
+		}
+
+		float globalAlpha = intro * outro;
+		if (globalAlpha <= 0.005f) return;
+
+		float baseRadius = effect.getRadius();
+		if (baseRadius <= 0.1f) baseRadius = 2.8f;
+		float radius = baseRadius * (0.85f + 0.15f * intro);
+
+		// Colors: default light spring green / mint white
+		int customColor = effect.getSpellColor();
+		float rLight = 0.40f, gLight = 1.0f, bLight = 0.55f;
+		float rLeaf = 0.25f, gLeaf = 0.95f, bLeaf = 0.45f;
+		float rCore = 0.85f, gCore = 1.0f, bCore = 0.88f;
+
+		if (customColor != -1) {
+			float cr = ((customColor >> 16) & 0xFF) / 255.0f;
+			float cg = ((customColor >> 8) & 0xFF) / 255.0f;
+			float cb = (customColor & 0xFF) / 255.0f;
+			rLeaf = cr; gLeaf = cg; bLeaf = cb;
+			rLight = Math.min(1.0f, cr * 1.25f); gLight = Math.min(1.0f, cg * 1.25f); bLight = Math.min(1.0f, cb * 1.25f);
+			rCore = Math.min(1.0f, cr * 1.4f + 0.2f); gCore = Math.min(1.0f, cg * 1.4f + 0.2f); bCore = Math.min(1.0f, cb * 1.4f + 0.2f);
+		}
+
+		Tessellator t = Tessellator.instance;
+
+		GL11.glPushMatrix();
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+
+		GL11.glDisable(GL11.GL_LIGHTING);
+		RenderHelper.disableStandardItemLighting();
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0f, 240.0f);
+
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+		GL11.glDepthMask(false);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+
+		float rot = age * 1.8f;
+
+		// 1. Primary Sacred Botanical Mandala
+		GL11.glPushMatrix();
+		GL11.glTranslatef((float) x, (float) y + 0.04f, (float) z);
+		GL11.glRotatef(rot, 0.0f, 1.0f, 0.0f);
+		this.bindTexture(texGrowGround);
+		GL11.glColor4f(rLight, gLight, bLight, globalAlpha * 0.95f);
+		renderHorizontalQuad(t, -radius, radius, -radius, radius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+		GL11.glPopMatrix();
+
+		// 2. Inner Lotus Core (counter-rotating with bright mint core)
+		GL11.glPushMatrix();
+		GL11.glTranslatef((float) x, (float) y + 0.05f, (float) z);
+		GL11.glRotatef(-rot * 0.7f, 0.0f, 1.0f, 0.0f);
+		this.bindTexture(texGrowGround);
+		GL11.glColor4f(rCore, gCore, bCore, globalAlpha * 0.85f);
+		renderHorizontalQuad(t, -radius * 0.55f, radius * 0.55f, -radius * 0.55f, radius * 0.55f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+		GL11.glPopMatrix();
+
+		// 3. Expanding Floral Life Ripple
+		float pulseDuration = 20.0f;
+		if (age < pulseDuration) {
+			float pNorm = age / pulseDuration;
+			float pScale = (0.3f + 1.15f * (float) Math.sqrt(pNorm)) * radius;
+			float pAlpha = (float) Math.sin(pNorm * Math.PI) * (1.0f - pNorm * 0.4f) * globalAlpha;
+
+			GL11.glPushMatrix();
+			GL11.glTranslatef((float) x, (float) y + 0.06f, (float) z);
+			GL11.glRotatef(-age * 2.5f, 0.0f, 1.0f, 0.0f);
+			this.bindTexture(texGrowPulse);
+			GL11.glColor4f(rLight, gLight, bLight, pAlpha * 0.90f);
+		renderHorizontalQuad(t, -pScale, pScale, -pScale, pScale, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+		GL11.glPopMatrix();
+		}
+
+		// 4. Smooth Sacred Geometry Vector Rings
+		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glPushMatrix();
+		GL11.glTranslatef((float) x, (float) y + 0.05f, (float) z);
+
+		// Outer boundary circle
+		GL11.glColor4f(rLight, gLight, bLight, globalAlpha * 0.75f);
+		renderSmoothVectorRing(radius * 0.98f, 48, 2.2f);
+
+		// Rotating 16-sided star polygon
+		GL11.glRotatef(rot * 0.5f, 0.0f, 1.0f, 0.0f);
+		GL11.glColor4f(rCore, gCore, bCore, globalAlpha * 0.60f);
+		renderSmoothVectorPolygon(radius * 0.72f, 16, 1.8f);
+
+		GL11.glPopMatrix();
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+
+		GL11.glPopAttrib();
+		GL11.glPopMatrix();
+	}
+
 	@Override
 	protected ResourceLocation getEntityTexture(Entity entity) {
 		if (entity instanceof EntitySpellEffect) {
 			EntitySpellEffect effect = (EntitySpellEffect) entity;
 			if (effect.isBlizzard()) return texBlizzardOuter;
 			if (effect.isStarfallImpact()) return texStarfallShockwave;
+			if (effect.isGrowMandala()) return texGrowGround;
 		}
 		return texOuter;
 	}

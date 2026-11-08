@@ -56,6 +56,9 @@ public class EntitySpellEffect extends Entity{
 	private static final int TYPE_WALL = 3;
 	private static final int TYPE_WAVE = 4;
 	public static final int TYPE_STARFALL_IMPACT = 5;
+	public static final int TYPE_GROW_MANDALA = 6;
+
+	private int explicitColor = -1;
 
 	private boolean firstApply = true;
 
@@ -117,7 +120,14 @@ public class EntitySpellEffect extends Entity{
 		return dw > 0 ? dw : this.ticksToExist;
 	}
 
+	public void setExplicitColor(int color){
+		this.explicitColor = color;
+	}
+
 	public int getSpellColor(){
+		if (this.explicitColor != -1){
+			return this.explicitColor;
+		}
 		if (spellStack == null){
 			spellStack = this.dataWatcher.getWatchableObjectItemStack(WATCHER_STACK);
 		}
@@ -195,7 +205,7 @@ public class EntitySpellEffect extends Entity{
 			break;
 		}
 
-		if (!worldObj.isRemote && this.ticksExisted >= this.getTicksToExist()){
+		if ((!worldObj.isRemote || isStarfallImpact() || isGrowMandala()) && this.ticksExisted >= this.getTicksToExist()){
 			this.setDead();
 		}
 	}
@@ -710,6 +720,21 @@ public class EntitySpellEffect extends Entity{
 
 	public boolean isStarfallImpact(){
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_STARFALL_IMPACT;
+	}
+
+	public void setGrowMandala(float radius, int colorModifier){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_GROW_MANDALA);
+		this.setTicksToExist(32);
+		this.setRadius(radius);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
+		if (colorModifier != -1){
+			this.setExplicitColor(colorModifier);
+		}
+	}
+
+	public boolean isGrowMandala(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_GROW_MANDALA;
 	}
 
 	@Override

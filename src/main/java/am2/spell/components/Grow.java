@@ -10,6 +10,9 @@ import am2.items.ItemsCommonProxy;
 import am2.particles.AMParticle;
 import am2.particles.ParticleFadeOut;
 import am2.particles.ParticleFloatUpward;
+import am2.entities.EntitySpellEffect;
+import net.minecraft.util.AxisAlignedBB;
+import java.util.List;
 import am2.particles.ParticleOrbitPoint;
 import am2.utility.DummyEntityPlayer;
 import cpw.mods.fml.common.eventhandler.Event.Result;
@@ -147,17 +150,61 @@ public class Grow implements ISpellComponent{
 
 	@Override
 	public void spawnParticles(World world, double x, double y, double z, EntityLivingBase caster, Entity target, Random rand, int colorModifier){
-		for (int i = 0; i < 25; ++i){
-			AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(world, "plant", x + 0.5, y + 1, z + 0.5);
+		if (!world.isRemote) return;
+
+		// 1. Coalesce multi-block / AoE casts into a single expanding Grow Mandala
+		double searchRadius = 14.0;
+		@SuppressWarnings("unchecked")
+		List<EntitySpellEffect> nearby = world.getEntitiesWithinAABB(EntitySpellEffect.class,
+				AxisAlignedBB.getBoundingBox(x - searchRadius, y - 6.0, z - searchRadius, x + searchRadius, y + 6.0, z + searchRadius));
+
+		EntitySpellEffect existing = null;
+		for (EntitySpellEffect effect : nearby){
+			if (effect.isGrowMandala() && !effect.isDead){
+				existing = effect;
+				break;
+			}
+		}
+
+		if (existing != null){
+			// Expand existing mandala instead of spawning redundant entities
+			float currentRadius = existing.getRadius();
+			if (currentRadius < 18.0f){
+				existing.setRadius(Math.min(18.0f, currentRadius + 0.35f));
+			}
+			// Keep alive slightly longer for continuous zone / multi-block ticks
+			if (existing.ticksExisted > 8){
+				existing.ticksExisted = Math.max(8, existing.ticksExisted - 2);
+			}
+		}else{
+			// Spawn a new botanical magic circle
+			double groundY = y + 1.02;
+			if (world.getBlock((int)Math.floor(x), (int)Math.floor(y + 1), (int)Math.floor(z)).isOpaqueCube()){
+				groundY = y + 2.02;
+			}else if (!world.getBlock((int)Math.floor(x), (int)Math.floor(y), (int)Math.floor(z)).isOpaqueCube()
+					&& world.getBlock((int)Math.floor(x), (int)Math.floor(y - 1), (int)Math.floor(z)).isOpaqueCube()){
+				groundY = y + 0.02;
+			}
+
+			EntitySpellEffect mandala = new EntitySpellEffect(world);
+			mandala.setPosition(x + 0.5, groundY, z + 0.5);
+			mandala.setGrowMandala(3.2f, colorModifier);
+			world.spawnEntityInWorld(mandala);
+		}
+
+		// 2. Subtle ambient sparkle: only 1 in 6 blocks spawns 1 gentle floating sparkle (no orbit controllers)
+		if (rand.nextInt(6) == 0){
+			AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(world, "plant", x + 0.5, y + 1.0, z + 0.5);
 			if (particle != null){
-				particle.addRandomOffset(1, 1, 1);
-				particle.AddParticleController(new ParticleFloatUpward(particle, 0, 0.1f, 1, false));
-				particle.AddParticleController(new ParticleOrbitPoint(particle, x + 0.5, y + 0.5, z + 0.5, 2, false).setIgnoreYCoordinate(true).SetOrbitSpeed(0.1f).SetTargetDistance(0.3f + rand.nextDouble() * 0.3));
-				particle.AddParticleController(new ParticleFadeOut(particle, 1, false).setFadeSpeed(0.05f).setKillParticleOnFinish(true));
-				particle.setMaxAge(20);
-				particle.setParticleScale(0.1f);
+				particle.addRandomOffset(0.6, 0.4, 0.6);
+				particle.AddParticleController(new ParticleFloatUpward(particle, 0, 0.05f, 1, false));
+				particle.AddParticleController(new ParticleFadeOut(particle, 1, false).setFadeSpeed(0.06f).setKillParticleOnFinish(true));
+				particle.setMaxAge(24);
+				particle.setParticleScale(0.12f);
 				if (colorModifier > -1){
 					particle.setRGBColorF(((colorModifier >> 16) & 0xFF) / 255.0f, ((colorModifier >> 8) & 0xFF) / 255.0f, (colorModifier & 0xFF) / 255.0f);
+				}else{
+					particle.setRGBColorF(0.40f, 1.0f, 0.55f);
 				}
 			}
 		}
