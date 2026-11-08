@@ -7,6 +7,7 @@ import am2.api.spell.component.interfaces.ISpellModifier;
 import am2.api.spell.enums.SpellModifiers;
 import am2.buffs.BuffEffectFrostSlowed;
 import am2.damage.DamageSources;
+import am2.network.AMNetHandler;
 import am2.particles.*;
 import am2.spell.SpellHelper;
 import am2.spell.SpellUtils;
@@ -57,6 +58,8 @@ public class EntitySpellEffect extends Entity{
 	private static final int TYPE_WAVE = 4;
 	public static final int TYPE_STARFALL_IMPACT = 5;
 	public static final int TYPE_GROW_MANDALA = 6;
+	public static final int TYPE_EXPLOSION_IMPACT = 7;
+	public static final int TYPE_EXPLOSION_FUSION = 8;
 
 	private int explicitColor = -1;
 
@@ -203,9 +206,12 @@ public class EntitySpellEffect extends Entity{
 		case TYPE_WAVE:
 			waveUpdate();
 			break;
+		case TYPE_EXPLOSION_FUSION:
+			detonateExplosionFusion();
+			break;
 		}
 
-		if ((!worldObj.isRemote || isStarfallImpact() || isGrowMandala()) && this.ticksExisted >= this.getTicksToExist()){
+		if ((!worldObj.isRemote || isStarfallImpact() || isGrowMandala() || isExplosionImpact()) && this.ticksExisted >= this.getTicksToExist()){
 			this.setDead();
 		}
 	}
@@ -767,6 +773,85 @@ public class EntitySpellEffect extends Entity{
 
 	public boolean isGrowMandala(){
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_GROW_MANDALA;
+	}
+
+	public void setExplosionFusion(EntityLivingBase caster, ItemStack stack, float basePower){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_EXPLOSION_FUSION);
+		this.setTicksToExist(5);
+		this.setRadius(basePower);
+		this.mergeCount = 1;
+		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster);
+		this.spellStack = stack;
+		this.ignoreFrustumCheck = true;
+	}
+
+	public void addMergedExplosion(double x, double y, double z, float extraPower){
+		this.mergeCount++;
+		double count = this.mergeCount;
+		this.posX = (this.posX * (count - 1.0) + x) / count;
+		this.posY = (this.posY * (count - 1.0) + y) / count;
+		this.posZ = (this.posZ * (count - 1.0) + z) / count;
+		this.setPosition(this.posX, this.posY, this.posZ);
+	}
+
+	public boolean isExplosionFusion(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_EXPLOSION_FUSION;
+	}
+
+	private void detonateExplosionFusion(){
+		if (this.worldObj.isRemote) return;
+
+		int count = this.mergeCount;
+		float basePower = this.dataWatcher.getWatchableObjectFloat(WATCHER_RADIUS);
+		if (basePower <= 0.5f) basePower = 2.5f;
+
+		// 4 Tiers of Blast Power
+		float finalPower = basePower;
+		if (count >= 25){
+			finalPower = basePower * 2.8f + 4.5f; // Tier 4 (Primordial Supernova)
+		}else if (count >= 10){
+			finalPower = basePower * 2.0f + 2.5f; // Tier 3 (Heavy Blast)
+		}else if (count >= 5){
+			finalPower = basePower * 1.4f + 1.2f; // Tier 2 (Medium Blast)
+		}else if (count > 1){
+			finalPower = basePower + (count - 1) * 0.15f;
+		}
+
+		finalPower = Math.min(13.5f, finalPower);
+
+		// Single unified Minecraft explosion
+		this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, finalPower, false, true);
+
+		// Send client visual packet
+		AMNetHandler.INSTANCE.sendExplosionImpactToClients(this.posX, this.posY, this.posZ, this.worldObj, this.spellStack, count);
+
+		this.setDead();
+	}
+
+	public void setExplosionImpact(ItemStack stack, int mergeCount){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_EXPLOSION_IMPACT);
+		this.setTicksToExist(20);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
+		float scale = 1.0f;
+		if (mergeCount >= 25){
+			scale = 4.5f + (float)Math.min(1.5f, (mergeCount - 25) * 0.03f);
+		}else if (mergeCount >= 10){
+			scale = 3.0f + (float)Math.min(1.0f, (mergeCount - 10) * 0.06f);
+		}else if (mergeCount >= 5){
+			scale = 1.8f + (mergeCount - 5) * 0.20f;
+		}else if (mergeCount > 1){
+			scale = 1.0f + (mergeCount - 1) * 0.15f;
+		}
+		this.setRadius(scale);
+		this.mergeCount = mergeCount;
+		if (stack != null){
+			this.dataWatcher.updateObject(WATCHER_STACK, stack);
+		}
+	}
+
+	public boolean isExplosionImpact(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_EXPLOSION_IMPACT;
 	}
 
 	@Override

@@ -185,6 +185,17 @@ public class AMNetHandler{
 		sendPacketToAllClientsNear(world.provider.dimensionId, x, y, z, 96, AMPacketIDs.STAR_FALL, writer.generate());
 	}
 
+	public void sendExplosionImpactToClients(double x, double y, double z, World world, ItemStack spellStack, int mergeCount){
+		AMDataWriter writer = new AMDataWriter().add(x).add(y).add(z);
+		if (spellStack != null)
+			writer.add(true).add(spellStack);
+		else
+			writer.add(false);
+		writer.add(mergeCount);
+
+		sendPacketToAllClientsNear(world.provider.dimensionId, x, y, z, 96, AMPacketIDs.EXPLOSION_IMPACT, writer.generate());
+	}
+
 	public void sendStarImpactToClients(double x, double y, double z, World world, ItemStack spellStack){
 		sendStarImpactToClients(x, y, z, world, spellStack, 1);
 	}

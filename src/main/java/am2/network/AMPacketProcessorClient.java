@@ -150,6 +150,9 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			case AMPacketIDs.STAR_FALL:
 				handleStarFall(remaining);
 				break;
+			case AMPacketIDs.EXPLOSION_IMPACT:
+				handleExplosionImpact(remaining);
+				break;
 			case AMPacketIDs.HIDDEN_COMPONENT_UNLOCK:
 				Minecraft.getMinecraft().guiAchievement.func_146256_a(ArcaneCompendium.componentUnlock);
 				break;
@@ -402,6 +405,43 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 				float pitch = mergeCount >= 25 ? 0.60f : (mergeCount >= 10 ? 0.72f : (mergeCount >= 5 ? 0.85f : 1.0f));
 				float volume = mergeCount >= 25 ? 3.8f : (mergeCount >= 10 ? 3.0f : 2.0f);
 				Minecraft.getMinecraft().theWorld.playSound(x, y, z, "arsmagica2:spell.special.starfall", volume, pitch, false);
+			}
+		}
+	}
+
+	private static long lastExplosionSoundTime = 0;
+	private static double lastExplosionSoundX = 0;
+	private static double lastExplosionSoundZ = 0;
+
+	private void handleExplosionImpact(byte[] data){
+		AMDataReader rdr = new AMDataReader(data, false);
+		double x = rdr.getDouble();
+		double y = rdr.getDouble();
+		double z = rdr.getDouble();
+
+		ItemStack spellStack = null;
+		if (rdr.getBoolean())
+			spellStack = rdr.getItemStack();
+
+		int mergeCount = 1;
+		try{
+			mergeCount = rdr.getInt();
+		}catch(Exception ignored){}
+
+		if (Minecraft.getMinecraft().theWorld != null){
+			EntitySpellEffect impact = new EntitySpellEffect(Minecraft.getMinecraft().theWorld);
+			impact.setPosition(x, y, z);
+			impact.setExplosionImpact(spellStack, mergeCount);
+			Minecraft.getMinecraft().theWorld.spawnEntityInWorld(impact);
+
+			long now = Minecraft.getMinecraft().theWorld.getTotalWorldTime();
+			if (now != lastExplosionSoundTime || Math.abs(x - lastExplosionSoundX) > 16.0 || Math.abs(z - lastExplosionSoundZ) > 16.0){
+				lastExplosionSoundTime = now;
+				lastExplosionSoundX = x;
+				lastExplosionSoundZ = z;
+				float pitch = mergeCount >= 25 ? 0.55f : (mergeCount >= 10 ? 0.70f : (mergeCount >= 5 ? 0.85f : 1.0f));
+				float volume = mergeCount >= 25 ? 4.0f : (mergeCount >= 10 ? 3.0f : (mergeCount >= 5 ? 2.2f : 1.5f));
+				Minecraft.getMinecraft().theWorld.playSound(x, y, z, "random.explode", volume, pitch, false);
 			}
 		}
 	}

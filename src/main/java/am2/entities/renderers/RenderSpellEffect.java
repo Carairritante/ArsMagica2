@@ -41,6 +41,10 @@ public class RenderSpellEffect extends Render {
 	private static final ResourceLocation texGrowGround = new ResourceLocation("arsmagica2", "textures/misc/vfx/grow_ground.png");
 	private static final ResourceLocation texGrowPulse = new ResourceLocation("arsmagica2", "textures/misc/vfx/grow_pulse.png");
 
+	// Explosion Impact textures
+	private static final ResourceLocation texExplosionGround = new ResourceLocation("arsmagica2", "textures/misc/vfx/explosion_ground.png");
+	private static final ResourceLocation texExplosionShockwave = new ResourceLocation("arsmagica2", "textures/misc/vfx/explosion_shockwave.png");
+
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float yaw, float partialTicks) {
 		if (!(entity instanceof EntitySpellEffect)) {
@@ -57,6 +61,8 @@ public class RenderSpellEffect extends Render {
 			renderStarfallImpact(effect, x, y, z, partialTicks);
 		} else if (effect.isGrowMandala()) {
 			renderGrowMandala(effect, x, y, z, partialTicks);
+		} else if (effect.isExplosionImpact()) {
+			renderExplosionImpact(effect, x, y, z, partialTicks);
 		}
 	}
 
@@ -818,6 +824,170 @@ public class RenderSpellEffect extends Render {
 		GL11.glPopMatrix();
 	}
 
+	private void renderExplosionImpact(EntitySpellEffect effect, double x, double y, double z, float partialTicks) {
+		float age = effect.ticksExisted + partialTicks;
+		int maxTicks = effect.getTicksToExist();
+		if (maxTicks <= 0) maxTicks = 20;
+
+		float progress = Math.min(1.0f, age / (float) maxTicks);
+		float fadeAlpha = (float) Math.pow(1.0f - progress, 1.4);
+		if (fadeAlpha <= 0.005f) return;
+
+		float scale = effect.getRadius();
+		if (scale <= 0.1f) scale = 1.0f;
+		int count = effect.getMergeCount();
+		int tier = count >= 25 ? 4 : (count >= 10 ? 3 : (count >= 5 ? 2 : 1));
+
+		// Palette: default solar blast orange & gold
+		int customColor = effect.getSpellColor();
+		float rLight = 1.0f, gLight = 0.58f, bLight = 0.15f;
+		float rCore = 1.0f, gCore = 0.95f, bCore = 0.80f;
+		float rEdge = 0.95f, gEdge = 0.22f, bEdge = 0.05f;
+
+		if (customColor != -1) {
+			float cr = ((customColor >> 16) & 0xFF) / 255.0f;
+			float cg = ((customColor >> 8) & 0xFF) / 255.0f;
+			float cb = (customColor & 0xFF) / 255.0f;
+			rLight = cr; gLight = cg; bLight = cb;
+			rEdge = Math.min(1.0f, cr * 0.8f); gEdge = Math.min(1.0f, cg * 0.8f); bEdge = Math.min(1.0f, cb * 0.8f);
+			rCore = Math.min(1.0f, cr * 1.4f + 0.2f); gCore = Math.min(1.0f, cg * 1.4f + 0.2f); bCore = Math.min(1.0f, cb * 1.4f + 0.2f);
+		}
+
+		Tessellator t = Tessellator.instance;
+
+		GL11.glPushMatrix();
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+
+		GL11.glDisable(GL11.GL_LIGHTING);
+		RenderHelper.disableStandardItemLighting();
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0f, 240.0f);
+
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+		GL11.glDepthMask(false);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+
+		// 1. Ground Blast Rune & Scorched Crater
+		float groundRadius = (2.6f + progress * 0.7f) * scale;
+		GL11.glPushMatrix();
+		GL11.glTranslatef((float) x, (float) y + 0.03f, (float) z);
+		GL11.glRotatef(age * 3.5f, 0.0f, 1.0f, 0.0f);
+		this.bindTexture(texExplosionGround);
+		GL11.glColor4f(rLight, gLight, bLight, fadeAlpha * 0.95f);
+		renderHorizontalQuad(t, -groundRadius, groundRadius, -groundRadius, groundRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+		GL11.glPopMatrix();
+
+		// 2. Rapidly Expanding Fiery Shockwave
+		float shockRadius = (0.4f + 3.6f * (float) Math.sqrt(progress)) * scale;
+		float shockAlpha = (float) Math.sin((1.0f - progress) * Math.PI * 0.5) * fadeAlpha;
+
+		GL11.glPushMatrix();
+		GL11.glTranslatef((float) x, (float) y + 0.05f, (float) z);
+		this.bindTexture(texExplosionShockwave);
+		GL11.glColor4f(rLight, gLight, bLight, shockAlpha * 0.92f);
+		renderHorizontalQuad(t, -shockRadius, shockRadius, -shockRadius, shockRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+
+		// Secondary harmonic wave for Tier 2+
+		if (tier >= 2) {
+			float shockRadius2 = shockRadius * 0.75f;
+			GL11.glColor4f(rCore, gCore, bCore, shockAlpha * 0.70f);
+			renderHorizontalQuad(t, -shockRadius2, shockRadius2, -shockRadius2, shockRadius2, 0.01f, 0.0f, 1.0f, 0.0f, 1.0f);
+		}
+		GL11.glPopMatrix();
+
+		// 3. Supernova Flash Core (White-hot fireball flash during first 7 ticks)
+		float flashDuration = 0.35f;
+		if (progress < flashDuration) {
+			float fNorm = progress / flashDuration;
+			float fAlpha = (1.0f - fNorm);
+			float fRadius = (1.4f + fNorm * 3.2f) * scale;
+
+			this.bindTexture(texStarfallCore);
+			GL11.glPushMatrix();
+			GL11.glTranslatef((float) x, (float) y + 0.8f * scale, (float) z);
+			GL11.glRotatef(age * 8.0f, 0.0f, 1.0f, 0.0f);
+			GL11.glColor4f(rCore, gCore, bCore, fAlpha);
+			renderVerticalQuadCross3(t, 0.0, -fRadius, fRadius, 0.0, fRadius * 2.0f, 0.0f, 1.0f);
+			renderHorizontalQuad(t, -fRadius, fRadius, -fRadius, fRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+			GL11.glPopMatrix();
+		}
+
+		// 4. Concentric Flaming Vector Blast Rings
+		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glPushMatrix();
+		GL11.glTranslatef((float) x, (float) y + 0.04f, (float) z);
+
+		// Outer shock ring (All Tiers)
+		float outerWidth = tier >= 4 ? 3.2f : (tier >= 3 ? 2.6f : 2.0f);
+		GL11.glColor4f(rLight, gLight, bLight, shockAlpha * 0.85f);
+		renderSmoothVectorRing(shockRadius * 0.96f, 48, outerWidth);
+
+		// Rotating Star Polygon (Tier 1: 8-pt, Tier 2: 12-pt, Tier 3+: 16-pt)
+		int sides = tier >= 3 ? 16 : (tier == 2 ? 12 : 8);
+		GL11.glPushMatrix();
+		GL11.glRotatef(age * 4.0f, 0.0f, 1.0f, 0.0f);
+		GL11.glColor4f(rCore, gCore, bCore, fadeAlpha * 0.70f);
+		renderSmoothVectorPolygon(groundRadius * 0.75f, sides, 2.0f);
+		GL11.glPopMatrix();
+
+		// Tier 2+: 2nd Concentric Ring & Secondary Star
+		if (tier >= 2) {
+			GL11.glColor4f(rEdge, gEdge, bEdge, shockAlpha * 0.75f);
+			renderSmoothVectorRing(shockRadius * 0.78f, 42, 2.0f);
+
+			GL11.glPushMatrix();
+			GL11.glRotatef(-age * 3.0f, 0.0f, 1.0f, 0.0f);
+			GL11.glColor4f(rLight, gLight, bLight, fadeAlpha * 0.60f);
+		renderSmoothVectorPolygon(groundRadius * 0.52f, 8, 1.8f);
+			GL11.glPopMatrix();
+		}
+
+		// Tier 3+: 3rd Concentric Ring & Molten Solar Corona
+		if (tier >= 3) {
+			GL11.glColor4f(rCore, gCore, bCore, shockAlpha * 0.80f);
+			renderSmoothVectorRing(shockRadius * 0.60f, 36, 2.2f);
+
+			GL11.glPushMatrix();
+			GL11.glRotatef(age * 5.5f, 0.0f, 1.0f, 0.0f);
+			GL11.glColor4f(rCore, gCore, bCore, fadeAlpha * 0.65f);
+		renderSmoothVectorPolygon(groundRadius * 0.36f, 12, 2.0f);
+			GL11.glPopMatrix();
+		}
+
+		// Tier 4: 4th Concentric Ring & Primordial Solar Seal
+		if (tier >= 4) {
+			GL11.glColor4f(rLight, gLight, bLight, shockAlpha * 0.90f);
+			renderSmoothVectorRing(shockRadius * 0.44f, 32, 2.4f);
+
+			GL11.glPushMatrix();
+			GL11.glRotatef(-age * 6.0f, 0.0f, 1.0f, 0.0f);
+			GL11.glColor4f(rCore, gCore, bCore, fadeAlpha * 0.80f);
+		renderSmoothVectorPolygon(groundRadius * 0.24f, 16, 2.2f);
+			GL11.glPopMatrix();
+		}
+
+		GL11.glPopMatrix();
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+
+		// 5. Tier 4: Ascending Column of Holy Blast Fire / Eruption Pillar
+		if (tier >= 4) {
+			float pDuration = 0.75f;
+			if (progress < pDuration) {
+				float pNorm = progress / pDuration;
+				float pAlpha = (float) Math.sin((1.0f - pNorm) * Math.PI * 0.5);
+				float pWidth = 4.2f * (1.0f - pNorm * 0.35f);
+				float pillarHeight = 34.0f + scale * 4.0f;
+
+				this.bindTexture(texStarfallPillar);
+				GL11.glColor4f(rLight, gLight, bLight, pAlpha * 0.92f);
+				renderVerticalQuadCross3(t, x, y + 0.05f, y + pillarHeight, z, pWidth, 1.0f, 0.0f);
+			}
+		}
+
+		GL11.glPopAttrib();
+		GL11.glPopMatrix();
+	}
+
 	@Override
 	protected ResourceLocation getEntityTexture(Entity entity) {
 		if (entity instanceof EntitySpellEffect) {
@@ -825,6 +995,7 @@ public class RenderSpellEffect extends Render {
 			if (effect.isBlizzard()) return texBlizzardOuter;
 			if (effect.isStarfallImpact()) return texStarfallShockwave;
 			if (effect.isGrowMandala()) return texGrowGround;
+			if (effect.isExplosionImpact()) return texExplosionShockwave;
 		}
 		return texOuter;
 	}
