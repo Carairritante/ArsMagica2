@@ -77,9 +77,6 @@ public class EntitySpellEffect extends Entity{
 
 	public void setRadius(float newRadius){
 		this.dataWatcher.updateObject(WATCHER_RADIUS, newRadius);
-		if (isRainOfFire()){
-			this.setSize(newRadius * 2.0f + 6.0f, 18.0f);
-		}
 	}
 
 	public float getRadius(){
@@ -632,10 +629,6 @@ public class EntitySpellEffect extends Entity{
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_ROF);
 		if (ignite)
 			this.dataWatcher.updateObject(WATCHER_ROF_IGNITE, (byte)1);
-		float r = getRadius();
-		if (r < 1.0f) r = 3.0f;
-		this.setSize(r * 2.0f + 6.0f, 18.0f);
-		this.ignoreFrustumCheck = true;
 	}
 
 	@Override
@@ -653,15 +646,7 @@ public class EntitySpellEffect extends Entity{
 		return (dx * dx + dy * dy + dz * dz) < 65536.0D;
 	}
 
-	@Override
-	public AxisAlignedBB getBoundingBox(){
-		if (isRainOfFire()){
-			float r = getRadius() + 4.0f;
-			return AxisAlignedBB.getBoundingBox(this.posX - r, this.posY - 2.0, this.posZ - r,
-					this.posX + r, this.posY + 20.0, this.posZ + r);
-		}
-		return super.getBoundingBox();
-	}
+
 
 	public void setBlizzard(){
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_BLIZ);
