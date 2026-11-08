@@ -80,6 +80,16 @@ public class EntitySpellEffect extends Entity{
 		this.maxTicksToEffect = newTickRate;
 		this.ticksToEffect = newTickRate;
 	}
+	private int wavePulsesRemaining = -1;
+	private int wavePulseInterval = 1;
+
+	public void setWavePulseLimit(int maxPulses){
+		this.wavePulsesRemaining = maxPulses;
+		int duration = this.getTicksToExist();
+		this.wavePulseInterval = Math.max(1, duration / maxPulses);
+		this.ticksToEffect = 0;
+	}
+
 
 	public void setTicksToExist(int ticks){
 		this.ticksToExist = ticks;
@@ -513,8 +523,29 @@ public class EntitySpellEffect extends Entity{
 	}
 
 	private void waveUpdate(){
-		ticksToEffect = 0;
-		wallUpdate();
+		boolean isLimited = this.wavePulsesRemaining >= 0;
+		boolean doPulse = false;
+
+		if (isLimited){
+			if (wavePulsesRemaining > 0){
+				ticksToEffect--;
+				if (ticksToEffect <= 0){
+					doPulse = true;
+					wavePulsesRemaining--;
+				}
+			}
+		} else {
+			doPulse = true;
+		}
+
+		if (worldObj.isRemote){
+			wallUpdate();
+		} else if (doPulse){
+			ticksToEffect = 0;
+			wallUpdate();
+			ticksToEffect = isLimited ? wavePulseInterval : 0;
+		}
+
 		double dx = Math.cos(Math.toRadians(this.rotationYaw + 90));
 		double dz = Math.sin(Math.toRadians(this.rotationYaw + 90));
 
@@ -532,9 +563,11 @@ public class EntitySpellEffect extends Entity{
 			dummycaster = DummyEntityPlayer.fromEntityLiving(new EntityDummyCaster(worldObj));
 		}
 
-		AMVector3[] vecs = getAllBlockLocationsBetween(a, b);
-		for (AMVector3 vec : vecs){
-			SpellHelper.instance.applyStageToGround(spellStack, dummycaster, worldObj, (int)vec.x, (int)vec.y, (int)vec.z, 0, vec.x + 0.5, vec.y + 0.5, vec.z + 0.5, 0, false);
+		if (!worldObj.isRemote && doPulse){
+			AMVector3[] vecs = getAllBlockLocationsBetween(a, b);
+			for (AMVector3 vec : vecs){
+				SpellHelper.instance.applyStageToGround(spellStack, dummycaster, worldObj, (int)vec.x, (int)vec.y, (int)vec.z, 0, vec.x + 0.5, vec.y + 0.5, vec.z + 0.5, 0, false);
+			}
 		}
 
 	}
