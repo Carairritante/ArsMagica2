@@ -217,6 +217,9 @@ public class EntitySpellEffect extends Entity{
 		case TYPE_LIGHTNING_FUSION:
 			detonateLightningFusion();
 			break;
+		case TYPE_LIGHTNING_IMPACT:
+			lightningImpactUpdate();
+			break;
 		}
 
 		if ((!worldObj.isRemote || isStarfallImpact() || isGrowMandala() || isExplosionImpact() || isLightningImpact()) && this.ticksExisted >= this.getTicksToExist()){
@@ -977,7 +980,7 @@ public class EntitySpellEffect extends Entity{
 
 	public void setLightningImpact(ItemStack stack, int mergeCount, double radius){
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_LIGHTNING_IMPACT);
-		int duration = mergeCount >= 30 ? 60 : (mergeCount >= 15 ? 45 : (mergeCount >= 5 ? 30 : 20));
+		int duration = mergeCount >= 30 ? 70 : (mergeCount >= 15 ? 50 : (mergeCount >= 5 ? 35 : 20));
 		this.setTicksToExist(duration);
 		this.mergeCount = mergeCount;
 		this.lightningAoERadius = radius;
@@ -989,6 +992,21 @@ public class EntitySpellEffect extends Entity{
 
 	public boolean isLightningImpact(){
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_LIGHTNING_IMPACT;
+	}
+
+	private void lightningImpactUpdate(){
+		if (this.worldObj.isRemote){
+			int count = this.mergeCount;
+			int tier = count >= 30 ? 4 : (count >= 15 ? 3 : (count >= 5 ? 2 : 1));
+			if (tier >= 2){
+				int interval = tier >= 4 ? 8 : (tier >= 3 ? 12 : 16);
+				if (this.ticksExisted % interval == 0 && this.ticksExisted < this.getTicksToExist() * 0.85f){
+					float pitch = 0.65f + this.rand.nextFloat() * 0.35f;
+					float vol = tier >= 4 ? 3.5f : 2.0f;
+					this.worldObj.playSound(this.posX, this.posY, this.posZ, "ambient.weather.thunder", vol, pitch, false);
+				}
+			}
+		}
 	}
 
 	@Override
