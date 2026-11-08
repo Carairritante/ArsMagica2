@@ -138,8 +138,10 @@ public class EntityThrownRock extends EntityLiving{
 
 	public float getVisualScale(){
 		int count = getStarMergeCount();
-		if (count >= 10){
-			return 2.8f + (float)Math.min(1.2f, (count - 10) * 0.05f);
+		if (count >= 25){
+			return 4.2f + (float)Math.min(1.0f, (count - 25) * 0.03f);
+		}else if (count >= 10){
+			return 2.8f + (float)Math.min(0.9f, (count - 10) * 0.05f);
 		}else if (count >= 5){
 			return 1.8f + (count - 5) * 0.18f;
 		}else if (count > 1){
@@ -292,7 +294,10 @@ public class EntityThrownRock extends EntityLiving{
 
 		if (getIsShootingStar()){
 			int count = getStarMergeCount();
-			float impactRadius = count >= 10 ? 13.0f : (count >= 5 ? 8.5f : 5.0f);
+			float impactRadius = 5.0f;
+			if (count >= 25) impactRadius = 18.0f;
+			else if (count >= 10) impactRadius = 13.0f;
+			else if (count >= 5) impactRadius = 8.5f;
 
 			AMNetHandler.INSTANCE.sendStarImpactToClients(posX, posY + ((movingobjectposition.typeOfHit == MovingObjectType.ENTITY) ? -movingobjectposition.entityHit.getEyeHeight() : 1.5f), posZ, worldObj, this.getSpellStack(), count);
 			List<EntityLivingBase> ents = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, boundingBox.expand(impactRadius, impactRadius, impactRadius));

@@ -579,9 +579,16 @@ public class RenderSpellEffect extends Render {
 		GL11.glPushMatrix();
 		GL11.glTranslatef((float) x, (float) y + 0.05f, (float) z);
 		float shockExpansion = (float) Math.sin(progress * Math.PI * 0.5);
-		float shockRadius = (0.8f + shockExpansion * 8.5f) * (0.75f + scale * 0.35f);
+		float shockRadius = (0.8f + shockExpansion * 8.5f) * (0.75f + scale * 0.40f);
 		GL11.glColor4f(rShock, gShock, bShock, 0.90f * fadeAlpha);
 		renderHorizontalQuad(t, -shockRadius, shockRadius, -shockRadius, shockRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+
+		// Tier 4 Secondary Accretion Shockwave
+		if (scale >= 4.0f){
+			float shockRadius2 = shockRadius * 0.65f;
+			GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.75f * fadeAlpha);
+			renderHorizontalQuad(t, -shockRadius2, shockRadius2, -shockRadius2, shockRadius2, 0.02f, 0.0f, 1.0f, 0.0f, 1.0f);
+		}
 		GL11.glPopMatrix();
 
 		// 3. Ascending Pillar of Holy Starlight (shoots straight up)
@@ -589,8 +596,8 @@ public class RenderSpellEffect extends Render {
 		if (progress < pillarDuration) {
 			float pNorm = progress / pillarDuration;
 			float pAlpha = (float) Math.sin((1.0f - pNorm) * Math.PI * 0.5);
-			float pWidth = 3.2f * scale * (1.0f - pNorm * 0.35f);
-			float pillarHeight = 36.0f + (scale - 1.0f) * 8.0f;
+			float pWidth = 3.2f * Math.min(4.5f, scale) * (1.0f - pNorm * 0.35f);
+			float pillarHeight = 36.0f + (scale - 1.0f) * 10.0f;
 
 			this.bindTexture(texStarfallPillar);
 			GL11.glColor4f(rPillar, gPillar, bPillar, pAlpha * 0.92f);

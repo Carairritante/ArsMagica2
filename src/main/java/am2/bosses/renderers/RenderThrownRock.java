@@ -151,6 +151,17 @@ public class RenderThrownRock extends RenderLiving {
 			GL11.glPopMatrix();
 		}
 
+		// Tier 4 Accretion Disc (Primordial Star 25+ merged stars)
+		if (visualScale >= 4.0f){
+			GL11.glPushMatrix();
+			GL11.glRotatef(-age * 6.5f, 0.0f, 1.0f, 0.0f);
+			GL11.glRotatef(75.0f, 0.0f, 0.0f, 1.0f);
+			GL11.glColor4f(rStar, gStar, bStar, 0.95f);
+			float ringScale4 = 3.8f * visualScale;
+			renderHorizontalQuad(t, -ringScale4, ringScale4, -ringScale4, ringScale4, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+			GL11.glPopMatrix();
+		}
+
 		// 6. 3D Vector Octagram Frame (smooth mathematical celestial lattice)
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		GL11.glPushMatrix();
@@ -158,6 +169,12 @@ public class RenderThrownRock extends RenderLiving {
 		GL11.glRotatef(15.0f, 1.0f, 0.0f, 1.0f);
 		GL11.glColor4f(1.0f, 1.0f, 1.0f, 0.80f);
 		renderSmoothVectorPolygon(2.4f * visualScale, 8, 2.0f);
+		if (visualScale >= 4.0f){
+			// Secondary offset octagram forming a 16-pointed sacred star frame
+			GL11.glRotatef(22.5f, 0.0f, 1.0f, 0.0f);
+			GL11.glColor4f(rTrail, gTrail, bTrail, 0.70f);
+			renderSmoothVectorPolygon(2.6f * visualScale, 8, 1.8f);
+		}
 		GL11.glPopMatrix();
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
 

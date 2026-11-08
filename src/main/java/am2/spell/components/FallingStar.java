@@ -44,10 +44,10 @@ public class FallingStar implements ISpellComponent{
 			double targetY = y - 50.0;
 			float starDamage = 2.0f * damageMultiplier;
 
-			// Star Fusion: Check if a shooting star already exists in this area (12-block radius)
-			double fusionRadius = 12.0;
+			// Star Fusion: Check if a shooting star already exists in this area (22-block radius for Zone/Wave unification)
+			double fusionRadius = 22.0;
 			List<EntityThrownRock> nearbyStars = world.getEntitiesWithinAABB(EntityThrownRock.class,
-					AxisAlignedBB.getBoundingBox(x - fusionRadius, targetY - 10.0, z - fusionRadius, x + fusionRadius, targetY + 80.0, z + fusionRadius));
+					AxisAlignedBB.getBoundingBox(x - fusionRadius, targetY - 15.0, z - fusionRadius, x + fusionRadius, targetY + 95.0, z + fusionRadius));
 
 			for (EntityThrownRock rock : nearbyStars){
 				if (rock.getIsShootingStar() && !rock.isDead){

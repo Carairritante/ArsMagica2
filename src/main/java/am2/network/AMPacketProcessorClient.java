@@ -399,8 +399,8 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 				lastStarSoundTime = now;
 				lastStarSoundX = x;
 				lastStarSoundZ = z;
-				float pitch = mergeCount >= 10 ? 0.72f : (mergeCount >= 5 ? 0.85f : 1.0f);
-				float volume = mergeCount >= 10 ? 3.0f : 2.0f;
+				float pitch = mergeCount >= 25 ? 0.60f : (mergeCount >= 10 ? 0.72f : (mergeCount >= 5 ? 0.85f : 1.0f));
+				float volume = mergeCount >= 25 ? 3.8f : (mergeCount >= 10 ? 3.0f : 2.0f);
 				Minecraft.getMinecraft().theWorld.playSound(x, y, z, "arsmagica2:spell.special.starfall", volume, pitch, false);
 			}
 		}

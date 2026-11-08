@@ -656,8 +656,10 @@ public class EntitySpellEffect extends Entity{
 		this.ignoreFrustumCheck = true;
 		this.renderDistanceWeight = 10.0D;
 		float scale = 1.0f;
-		if (mergeCount >= 10){
-			scale = 2.8f + (float)Math.min(1.2f, (mergeCount - 10) * 0.05f);
+		if (mergeCount >= 25){
+			scale = 4.2f + (float)Math.min(1.0f, (mergeCount - 25) * 0.03f);
+		}else if (mergeCount >= 10){
+			scale = 2.8f + (float)Math.min(0.9f, (mergeCount - 10) * 0.05f);
 		}else if (mergeCount >= 5){
 			scale = 1.8f + (mergeCount - 5) * 0.18f;
 		}else if (mergeCount > 1){
