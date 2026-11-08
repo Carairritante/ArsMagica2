@@ -83,9 +83,13 @@ public class EntitySpellEffect extends Entity{
 	private int wavePulsesRemaining = -1;
 	private int wavePulseInterval = 1;
 
+	public int getTicksToExist(){
+		return this.ticksToExist;
+	}
+
 	public void setWavePulseLimit(int maxPulses){
 		this.wavePulsesRemaining = maxPulses;
-		int duration = this.getTicksToExist();
+		int duration = this.ticksToExist > 0 ? this.ticksToExist : 20;
 		this.wavePulseInterval = Math.max(1, duration / maxPulses);
 		this.ticksToEffect = 0;
 	}
