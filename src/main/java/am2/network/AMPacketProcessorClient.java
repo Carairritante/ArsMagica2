@@ -400,27 +400,7 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			Minecraft.getMinecraft().theWorld.spawnEntityInWorld(impact);
 		}
 
-		for (int i = 0; i < 360; i += 30){
-			AMParticle effect = (AMParticle)AMCore.instance.proxy.particleManager.spawn(Minecraft.getMinecraft().theWorld, "sparkle2", x, y + 1.2, z);
-			if (effect != null){
-				effect.setIgnoreMaxAge(true);
-				effect.AddParticleController(new ParticleMoveOnHeading(effect, i, 0, 0.45f, 1, false));
-				float clrMod = Minecraft.getMinecraft().theWorld.rand.nextFloat();
-				int finalColor = -1;
-				if (color == -1)
-					finalColor = MathUtilities.colorFloatsToInt(0.35f * clrMod, 0.75f * clrMod, 1.0f * clrMod);
-				else{
-					float[] colors = MathUtilities.colorIntToFloats(color);
-					for (int c = 0; c < colors.length; ++c)
-						colors[c] = colors[c] * clrMod;
-					finalColor = MathUtilities.colorFloatsToInt(colors[0], colors[1], colors[2]);
-				}
-				effect.setParticleScale(0.8f);
-				effect.noClip = false;
-				effect.setRGBColorI(finalColor);
-				effect.AddParticleController(new ParticleFadeOut(effect, 1, false).setFadeSpeed(0.06f).setKillParticleOnFinish(true));
-			}
-		}
+
 
 		Minecraft.getMinecraft().theWorld.playSound(x, y, z, "arsmagica2:spell.special.starfall", 2.0f, 1.0f, false);
 	}

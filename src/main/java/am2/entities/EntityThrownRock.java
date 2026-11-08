@@ -202,25 +202,7 @@ public class EntityThrownRock extends EntityLiving{
 					}
 				}
 
-				if (this.ticksExisted % 2 == 0){
-					AMParticle star = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "ember", posX, posY, posZ);
-					if (star != null){
-						star.setMaxAge(14);
-						float clrMod = rand.nextFloat();
-						int finalColor = -1;
-						if (color == -1)
-							finalColor = MathUtilities.colorFloatsToInt(0.35f * clrMod, 0.75f * clrMod, 1.0f * clrMod);
-						else{
-							float[] colors = MathUtilities.colorIntToFloats(color);
-							for (int c = 0; c < colors.length; ++c)
-								colors[c] = colors[c] * clrMod;
-							finalColor = MathUtilities.colorFloatsToInt(colors[0], colors[1], colors[2]);
-						}
-						star.setRGBColorI(finalColor);
-						star.setParticleScale(0.35f);
-						star.AddParticleController(new ParticleHoldPosition(star, 14, 1, false));
-					}
-				}
+
 			}
 		}
 
