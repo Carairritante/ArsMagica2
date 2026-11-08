@@ -122,8 +122,10 @@ public class RenderSpellEffect extends Render {
 		Tessellator t = Tessellator.instance;
 
 		// 3. Setup OpenGL state for clean additive glow
+		float prevBrightX = OpenGlHelper.lastBrightnessX;
+		float prevBrightY = OpenGlHelper.lastBrightnessY;
 		GL11.glPushMatrix();
-		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LINE_BIT | GL11.GL_POLYGON_BIT);
 
 		GL11.glDisable(GL11.GL_LIGHTING);
 		RenderHelper.disableStandardItemLighting();
@@ -240,6 +242,7 @@ public class RenderSpellEffect extends Render {
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glEnable(GL11.GL_LIGHTING);
 		RenderHelper.enableStandardItemLighting();
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
 		GL11.glPopAttrib();
 		GL11.glPopMatrix();
 	}
@@ -291,8 +294,10 @@ public class RenderSpellEffect extends Render {
 		Tessellator t = Tessellator.instance;
 
 		// 3. Setup OpenGL state
+		float prevBrightX = OpenGlHelper.lastBrightnessX;
+		float prevBrightY = OpenGlHelper.lastBrightnessY;
 		GL11.glPushMatrix();
-		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LINE_BIT | GL11.GL_POLYGON_BIT);
 
 		GL11.glDisable(GL11.GL_LIGHTING);
 		RenderHelper.disableStandardItemLighting();
@@ -449,6 +454,7 @@ public class RenderSpellEffect extends Render {
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glEnable(GL11.GL_LIGHTING);
 		RenderHelper.enableStandardItemLighting();
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
 		GL11.glPopAttrib();
 		GL11.glPopMatrix();
 	}
@@ -574,8 +580,10 @@ public class RenderSpellEffect extends Render {
 
 		Tessellator t = Tessellator.instance;
 
+		float prevBrightX = OpenGlHelper.lastBrightnessX;
+		float prevBrightY = OpenGlHelper.lastBrightnessY;
 		GL11.glPushMatrix();
-		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LINE_BIT | GL11.GL_POLYGON_BIT);
 
 		GL11.glDisable(GL11.GL_LIGHTING);
 		RenderHelper.disableStandardItemLighting();
@@ -648,6 +656,7 @@ public class RenderSpellEffect extends Render {
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glEnable(GL11.GL_LIGHTING);
 		RenderHelper.enableStandardItemLighting();
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
 		GL11.glPopAttrib();
 		GL11.glPopMatrix();
 	}
@@ -713,8 +722,10 @@ public class RenderSpellEffect extends Render {
 
 		Tessellator t = Tessellator.instance;
 
+		float prevBrightX = OpenGlHelper.lastBrightnessX;
+		float prevBrightY = OpenGlHelper.lastBrightnessY;
 		GL11.glPushMatrix();
-		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LINE_BIT | GL11.GL_POLYGON_BIT);
 
 		GL11.glDisable(GL11.GL_LIGHTING);
 		RenderHelper.disableStandardItemLighting();
@@ -830,6 +841,7 @@ public class RenderSpellEffect extends Render {
 			renderVerticalQuadCross3(t, x, y + 0.05f, y + pillarHeight, z, pWidth, 1.0f, 0.0f);
 		}
 
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
 		GL11.glPopAttrib();
 		GL11.glPopMatrix();
 	}
@@ -865,8 +877,10 @@ public class RenderSpellEffect extends Render {
 
 		Tessellator t = Tessellator.instance;
 
+		float prevBrightX = OpenGlHelper.lastBrightnessX;
+		float prevBrightY = OpenGlHelper.lastBrightnessY;
 		GL11.glPushMatrix();
-		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LINE_BIT | GL11.GL_POLYGON_BIT);
 
 		GL11.glDisable(GL11.GL_LIGHTING);
 		RenderHelper.disableStandardItemLighting();
@@ -994,6 +1008,7 @@ public class RenderSpellEffect extends Render {
 			}
 		}
 
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
 		GL11.glPopAttrib();
 		GL11.glPopMatrix();
 	}
@@ -1046,8 +1061,10 @@ public class RenderSpellEffect extends Render {
 
 		Tessellator t = Tessellator.instance;
 
+		float prevBrightX = OpenGlHelper.lastBrightnessX;
+		float prevBrightY = OpenGlHelper.lastBrightnessY;
 		GL11.glPushMatrix();
-		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LINE_BIT | GL11.GL_POLYGON_BIT);
 
 		GL11.glDisable(GL11.GL_LIGHTING);
 		RenderHelper.disableStandardItemLighting();
@@ -1331,6 +1348,7 @@ public class RenderSpellEffect extends Render {
 			}
 		}
 
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
 		GL11.glPopAttrib();
 		GL11.glPopMatrix();
 	}

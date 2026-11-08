@@ -1,0 +1,691 @@
+package am2.armor;
+
+import am2.AMCore;
+import am2.LogHelper;
+import net.minecraft.block.material.Material;
+import am2.items.ItemBoxOfIllusions;
+import am2.items.ItemsCommonProxy;
+import am2.playerextensions.ExtendedProperties;
+import am2.proxy.gui.ModelLibrary;
+import am2.texture.ResourceManager;
+import cpw.mods.fml.client.FMLClientHandler;
+import cpw.mods.fml.common.eventhandler.EventPriority;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
+import cpw.mods.fml.relauncher.ReflectionHelper;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.block.Block;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.*;
+import net.minecraft.client.renderer.OpenGlHelper;
+import net.minecraft.client.renderer.entity.Render;
+import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.client.renderer.entity.RendererLivingEntity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.monster.*;
+import net.minecraft.entity.passive.EntityChicken;
+import net.minecraft.entity.passive.EntityCow;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.EnumAction;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.MathHelper;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.client.event.*;
+import net.minecraftforge.common.util.FakePlayer;
+import net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka;
+import org.lwjgl.opengl.GL11;
+
+import java.lang.reflect.Field;
+import java.util.*;
+
+@SideOnly(Side.CLIENT)
+public class ArmorClientEventHandler {
+
+	private static Field fieldLivingMainModel = null;
+	private static Field fieldOcelotHead = null;
+	private static Field fieldHorseHead = null;
+
+	static {
+		try {
+			fieldLivingMainModel = ReflectionHelper.findField(RendererLivingEntity.class, "mainModel", "field_77045_g");
+			if (fieldLivingMainModel != null) fieldLivingMainModel.setAccessible(true);
+		} catch (Throwable t) {}
+		try {
+			fieldOcelotHead = ReflectionHelper.findField(ModelOcelot.class, "ocelotHead", "field_78156_g");
+			if (fieldOcelotHead != null) fieldOcelotHead.setAccessible(true);
+		} catch (Throwable t) {}
+		try {
+			fieldHorseHead = ReflectionHelper.findField(ModelHorse.class, "head", "field_110709_a");
+			if (fieldHorseHead != null) fieldHorseHead.setAccessible(true);
+		} catch (Throwable t) {}
+	}
+
+	public static ModelBase getMainModel(RendererLivingEntity rle) {
+		if (rle == null) return null;
+		if (fieldLivingMainModel != null) {
+			try {
+				return (ModelBase) fieldLivingMainModel.get(rle);
+			} catch (Throwable t) {}
+		}
+		return null;
+	}
+
+	private static boolean isMouthMob(String toMob) {
+		if (toMob == null) return false;
+		String m = toMob.toLowerCase();
+		return m.equals("horse") || m.equals("ocelot") || m.equals("wolf") ||
+		       m.equals("cow") || m.equals("pig") || m.equals("sheep") || m.equals("chicken");
+	}
+
+	private static ModelRenderer getMobHeadModel(ModelBase model, String mob) {
+		if (model == null) return null;
+		try {
+			if (model instanceof ModelQuadruped) {
+				return ((ModelQuadruped) model).head;
+			} else if (model instanceof ModelWolf) {
+				return ((ModelWolf) model).wolfHeadMain;
+			} else if (model instanceof ModelChicken) {
+				return ((ModelChicken) model).head;
+			} else if (model instanceof ModelOcelot && fieldOcelotHead != null) {
+				return (ModelRenderer) fieldOcelotHead.get(model);
+			} else if (model instanceof ModelHorse && fieldHorseHead != null) {
+				return (ModelRenderer) fieldHorseHead.get(model);
+			}
+		} catch (Throwable t) {}
+		return null;
+	}
+
+
+
+	@SideOnly(Side.CLIENT)
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public void onPlayerRenderPre(RenderPlayerEvent.Pre event) { // true invis
+		if (MysteriumPatchesFixesMagicka.isPlayerEthereal(event.entityPlayer)) {event.setCanceled(true); return;}
+		if (event.entityPlayer == Minecraft.getMinecraft().thePlayer) {
+			am2.items.renderers.RenderItemBoxOfIllusions.enforceLocalPlayerModel(event.entityPlayer);
+		}
+		String playerName = event.entityPlayer.getCommandSenderName();
+		String toMob = MysteriumPatchesFixesMagicka.playerModelMap.get(playerName);
+		if (toMob != null && !am2.items.renderers.RenderItemBoxOfIllusions.isValidIllusionModel(toMob)) {
+			MysteriumPatchesFixesMagicka.playerModelMap.remove(playerName);
+			toMob = null;
+		}
+		if (toMob != null && !toMob.startsWith("maid")) {
+			EntityLivingBase elb = am2.items.renderers.IllusionEntityHelper.getEntityForPlayer(event.entityPlayer, toMob, event.entityPlayer.worldObj);
+			if (elb == null) {
+				return;
+			}
+			am2.items.renderers.IllusionEntityHelper.updateEntityAnimation(event.entityPlayer, elb, toMob);
+
+			Render rle = RenderManager.instance.getEntityRenderObject(elb);
+			if (rle instanceof RendererLivingEntity) {
+				if (elb.ticksExisted == 0)
+				{
+					elb.lastTickPosX = elb.posX;
+					elb.lastTickPosY = elb.posY;
+					elb.lastTickPosZ = elb.posZ;
+				}
+
+				double d0 = elb.lastTickPosX + (elb.posX - elb.lastTickPosX) * (double)event.partialRenderTick;
+				double d1 = elb.lastTickPosY + (elb.posY - elb.lastTickPosY) * (double)event.partialRenderTick;
+				double d2 = elb.lastTickPosZ + (elb.posZ - elb.lastTickPosZ) * (double)event.partialRenderTick;
+				float f1 = elb.prevRotationYaw + (elb.rotationYaw - elb.prevRotationYaw) * event.partialRenderTick;
+				int i = elb.getBrightnessForRender(event.partialRenderTick);
+
+				if (elb.isBurning())
+				{
+					i = 15728880;
+				}
+
+				int j = i % 65536;
+				int k = i / 65536;
+				OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float)j / 1.0F, (float)k / 1.0F);
+				GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+				double rx = d0 - RenderManager.renderPosX;
+				double ry = d1 - RenderManager.renderPosY - event.entityPlayer.yOffset;
+				double rz = d2 - RenderManager.renderPosZ;
+
+				if (am2.items.renderers.IllusionEntityHelper.isMiniatureDragon(toMob)) {
+					GL11.glPushMatrix();
+					GL11.glTranslated(rx, ry + 0.35D, rz);
+					float dragonScale = 0.18F;
+					GL11.glScalef(dragonScale, dragonScale, dragonScale);
+					((RendererLivingEntity) rle).doRender(elb, 0.0D, 0.0D, 0.0D, f1, event.partialRenderTick);
+					GL11.glPopMatrix();
+				} else if (am2.items.renderers.IllusionEntityHelper.isMiniatureWither(toMob)) {
+					GL11.glPushMatrix();
+					GL11.glTranslated(rx, ry + 0.25D, rz);
+					float witherScale = 0.55F;
+					GL11.glScalef(witherScale, witherScale, witherScale);
+					((RendererLivingEntity) rle).doRender(elb, 0.0D, 0.0D, 0.0D, f1, event.partialRenderTick);
+					GL11.glPopMatrix();
+				} else if (toMob.equalsIgnoreCase("slime")) {
+					am2.items.renderers.RenderIllusionSlime.render(elb, rx, ry, rz, f1, event.partialRenderTick);
+				} else {
+					((RendererLivingEntity) rle).doRender(elb, rx, ry, rz, f1, event.partialRenderTick);
+				}
+				ModelBase mainModel = getMainModel((RendererLivingEntity) rle);
+				renderIllusionHeldItem(event.entityPlayer, elb, toMob, rx, ry, rz, event.partialRenderTick, mainModel);
+				event.setCanceled(true);
+			} else {
+				LogHelper.warn("Renderer not of living entity type! Report this as an error.");
+			}
+			return;
+		}
+	}
+
+	@SideOnly(Side.CLIENT)
+	private void renderIllusionHeldItem(EntityPlayer player, EntityLivingBase elb, String toMob, double rx, double ry, double rz, float partialTick, ModelBase mainModel) {
+		ItemStack heldStack = player.getHeldItem();
+		if (heldStack == null || heldStack.getItem() == null) {
+			return;
+		}
+		// RenderBiped (zombie) and RenderWitch (witch) already render elb.getHeldItem() during doRender
+		if (toMob.equalsIgnoreCase("zombie") || toMob.equalsIgnoreCase("witch") || toMob.equalsIgnoreCase("skeleton")) {
+			return;
+		}
+
+		boolean isMouth = isMouthMob(toMob);
+		ModelRenderer headRenderer = isMouth ? getMobHeadModel(mainModel, toMob) : null;
+
+		GL11.glPushMatrix();
+		GL11.glTranslatef((float) rx, (float) ry, (float) rz);
+
+		float renderYaw = elb.prevRenderYawOffset + (elb.renderYawOffset - elb.prevRenderYawOffset) * partialTick;
+		GL11.glRotatef(180.0F - renderYaw, 0.0F, 1.0F, 0.0F);
+		GL11.glScalef(-1.0F, -1.0F, 1.0F);
+		GL11.glTranslatef(0.0F, -24.0F * 0.0625F - 0.0078125F, 0.0F);
+
+		if (isMouth && headRenderer != null) {
+			headRenderer.postRender(0.0625F);
+
+			float mouthX = 0.0F;
+			float mouthY = 0.0F;
+			float mouthZ = -0.30F;
+
+			if (toMob.equalsIgnoreCase("horse")) {
+				mouthX = 0.0F;
+				mouthY = -0.43F;
+				mouthZ = -0.41F;
+			} else if (toMob.equalsIgnoreCase("ocelot")) {
+				mouthX = 0.0F;
+				mouthY = 0.08F;
+				mouthZ = -0.26F;
+			} else if (toMob.equalsIgnoreCase("wolf")) {
+				mouthX = 0.0F;
+				mouthY = 0.10F;
+				mouthZ = -0.32F;
+			} else if (toMob.equalsIgnoreCase("cow")) {
+				mouthX = 0.0F;
+				mouthY = 0.13F;
+				mouthZ = -0.39F;
+			} else if (toMob.equalsIgnoreCase("pig")) {
+				mouthX = 0.0F;
+				mouthY = 0.13F;
+				mouthZ = -0.57F;
+			} else if (toMob.equalsIgnoreCase("sheep")) {
+				mouthX = 0.0F;
+				mouthY = 0.11F;
+				mouthZ = -0.39F;
+			} else if (toMob.equalsIgnoreCase("chicken")) {
+				mouthX = 0.0F;
+				mouthY = -0.19F;
+				mouthZ = -0.26F;
+			}
+
+			GL11.glTranslatef(mouthX, mouthY, mouthZ);
+			renderMouthItem(player, heldStack);
+		} else {
+			float handX = -0.32F;
+			float handY = 0.65F;
+			float handZ = -0.20F;
+			float mobItemScale = 1.0F;
+
+			if (toMob.equalsIgnoreCase("bat")) {
+				handX = -0.12F;
+				handY = 1.10F;
+				handZ = -0.15F;
+			} else if (toMob.equalsIgnoreCase("squid")) {
+				handX = -0.25F;
+				handY = 0.65F;
+				handZ = -0.25F;
+			} else if (toMob.equalsIgnoreCase("villager")) {
+				handX = -0.25F;
+				handY = 0.65F;
+				handZ = -0.35F;
+			} else if (toMob.equalsIgnoreCase("iron_golem")) {
+				handX = -0.55F;
+				handY = 0.40F;
+				handZ = -0.30F;
+			} else if (toMob.equalsIgnoreCase("enderman")) {
+				handX = -0.35F;
+				handY = 0.35F;
+				handZ = -0.18F;
+			} else if (toMob.equalsIgnoreCase("blaze")) {
+				handX = -0.35F;
+				handY = 0.60F;
+				handZ = -0.25F;
+			} else if (toMob.equalsIgnoreCase("slime") || toMob.equalsIgnoreCase("magma_cube")) {
+				handX = -0.55F;
+				handY = 0.75F;
+				handZ = -0.10F;
+			} else if (toMob.equalsIgnoreCase("ghast")) {
+				handX = -0.45F;
+				handY = 0.50F;
+				handZ = -0.45F;
+			} else if (toMob.equalsIgnoreCase("dragon") || toMob.equalsIgnoreCase("ender_dragon")) {
+				handX = -0.15F;
+				handY = 0.55F;
+				handZ = -0.55F;
+			} else if (toMob.equalsIgnoreCase("wither")) {
+				handX = -0.35F;
+				handY = 0.50F;
+				handZ = -0.30F;
+			} else if (toMob.equalsIgnoreCase("spider")) {
+				handX = -0.28F;
+				handY = 0.88F;
+				handZ = -0.45F;
+			} else if (toMob.equalsIgnoreCase("creeper")) {
+				handX = -0.28F;
+				handY = 0.62F;
+				handZ = -0.22F;
+			} else if (toMob.equalsIgnoreCase("snowman")) {
+				handX = -0.42F;
+				handY = 0.48F;
+				handZ = -0.18F;
+			} else if (toMob.equalsIgnoreCase("ender")) {
+				handX = -0.42F;
+				handY = 0.42F;
+				handZ = -0.24F;
+			}
+
+		if (player.isSneaking()) {
+			handY += 0.12F;
+		}
+
+		GL11.glTranslatef(handX, handY, handZ);
+		GL11.glScalef(mobItemScale, mobItemScale, mobItemScale);
+
+		float swing = elb.getSwingProgress(partialTick);
+		if (swing > 0.0F) {
+			float swingSin = MathHelper.sin(MathHelper.sqrt_float(swing) * (float) Math.PI);
+			GL11.glRotatef(-swingSin * 35.0F, 1.0F, 0.0F, 0.0F);
+		}
+
+		renderStandardEquippedItem(player, heldStack);
+		}
+
+		GL11.glPopMatrix();
+	}
+
+	@SideOnly(Side.CLIENT)
+	private void renderMouthItem(EntityPlayer player, ItemStack heldStack) {
+		net.minecraftforge.client.IItemRenderer customRenderer = net.minecraftforge.client.MinecraftForgeClient.getItemRenderer(heldStack, net.minecraftforge.client.IItemRenderer.ItemRenderType.EQUIPPED);
+		boolean is3D = (customRenderer != null && customRenderer.shouldUseRenderHelper(net.minecraftforge.client.IItemRenderer.ItemRenderType.EQUIPPED, heldStack, net.minecraftforge.client.IItemRenderer.ItemRendererHelper.BLOCK_3D));
+		boolean isBlock = is3D || (heldStack.getItem() instanceof net.minecraft.item.ItemBlock && net.minecraft.client.renderer.RenderBlocks.renderItemIn3d(Block.getBlockFromItem(heldStack.getItem()).getRenderType()));
+
+		if (isBlock) {
+			float f1 = 0.375F;
+			GL11.glScalef(f1, f1, f1);
+			GL11.glRotatef(180.0F, 0.0F, 1.0F, 0.0F);
+			GL11.glTranslatef(0.0F, -0.2F, -0.15F);
+		} else {
+			GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
+			GL11.glRotatef(15.0F, 1.0F, 0.0F, 0.0F);
+
+			if (heldStack.getItem().isFull3D()) {
+				float f1 = 0.625F;
+				if (heldStack.getItem().shouldRotateAroundWhenRendering()) {
+					GL11.glRotatef(180.0F, 0.0F, 0.0F, 1.0F);
+					GL11.glTranslatef(0.0F, -0.125F, 0.0F);
+				}
+				GL11.glTranslatef(-0.25F, 0.10F, 0.0F);
+				GL11.glScalef(f1, -f1, f1);
+				GL11.glRotatef(-100.0F, 1.0F, 0.0F, 0.0F);
+				GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
+			} else {
+				float f1 = 0.375F;
+				GL11.glTranslatef(-0.15F, 0.10F, -0.05F);
+				GL11.glScalef(f1, f1, f1);
+				GL11.glRotatef(60.0F, 0.0F, 0.0F, 1.0F);
+				GL11.glRotatef(-90.0F, 1.0F, 0.0F, 0.0F);
+				GL11.glRotatef(20.0F, 0.0F, 0.0F, 1.0F);
+			}
+		}
+
+		if (heldStack.getItem().requiresMultipleRenderPasses()) {
+			for (int pass = 0; pass < heldStack.getItem().getRenderPasses(heldStack.getItemDamage()); pass++) {
+				int color = heldStack.getItem().getColorFromItemStack(heldStack, pass);
+				float r = (float) (color >> 16 & 255) / 255.0F;
+				float g = (float) (color >> 8 & 255) / 255.0F;
+				float b = (float) (color & 255) / 255.0F;
+				GL11.glColor4f(r, g, b, 1.0F);
+				RenderManager.instance.itemRenderer.renderItem(player, heldStack, pass);
+			}
+		} else {
+			int color = heldStack.getItem().getColorFromItemStack(heldStack, 0);
+			float r = (float) (color >> 16 & 255) / 255.0F;
+			float g = (float) (color >> 8 & 255) / 255.0F;
+			float b = (float) (color & 255) / 255.0F;
+			GL11.glColor4f(r, g, b, 1.0F);
+			RenderManager.instance.itemRenderer.renderItem(player, heldStack, 0);
+		}
+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+	}
+
+	@SideOnly(Side.CLIENT)
+	private void renderStandardEquippedItem(EntityPlayer player, ItemStack heldStack) {
+		net.minecraftforge.client.IItemRenderer customRenderer = net.minecraftforge.client.MinecraftForgeClient.getItemRenderer(heldStack, net.minecraftforge.client.IItemRenderer.ItemRenderType.EQUIPPED);
+		boolean is3D = (customRenderer != null && customRenderer.shouldUseRenderHelper(net.minecraftforge.client.IItemRenderer.ItemRenderType.EQUIPPED, heldStack, net.minecraftforge.client.IItemRenderer.ItemRendererHelper.BLOCK_3D));
+
+		if (is3D || (heldStack.getItem() instanceof net.minecraft.item.ItemBlock && net.minecraft.client.renderer.RenderBlocks.renderItemIn3d(Block.getBlockFromItem(heldStack.getItem()).getRenderType()))) {
+			float f1 = 0.5F * 0.75F;
+			GL11.glTranslatef(0.0F, 0.1875F, -0.3125F);
+			GL11.glRotatef(20.0F, 1.0F, 0.0F, 0.0F);
+			GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
+			GL11.glScalef(-f1, -f1, f1);
+		} else if (heldStack.getItem() == net.minecraft.init.Items.bow) {
+			float f1 = 0.625F;
+			GL11.glTranslatef(0.0F, 0.125F, 0.3125F);
+			GL11.glRotatef(-20.0F, 0.0F, 1.0F, 0.0F);
+			GL11.glScalef(f1, -f1, f1);
+			GL11.glRotatef(-100.0F, 1.0F, 0.0F, 0.0F);
+			GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
+		} else if (heldStack.getItem().isFull3D()) {
+			float f1 = 0.625F;
+			if (heldStack.getItem().shouldRotateAroundWhenRendering()) {
+				GL11.glRotatef(180.0F, 0.0F, 0.0F, 1.0F);
+				GL11.glTranslatef(0.0F, -0.125F, 0.0F);
+			}
+
+			if (player.getItemInUseCount() > 0) {
+				EnumAction action = heldStack.getItemUseAction();
+				if (action == EnumAction.block) {
+					GL11.glTranslatef(0.05F, 0.0F, -0.1F);
+					GL11.glRotatef(-50.0F, 0.0F, 1.0F, 0.0F);
+					GL11.glRotatef(-10.0F, 1.0F, 0.0F, 0.0F);
+					GL11.glRotatef(-60.0F, 0.0F, 0.0F, 1.0F);
+				}
+			}
+
+			GL11.glTranslatef(0.0F, 0.1875F, 0.0F);
+			GL11.glScalef(f1, -f1, f1);
+			GL11.glRotatef(-100.0F, 1.0F, 0.0F, 0.0F);
+			GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
+		} else {
+			float f1 = 0.375F;
+			GL11.glTranslatef(0.25F, 0.1875F, -0.1875F);
+			GL11.glScalef(f1, f1, f1);
+			GL11.glRotatef(60.0F, 0.0F, 0.0F, 1.0F);
+			GL11.glRotatef(-90.0F, 1.0F, 0.0F, 0.0F);
+			GL11.glRotatef(20.0F, 0.0F, 0.0F, 1.0F);
+		}
+
+		if (heldStack.getItem().requiresMultipleRenderPasses()) {
+			for (int pass = 0; pass < heldStack.getItem().getRenderPasses(heldStack.getItemDamage()); pass++) {
+				int color = heldStack.getItem().getColorFromItemStack(heldStack, pass);
+				float r = (float) (color >> 16 & 255) / 255.0F;
+				float g = (float) (color >> 8 & 255) / 255.0F;
+				float b = (float) (color & 255) / 255.0F;
+				GL11.glColor4f(r, g, b, 1.0F);
+				RenderManager.instance.itemRenderer.renderItem(player, heldStack, pass);
+			}
+		} else {
+			int color = heldStack.getItem().getColorFromItemStack(heldStack, 0);
+			float r = (float) (color >> 16 & 255) / 255.0F;
+			float g = (float) (color >> 8 & 255) / 255.0F;
+			float b = (float) (color & 255) / 255.0F;
+			GL11.glColor4f(r, g, b, 1.0F);
+			RenderManager.instance.itemRenderer.renderItem(player, heldStack, 0);
+		}
+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+	}
+
+	@SideOnly(Side.CLIENT)
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public void onPlayerRenderPreSpecial(RenderPlayerEvent.Specials.Pre event) { // true invis
+		if (MysteriumPatchesFixesMagicka.isPlayerEthereal(event.entityPlayer)) {event.setCanceled(true); return;}
+		if (event.entityPlayer == Minecraft.getMinecraft().thePlayer) {
+			am2.items.renderers.RenderItemBoxOfIllusions.enforceLocalPlayerModel(event.entityPlayer);
+		}
+		String toMob = MysteriumPatchesFixesMagicka.playerModelMap.get(event.entityPlayer.getCommandSenderName());
+		if (toMob != null && am2.items.renderers.RenderItemBoxOfIllusions.isValidIllusionModel(toMob) && !toMob.startsWith("maid")) {event.setCanceled(true); return;}
+
+		// When player is shrunk (dwarf), cancel vanilla item rendering in renderEquippedItems
+		// and render it at 1.0x normal scale in onPlayerRenderPostSpecial!
+		ExtendedProperties exProps = ExtendedProperties.For(event.entityPlayer);
+		if (exProps != null && exProps.getShrinkPct() > 0.0F) {
+			event.renderItem = false;
+		}
+	}
+
+	@SideOnly(Side.CLIENT)
+	@SubscribeEvent(priority = EventPriority.NORMAL)
+	public void onPlayerRenderPostSpecial(RenderPlayerEvent.Specials.Post event) {
+		if (MysteriumPatchesFixesMagicka.isPlayerEthereal(event.entityPlayer)) return;
+
+		String toMob = MysteriumPatchesFixesMagicka.playerModelMap.get(event.entityPlayer.getCommandSenderName());
+		if (toMob != null && am2.items.renderers.RenderItemBoxOfIllusions.isValidIllusionModel(toMob) && !toMob.startsWith("maid")) {
+			return;
+		}
+
+		ExtendedProperties exProps = ExtendedProperties.For(event.entityPlayer);
+		if (exProps != null && exProps.getShrinkPct() > 0.0F) {
+			ItemStack heldStack = event.entityPlayer.getHeldItem();
+			if (heldStack == null || heldStack.getItem() == null) return;
+
+			GL11.glPushMatrix();
+			event.renderer.modelBipedMain.bipedRightArm.postRender(0.0625F);
+			GL11.glTranslatef(-0.0625F, 0.4375F, 0.0625F);
+
+			float currentScale = 1.0F - 0.75F * exProps.getShrinkPct();
+			if (currentScale > 0.01F) {
+				float invScale = 1.0F / currentScale;
+				GL11.glScalef(invScale, invScale, invScale);
+			}
+
+			renderStandardEquippedItem(event.entityPlayer, heldStack);
+			GL11.glPopMatrix();
+		}
+	}
+
+	// Sorry Roadhog for borrowing some of your code starting here :D
+
+	private static boolean hadHeldItemTooltips;
+
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	@SideOnly(Side.CLIENT)
+	public void onOverlayRenderPre(RenderGameOverlayEvent.Pre event) {
+		if(MysteriumPatchesFixesMagicka.isPlayerEthereal(Minecraft.getMinecraft().thePlayer)) {
+			if(event.type == RenderGameOverlayEvent.ElementType.HOTBAR ||
+					event.type == RenderGameOverlayEvent.ElementType.CROSSHAIRS) {
+				event.setCanceled(true);
+			}
+			if(event.type == RenderGameOverlayEvent.ElementType.ALL) {
+				hadHeldItemTooltips = Minecraft.getMinecraft().gameSettings.heldItemTooltips;
+				Minecraft.getMinecraft().gameSettings.heldItemTooltips = false;
+			}
+		}
+	}
+
+	@SubscribeEvent(priority = EventPriority.LOWEST)
+	@SideOnly(Side.CLIENT)
+	public void onOverlayRenderPost(RenderGameOverlayEvent.Post event) {
+		if(MysteriumPatchesFixesMagicka.isPlayerEthereal(Minecraft.getMinecraft().thePlayer)) {
+			if(event.type == RenderGameOverlayEvent.ElementType.ALL) {
+				Minecraft.getMinecraft().gameSettings.heldItemTooltips = hadHeldItemTooltips;
+			}
+		}
+	}
+
+	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
+	public void onHandRender(RenderHandEvent event) {
+		if(MysteriumPatchesFixesMagicka.isPlayerEthereal(Minecraft.getMinecraft().thePlayer))
+			event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
+	public void onFireRender(RenderBlockOverlayEvent event) {
+		if(MysteriumPatchesFixesMagicka.isPlayerEthereal(Minecraft.getMinecraft().thePlayer))
+			event.setCanceled(true);
+	}
+
+	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
+	public void onRenderFogDensity(EntityViewRenderEvent.FogDensity event) {
+		if(event.entity instanceof EntityPlayer) {
+			if(MysteriumPatchesFixesMagicka.isPlayerEthereal((EntityPlayer)event.entity)) {
+				if(event.block.getMaterial() == Material.water || event.block.getMaterial() == Material.lava) {
+					event.setCanceled(true);
+					event.density = 0;
+				}
+			}
+		}
+	}
+
+	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
+	public void onBlockHighlight(DrawBlockHighlightEvent event) {
+		if(MysteriumPatchesFixesMagicka.isPlayerEthereal(event.player)) {
+			Block block = Minecraft.getMinecraft().theWorld.getBlock(event.target.blockX, event.target.blockY, event.target.blockZ);
+			int meta = Minecraft.getMinecraft().theWorld.getBlockMetadata(event.target.blockX, event.target.blockY, event.target.blockZ);
+			if(!block.hasTileEntity(meta) || !(Minecraft.getMinecraft().theWorld.getTileEntity(event.target.blockX, event.target.blockY, event.target.blockZ) instanceof IInventory)) {
+				event.setCanceled(true);
+			}
+		}
+	}
+
+	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
+	public void onClientTick(TickEvent.ClientTickEvent event) {
+		EntityPlayer player = FMLClientHandler.instance().getClientPlayerEntity();
+		if(player != null && !(player instanceof FakePlayer) && Minecraft.getMinecraft().playerController != null && event.phase == TickEvent.Phase.START) {
+			if(MysteriumPatchesFixesMagicka.isPlayerEthereal(Minecraft.getMinecraft().thePlayer)) {
+				if(!player.capabilities.isFlying) {
+					player.capabilities.isFlying = true;
+					player.sendPlayerAbilities();
+				}
+			}
+		}
+	}
+
+	@SideOnly(Side.CLIENT)
+	@SubscribeEvent
+	public void onPlayerRender(RenderPlayerEvent.Post event) {
+		if (event.entityPlayer == Minecraft.getMinecraft().thePlayer) { // these additions only render clientside/SP
+			if (event.entityPlayer.getCurrentArmor(3) != null) {
+				if (event.entityPlayer.getCurrentArmor(3).getItem() == ItemsCommonProxy.archmageHood) {
+					EntityPlayer p_76986_1_ = event.entityPlayer;
+					int i1 = Minecraft.getMinecraft().gameSettings.limitFramerate;
+					float p_76986_9_ = System.nanoTime() + (long) (1000000000 / i1);
+					float f5 = 0.0625F;
+					float f2 = 0; // interpolateRotation(p_76986_1_.prevRenderYawOffset, p_76986_1_.renderYawOffset, p_76986_9_);
+					float f3 = -p_76986_1_.prevRotationYawHead; // , p_76986_1_.rotationYawHead, p_76986_9_);
+					float f4 = 0;
+					float f13 = 63;
+					float f6 = p_76986_1_.prevLimbSwingAmount + (p_76986_1_.limbSwingAmount - p_76986_1_.prevLimbSwingAmount) * p_76986_9_;
+					float f7 = p_76986_1_.limbSwing - p_76986_1_.limbSwingAmount * (1.0F - p_76986_9_);
+					if (f6 > 1.0F) {
+						f6 = 1.0F;
+					}
+					GL11.glPushMatrix();
+					GL11.glTranslated(0, 0.4, 0);
+					Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation("arsmagica2:" + ResourceManager.getMobTexturePath("bosses/fire_guardian.png")));
+					ModelLibrary.instance.fireEars.saveValues = true;
+					ModelLibrary.instance.fireEars.render(event.entityPlayer, f7, f6, f4, f3, -f13, f5);
+					GL11.glPopMatrix();
+				}
+			}
+			if (event.entityPlayer.getCurrentArmor(2) != null) {
+				if (event.entityPlayer.getCurrentArmor(2).getItem() == ItemsCommonProxy.archmageArmor) {
+					EntityPlayer p_76986_1_ = event.entityPlayer;
+					int i1 = Minecraft.getMinecraft().gameSettings.limitFramerate;
+					float p_76986_9_ = System.nanoTime() + (long) (1000000000 / i1);
+					float f5 = 0.0625F;
+					float f2 = 0; // interpolateRotation(p_76986_1_.prevRenderYawOffset, p_76986_1_.renderYawOffset, p_76986_9_);
+					float f3 = -p_76986_1_.rotationYawHead; // , p_76986_1_.rotationYawHead, p_76986_9_);
+					float f4 = 0;
+					float f13 = 0;
+					float f6 = 0; // p_76986_1_.prevLimbSwingAmount + (p_76986_1_.limbSwingAmount - p_76986_1_.prevLimbSwingAmount) * p_76986_9_;
+					float f7 = p_76986_1_.limbSwing - p_76986_1_.limbSwingAmount * (1.0F - p_76986_9_) + 50;
+					if (f6 > 1.0F) {
+						f6 = 1.0F;
+					}
+					GL11.glPushMatrix();
+					GL11.glTranslated(0, -0.75, 0);
+					GL11.glScaled(0.6, 0.6, 0.6);
+					setRotation(rotation + 1);
+					GL11.glRotated(rotation, 0, 1, 0);
+					Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation("arsmagica2:" + ResourceManager.getMobTexturePath("bosses/earth_guardian.png")));
+					ModelLibrary.instance.earthArmor.saveValues = true;
+					ModelLibrary.instance.earthArmor.renderArms(event.entityPlayer, f7, f6, f4, f3, f13, f5);
+					GL11.glPopMatrix();
+				}
+			}
+			if (event.entityPlayer.getCurrentArmor(1) != null) {
+				if (event.entityPlayer.getCurrentArmor(1).getItem() == ItemsCommonProxy.archmageLeggings) {
+					EntityPlayer p_76986_1_ = event.entityPlayer;
+					int i1 = Minecraft.getMinecraft().gameSettings.limitFramerate;
+					float p_76986_9_ = System.nanoTime() + (long) (1000000000 / i1);
+					float f5 = 0.0625F;
+					float f2 = 0; // interpolateRotation(p_76986_1_.prevRenderYawOffset, p_76986_1_.renderYawOffset, p_76986_9_);
+					float f3 = -p_76986_1_.rotationYawHead; // , p_76986_1_.rotationYawHead, p_76986_9_);
+					float f4 = 0;
+					float f13 = 0;
+					float f6 = 0; // p_76986_1_.prevLimbSwingAmount + (p_76986_1_.limbSwingAmount - p_76986_1_.prevLimbSwingAmount) * p_76986_9_;
+					float f7 = p_76986_1_.limbSwing - p_76986_1_.limbSwingAmount * (1.0F - p_76986_9_) + 50;
+					if (f6 > 1.0F) {
+						f6 = 1.0F;
+					}
+					GL11.glPushMatrix();
+					GL11.glTranslated(0, -1.3, 0);
+					GL11.glScaled(1.05, 1.05, 1.05);
+					setRotation2(rotation2 + 0.4f);
+					GL11.glRotatef(rotation2, 0, -1, 0);
+					Minecraft.getMinecraft().getTextureManager().bindTexture(new ResourceLocation("arsmagica2:" + ResourceManager.getMobTexturePath("bosses/water_guardian.png")));
+					ModelLibrary.instance.earthArmor.saveValues = true;
+					ModelLibrary.instance.waterOrbs.render(event.entityPlayer, f7, f6, f4, f3, f13, f5);
+					GL11.glPopMatrix();
+				}
+			}
+		}
+	}
+
+	private int rotation = 0;
+	public void setRotation(int newRotation) {
+		rotation = newRotation;
+		if (rotation == 360) {
+			rotation = 0;
+		}
+	}
+
+	private float rotation2 = 0;
+	public void setRotation2(float newRotation) {
+		rotation2 = newRotation;
+		if (rotation >= 360) {
+			rotation2 = 0;
+		}
+	}
+
+	private float interpolateRotation(float p_77034_1_, float p_77034_2_, float p_77034_3_)
+	{
+		float f3;
+
+		for (f3 = p_77034_2_ - p_77034_1_; f3 < -180.0F; f3 += 360.0F)
+		{
+			;
+		}
+
+		while (f3 >= 180.0F)
+		{
+			f3 -= 360.0F;
+		}
+
+		return p_77034_1_ + p_77034_3_ * f3;
+	}
+
+}

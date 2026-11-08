@@ -14,4 +14,8 @@ public class ProxyUtilitiesCommon{
 		return false;
 	}
 
+	public boolean isJumpKeyPressed(){
+		return false;
+	}
+
 }

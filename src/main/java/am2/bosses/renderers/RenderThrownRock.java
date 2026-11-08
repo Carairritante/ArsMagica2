@@ -76,8 +76,10 @@ public class RenderThrownRock extends RenderLiving {
 		Tessellator t = Tessellator.instance;
 
 		// 2. Setup OpenGL State
+		float prevBrightX = OpenGlHelper.lastBrightnessX;
+		float prevBrightY = OpenGlHelper.lastBrightnessY;
 		GL11.glPushMatrix();
-		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_LINE_BIT | GL11.GL_POLYGON_BIT);
 
 		GL11.glDisable(GL11.GL_LIGHTING);
 		RenderHelper.disableStandardItemLighting();
@@ -92,7 +94,19 @@ public class RenderThrownRock extends RenderLiving {
 		float visualScale = rock.getVisualScale();
 
 		// Ground Astrological Targeting Reticle (directly below the falling star)
-		int groundY = rock.worldObj.getTopSolidOrLiquidBlock((int) Math.floor(rock.posX), (int) Math.floor(rock.posZ));
+		int blockX = (int) Math.floor(rock.posX);
+		int blockZ = (int) Math.floor(rock.posZ);
+		int startY = (int) Math.floor(rock.posY);
+		int groundY = 0;
+		for (int checkY = Math.min(255, startY); checkY >= 0; checkY--) {
+			if (rock.worldObj.getBlock(blockX, checkY, blockZ).getMaterial().isSolid()) {
+				groundY = checkY + 1;
+				break;
+			}
+		}
+		if (groundY == 0) {
+			groundY = rock.worldObj.getTopSolidOrLiquidBlock(blockX, blockZ);
+		}
 		double viewerY = RenderManager.instance.viewerPosY;
 		double groundYRel = (double) groundY - viewerY;
 		double distToGround = Math.max(0.0, rock.posY - groundY);
@@ -200,6 +214,7 @@ public class RenderThrownRock extends RenderLiving {
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glEnable(GL11.GL_LIGHTING);
 		RenderHelper.enableStandardItemLighting();
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
 		GL11.glPopAttrib();
 		GL11.glPopMatrix();
 	}

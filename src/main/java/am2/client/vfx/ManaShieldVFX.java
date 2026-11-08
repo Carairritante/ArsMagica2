@@ -49,6 +49,10 @@ public class ManaShieldVFX {
 		hitFlashes.put(entityId, Minecraft.getSystemTime());
 	}
 
+	public static void clearAll() {
+		hitFlashes.clear();
+	}
+
 	public static float getHitFlash(Entity entity) {
 		if (entity == null) return 0.0f;
 		Long timestamp = hitFlashes.get(entity.getEntityId());

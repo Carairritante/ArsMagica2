@@ -69,7 +69,7 @@ public class CommonProxy{
 	public AMEnchantments enchantments;
 
 	public ItemFrameWatcher itemFrameWatcher;
-	protected ProxyUtilitiesCommon utils;
+	public ProxyUtilitiesCommon utils;
 	public static EntityManager entities;
 	public static ServerGuiManager guiManager;
 

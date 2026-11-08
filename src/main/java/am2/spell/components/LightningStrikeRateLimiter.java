@@ -57,7 +57,7 @@ public final class LightningStrikeRateLimiter {
 				am2.entities.EntitySpellEffect activeFusion = null;
 
 				for (am2.entities.EntitySpellEffect effect : existing){
-					if (effect.isLightningFusion() && effect.getCasterEntityID() == casterID){
+					if (effect.isLightningFusion() && !effect.isDead && effect.getCasterEntityID() == casterID){
 						activeFusion = effect;
 						break;
 					}

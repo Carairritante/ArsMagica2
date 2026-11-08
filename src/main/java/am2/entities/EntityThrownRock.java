@@ -17,7 +17,6 @@ import am2.spell.SpellHelper;
 import am2.spell.SpellUtils;
 import am2.spell.modifiers.Colour;
 import am2.utility.MathUtilities;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
@@ -299,12 +298,21 @@ public class EntityThrownRock extends EntityLiving{
 			else if (count >= 10) impactRadius = 13.0f;
 			else if (count >= 5) impactRadius = 8.5f;
 
-			AMNetHandler.INSTANCE.sendStarImpactToClients(posX, posY + ((movingobjectposition.typeOfHit == MovingObjectType.ENTITY) ? -movingobjectposition.entityHit.getEyeHeight() : 1.5f), posZ, worldObj, this.getSpellStack(), count);
+			double impactX = movingobjectposition.hitVec != null ? movingobjectposition.hitVec.xCoord : posX;
+			double impactY = movingobjectposition.hitVec != null ? movingobjectposition.hitVec.yCoord : posY;
+			double impactZ = movingobjectposition.hitVec != null ? movingobjectposition.hitVec.zCoord : posZ;
+			if (movingobjectposition.typeOfHit == MovingObjectType.ENTITY && movingobjectposition.entityHit != null) {
+				impactX = movingobjectposition.entityHit.posX;
+				impactY = movingobjectposition.entityHit.posY;
+				impactZ = movingobjectposition.entityHit.posZ;
+			}
+			AMNetHandler.INSTANCE.sendStarImpactToClients(impactX, impactY, impactZ, worldObj, this.getSpellStack(), count);
 			List<EntityLivingBase> ents = worldObj.getEntitiesWithinAABB(EntityLivingBase.class, boundingBox.expand(impactRadius, impactRadius, impactRadius));
+			DamageSource starDamageSource = throwingEntity != null ? DamageSources.causeEntityMagicDamage(throwingEntity) : DamageSource.magic;
 			for (EntityLivingBase e : ents){
 				if (e == throwingEntity) continue;
 				if (this.getEntitySenses().canSee(e))
-					SpellHelper.instance.attackTargetSpecial(null, e, DamageSources.causeEntityMagicDamage(throwingEntity), damage);
+					SpellHelper.instance.attackTargetSpecial(null, e, starDamageSource, damage);
 			}
 		}else{
 

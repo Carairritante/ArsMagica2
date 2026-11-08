@@ -114,6 +114,8 @@ public class ClientProxy extends CommonProxy{
 		((net.minecraft.client.resources.IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(SpellPartSearch.INSTANCE);
 		MinecraftForge.EVENT_BUS.post(new RegisterSkillTreeIcons(SpellIconManager.instance));
 		MinecraftForge.EVENT_BUS.register(new AMClientEventHandler());
+		MinecraftForge.EVENT_BUS.register(new am2.armor.ArmorClientEventHandler());
+		FMLCommonHandler.instance().bus().register(new am2.armor.ArmorClientEventHandler());
 		MinecraftForge.EVENT_BUS.register(new RitualArchitectRenderer());
 		((ParticleManagerClient)particleManager).registerEventHandlers();
 

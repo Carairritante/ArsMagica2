@@ -263,6 +263,7 @@ public class AMClientEventHandler{
 	public void onWorldUnload(WorldEvent.Unload event){
 		if (event.world != null && event.world.isRemote){
 			am2.client.vfx.OrbitalStormVFX.clearAll();
+			am2.client.vfx.ManaShieldVFX.clearAll();
 		}
 	}
 

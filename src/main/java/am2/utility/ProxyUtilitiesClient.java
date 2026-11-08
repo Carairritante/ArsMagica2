@@ -14,4 +14,9 @@ public class ProxyUtilitiesClient extends ProxyUtilitiesCommon{
 		return Minecraft.getMinecraft().thePlayer;
 	}
 
+	@Override
+	public boolean isJumpKeyPressed(){
+		return Minecraft.getMinecraft().gameSettings.keyBindJump.getIsKeyPressed();
+	}
+
 }

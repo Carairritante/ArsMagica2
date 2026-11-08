@@ -7,6 +7,7 @@ import am2.api.spell.component.interfaces.ISpellModifier;
 import am2.api.spell.enums.SpellModifiers;
 import am2.buffs.BuffEffectFrostSlowed;
 import am2.damage.DamageSources;
+import net.minecraft.util.DamageSource;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import am2.network.AMNetHandler;
@@ -978,7 +979,8 @@ public class EntitySpellEffect extends Entity{
 			if (dSq <= (radius + 1.5) * (radius + 1.5)){
 				int fireSeconds = count >= 30 ? 10 : (count >= 15 ? 8 : (count >= 5 ? 6 : 5));
 				target.setFire(fireSeconds);
-				target.attackEntityFrom(DamageSources.causeEntityLightningDamage(sourceCaster != null ? sourceCaster : target), finalDmg);
+				DamageSource impactDmg = DamageSources.causeEntityLightningDamage(sourceCaster);
+				target.attackEntityFrom(impactDmg, finalDmg);
 				if (count >= 15){
 					target.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, count >= 30 ? 100 : 60, count >= 30 ? 3 : 1));
 				}
@@ -1184,11 +1186,11 @@ public class EntitySpellEffect extends Entity{
 				target.setFire(fireSec);
 				target.hurtResistantTime = 0;
 
-				EntityLivingBase attacker = sourceCaster != null ? sourceCaster : target;
+				DamageSource strikeDmg = DamageSources.causeEntityLightningDamage(sourceCaster);
 				if (this.spellStack != null && sourceCaster != null){
-					SpellHelper.instance.attackTargetSpecial(this.spellStack, target, DamageSources.causeEntityLightningDamage(attacker), this.orbitalDamage);
+					SpellHelper.instance.attackTargetSpecial(this.spellStack, target, strikeDmg, this.orbitalDamage);
 				}else{
-					target.attackEntityFrom(DamageSources.causeEntityLightningDamage(attacker), this.orbitalDamage);
+					target.attackEntityFrom(strikeDmg, this.orbitalDamage);
 				}
 
 				sx[strikeCount] = target.posX;

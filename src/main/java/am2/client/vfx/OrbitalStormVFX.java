@@ -232,8 +232,10 @@ public class OrbitalStormVFX {
 
 		Tessellator t = Tessellator.instance;
 
+		float prevBrightX = OpenGlHelper.lastBrightnessX;
+		float prevBrightY = OpenGlHelper.lastBrightnessY;
 		GL11.glPushMatrix();
-		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_LINE_BIT);
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_LINE_BIT | GL11.GL_CURRENT_BIT | GL11.GL_POLYGON_BIT);
 
 		GL11.glDisable(GL11.GL_LIGHTING);
 		RenderHelper.disableStandardItemLighting();
@@ -260,6 +262,7 @@ public class OrbitalStormVFX {
 		renderDebrisSparks(mc, t, camX, camY, camZ, now);
 
 		GL11.glDepthMask(true);
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
 		GL11.glPopAttrib();
 		GL11.glPopMatrix();
 	}
