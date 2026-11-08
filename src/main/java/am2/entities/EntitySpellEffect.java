@@ -967,6 +967,8 @@ public class EntitySpellEffect extends Entity{
 			if (target == sourceCaster) continue;
 			double dSq = target.getDistanceSq(this.posX, target.posY, this.posZ);
 			if (dSq <= (radius + 1.5) * (radius + 1.5)){
+				int fireSeconds = count >= 30 ? 10 : (count >= 15 ? 8 : (count >= 5 ? 6 : 5));
+				target.setFire(fireSeconds);
 				target.attackEntityFrom(DamageSources.causeEntityLightningDamage(sourceCaster != null ? sourceCaster : target), finalDmg);
 				if (count >= 15){
 					target.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, count >= 30 ? 100 : 60, count >= 30 ? 3 : 1));
