@@ -673,9 +673,12 @@ public class RenderSpellEffect extends Render {
 		float globalAlpha = intro * outro;
 		if (globalAlpha <= 0.005f) return;
 
+		int tier = effect.getGrowTier();
+		float tierScale = effect.getGrowVisualScale();
+
 		float baseRadius = effect.getRadius();
 		if (baseRadius <= 0.1f) baseRadius = 2.8f;
-		float radius = baseRadius * (0.85f + 0.15f * intro);
+		float radius = baseRadius * tierScale * (0.85f + 0.15f * intro);
 
 		// Colors: default light spring green / mint white
 		int customColor = effect.getSpellColor();
@@ -718,46 +721,98 @@ public class RenderSpellEffect extends Render {
 		GL11.glPopMatrix();
 
 		// 2. Inner Lotus Core (counter-rotating with bright mint core)
+		float innerCoreRadius = radius * (tier >= 3 ? 0.60f : 0.52f);
 		GL11.glPushMatrix();
 		GL11.glTranslatef((float) x, (float) y + 0.05f, (float) z);
 		GL11.glRotatef(-rot * 0.7f, 0.0f, 1.0f, 0.0f);
 		this.bindTexture(texGrowGround);
-		GL11.glColor4f(rCore, gCore, bCore, globalAlpha * 0.85f);
-		renderHorizontalQuad(t, -radius * 0.55f, radius * 0.55f, -radius * 0.55f, radius * 0.55f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+		GL11.glColor4f(rCore, gCore, bCore, globalAlpha * (tier >= 3 ? 0.95f : 0.85f));
+		renderHorizontalQuad(t, -innerCoreRadius, innerCoreRadius, -innerCoreRadius, innerCoreRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
 		GL11.glPopMatrix();
 
 		// 3. Expanding Floral Life Ripple
-		float pulseDuration = 20.0f;
+		float pulseDuration = 22.0f;
 		if (age < pulseDuration) {
 			float pNorm = age / pulseDuration;
-			float pScale = (0.3f + 1.15f * (float) Math.sqrt(pNorm)) * radius;
-			float pAlpha = (float) Math.sin(pNorm * Math.PI) * (1.0f - pNorm * 0.4f) * globalAlpha;
+			float pScale = (0.25f + 1.20f * (float) Math.sqrt(pNorm)) * radius;
+			float pAlpha = (float) Math.sin(pNorm * Math.PI) * (1.0f - pNorm * 0.35f) * globalAlpha;
 
 			GL11.glPushMatrix();
 			GL11.glTranslatef((float) x, (float) y + 0.06f, (float) z);
 			GL11.glRotatef(-age * 2.5f, 0.0f, 1.0f, 0.0f);
 			this.bindTexture(texGrowPulse);
 			GL11.glColor4f(rLight, gLight, bLight, pAlpha * 0.90f);
-		renderHorizontalQuad(t, -pScale, pScale, -pScale, pScale, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
-		GL11.glPopMatrix();
+			renderHorizontalQuad(t, -pScale, pScale, -pScale, pScale, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+			GL11.glPopMatrix();
 		}
 
-		// 4. Smooth Sacred Geometry Vector Rings
+		// 4. Concentric Sacred Geometry Vector Rings & Sacred Stars based on Tier
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		GL11.glPushMatrix();
 		GL11.glTranslatef((float) x, (float) y + 0.05f, (float) z);
 
-		// Outer boundary circle
-		GL11.glColor4f(rLight, gLight, bLight, globalAlpha * 0.75f);
-		renderSmoothVectorRing(radius * 0.98f, 48, 2.2f);
+		// Outer boundary circle (All Tiers)
+		float outerWidth = tier >= 4 ? 3.0f : (tier >= 3 ? 2.5f : 2.0f);
+		GL11.glColor4f(rLight, gLight, bLight, globalAlpha * 0.80f);
+		renderSmoothVectorRing(radius * 0.98f, 54, outerWidth);
 
-		// Rotating 16-sided star polygon
+		// Rotating star polygon (Tier 1: 8-point, Tier 2: 12-point, Tier 3+: 16-point)
+		int sides = tier >= 3 ? 16 : (tier == 2 ? 12 : 8);
+		GL11.glPushMatrix();
 		GL11.glRotatef(rot * 0.5f, 0.0f, 1.0f, 0.0f);
-		GL11.glColor4f(rCore, gCore, bCore, globalAlpha * 0.60f);
-		renderSmoothVectorPolygon(radius * 0.72f, 16, 1.8f);
+		GL11.glColor4f(rCore, gCore, bCore, globalAlpha * 0.65f);
+		renderSmoothVectorPolygon(radius * 0.72f, sides, 1.8f);
+		GL11.glPopMatrix();
+
+		// Tier 2+: Second Concentric Ring & Secondary Counter-Rotating Star
+		if (tier >= 2) {
+			GL11.glColor4f(rLight, gLight, bLight, globalAlpha * 0.70f);
+			renderSmoothVectorRing(radius * 0.84f, 48, 1.9f);
+
+			GL11.glPushMatrix();
+			GL11.glRotatef(-rot * 0.4f, 0.0f, 1.0f, 0.0f);
+			GL11.glColor4f(rLeaf, gLeaf, bLeaf, globalAlpha * 0.55f);
+			renderSmoothVectorPolygon(radius * 0.58f, 8, 1.6f);
+			GL11.glPopMatrix();
+		}
+
+		// Tier 3+: Third Concentric Ring & Sacred Hexagram Flower of Life
+		if (tier >= 3) {
+			GL11.glColor4f(rCore, gCore, bCore, globalAlpha * 0.75f);
+			renderSmoothVectorRing(radius * 0.68f, 42, 2.0f);
+
+			GL11.glPushMatrix();
+			GL11.glRotatef(rot * 0.8f, 0.0f, 1.0f, 0.0f);
+			GL11.glColor4f(rLight, gLight, bLight, globalAlpha * 0.60f);
+			renderSmoothVectorPolygon(radius * 0.44f, 6, 2.0f);
+			GL11.glPopMatrix();
+		}
+
+		// Tier 4: Fourth Concentric Ring & Sacred Inner Core Star
+		if (tier >= 4) {
+			GL11.glColor4f(rLight, gLight, bLight, globalAlpha * 0.85f);
+			renderSmoothVectorRing(radius * 0.50f, 36, 2.2f);
+
+			GL11.glPushMatrix();
+			GL11.glRotatef(-rot * 1.0f, 0.0f, 1.0f, 0.0f);
+			GL11.glColor4f(rCore, gCore, bCore, globalAlpha * 0.75f);
+			renderSmoothVectorPolygon(radius * 0.32f, 16, 2.0f);
+			GL11.glPopMatrix();
+		}
 
 		GL11.glPopMatrix();
 		GL11.glEnable(GL11.GL_TEXTURE_2D);
+
+		// Tier 4: Ascending Pillar of Holy Verdant Starlight (Nature reaching for the heavens)
+		if (tier >= 4) {
+			float pAlpha = (float) Math.sin(intro * Math.PI * 0.5) * outro;
+			float pWidth = 3.4f * (0.85f + 0.15f * intro);
+			float pillarHeight = 30.0f + tierScale * 3.5f;
+
+			this.bindTexture(texStarfallPillar);
+			GL11.glColor4f(rLight, gLight, bLight, pAlpha * 0.88f);
+			renderVerticalQuadCross3(t, x, y + 0.05f, y + pillarHeight, z, pWidth, 1.0f, 0.0f);
+		}
 
 		GL11.glPopAttrib();
 		GL11.glPopMatrix();

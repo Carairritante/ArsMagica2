@@ -722,10 +722,42 @@ public class EntitySpellEffect extends Entity{
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_STARFALL_IMPACT;
 	}
 
+	private int mergeCount = 1;
+
+	public void addMerged(int count){
+		this.mergeCount += count;
+	}
+
+	public int getMergeCount(){
+		return this.mergeCount;
+	}
+
+	public int getGrowTier(){
+		if (this.mergeCount >= 25) return 4;
+		if (this.mergeCount >= 10) return 3;
+		if (this.mergeCount >= 5) return 2;
+		return 1;
+	}
+
+	public float getGrowVisualScale(){
+		int count = this.mergeCount;
+		if (count >= 25){
+			return 4.5f + (float)Math.min(1.5f, (count - 25) * 0.02f);
+		}else if (count >= 10){
+			return 3.0f + (float)Math.min(1.2f, (count - 10) * 0.08f);
+		}else if (count >= 5){
+			return 1.8f + (count - 5) * 0.20f;
+		}else if (count > 1){
+			return 1.0f + (count - 1) * 0.15f;
+		}
+		return 1.0f;
+	}
+
 	public void setGrowMandala(float radius, int colorModifier){
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_GROW_MANDALA);
 		this.setTicksToExist(32);
 		this.setRadius(radius);
+		this.mergeCount = 1;
 		this.ignoreFrustumCheck = true;
 		this.renderDistanceWeight = 10.0D;
 		if (colorModifier != -1){
