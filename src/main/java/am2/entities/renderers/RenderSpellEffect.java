@@ -50,6 +50,7 @@ public class RenderSpellEffect extends Render {
 	private static final ResourceLocation texLightningShockwave = new ResourceLocation("arsmagica2", "textures/misc/vfx/lightning_shockwave.png");
 	private static final ResourceLocation texLightningBolt = new ResourceLocation("arsmagica2", "textures/misc/vfx/lightning_bolt.png");
 	private static final ResourceLocation texLightningDragon = new ResourceLocation("arsmagica2", "textures/misc/vfx/lightning_dragon.png");
+	private static final ResourceLocation texStormCloud = new ResourceLocation("arsmagica2", "textures/misc/vfx/storm_cloud.png");
 
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float yaw, float partialTicks) {
@@ -1009,18 +1010,18 @@ public class RenderSpellEffect extends Render {
 
 		// Pure Dark Blue / Deep Cobalt Plasma Palette (As requested: "azul escuro")
 		int customColor = effect.getSpellColor();
-		float rDeep = 0.05f, gDeep = 0.12f, bDeep = 0.65f;
-		float rLight = 0.10f, gLight = 0.32f, bLight = 0.95f;
-		float rEdge = 0.18f, gEdge = 0.45f, bEdge = 1.0f;
-		float rCore = 0.60f, gCore = 0.82f, bCore = 1.0f;
+		float rDeep = 0.04f, gDeep = 0.10f, bDeep = 0.55f;
+		float rLight = 0.08f, gLight = 0.28f, bLight = 0.95f;
+		float rEdge = 0.15f, gEdge = 0.40f, bEdge = 1.0f;
+		float rCore = 0.65f, gCore = 0.85f, bCore = 1.0f;
 
 		if (customColor != -1) {
 			rLight = ((customColor >> 16) & 0xFF) / 255.0f;
 			gLight = ((customColor >> 8) & 0xFF) / 255.0f;
 			bLight = (customColor & 0xFF) / 255.0f;
-			rDeep = Math.max(0.0f, rLight * 0.5f);
-			gDeep = Math.max(0.0f, gLight * 0.5f);
-			bDeep = Math.max(0.0f, bLight * 0.5f);
+			rDeep = Math.max(0.0f, rLight * 0.4f);
+			gDeep = Math.max(0.0f, gLight * 0.4f);
+			bDeep = Math.max(0.0f, bLight * 0.4f);
 			rCore = Math.min(1.0f, rLight * 1.3f + 0.2f);
 			gCore = Math.min(1.0f, gLight * 1.3f + 0.2f);
 			bCore = Math.min(1.0f, bLight * 1.3f + 0.2f);
@@ -1040,121 +1041,183 @@ public class RenderSpellEffect extends Render {
 		GL11.glDepthMask(false);
 		GL11.glDisable(GL11.GL_CULL_FACE);
 
-		// 1. O CÉU DE TEMPESTADE AZUL ESCURO (Growing Thundercloud Dome)
+		// 1. NUVENS ESCURAS DE TEMPESTADE EM CIMA (Volumetric Dark Thundercloud)
 		if (tier >= 2) {
-			float cloudGrowth = Math.min(1.0f, (progress / 0.55f));
-			float stormCloudRadius = aoeRadius * (0.35f + 0.90f * cloudGrowth);
+			float stormGrowth = Math.min(1.0f, progress / 0.55f);
+			float cloudRadius = aoeRadius * (0.6f + 0.75f * stormGrowth);
 			float cloudAlpha = (float) Math.sin((1.0f - progress) * Math.PI * 0.5) * 0.85f;
 
-			GL11.glPushMatrix();
-			GL11.glTranslatef((float) x, (float) y + 36.0f, (float) z);
+			this.bindTexture(texStormCloud);
+			java.util.Random cloudRnd = new java.util.Random(effect.getEntityId() + 777);
 
-			GL11.glRotatef(age * 3.5f, 0.0f, 1.0f, 0.0f);
-			this.bindTexture(texGrowPulse);
-			GL11.glColor4f(rDeep, gDeep, bDeep, cloudAlpha * 0.85f);
-			renderHorizontalQuad(t, -stormCloudRadius, stormCloudRadius, -stormCloudRadius, stormCloudRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+			int numPuffs = tier >= 4 ? 18 : (tier >= 3 ? 14 : 9);
+			for (int cp = 0; cp < numPuffs; cp++) {
+				float cDist = (float) Math.sqrt(cloudRnd.nextFloat()) * (cloudRadius * 0.80f);
+				float cAng = cloudRnd.nextFloat() * (float) Math.PI * 2.0f + age * 0.015f * (cp % 2 == 0 ? 1 : -1);
+				float cx = (float) (x + cDist * Math.cos(cAng));
+				float cz = (float) (z + cDist * Math.sin(cAng));
+				float cy = (float) y + 26.0f + (cp % 5) * 1.8f;
+				float puffR = (tier >= 4 ? 9.5f : 6.5f) + (cp % 3) * 1.5f;
 
-			GL11.glRotatef(-age * 6.0f, 0.0f, 1.0f, 0.0f);
-			this.bindTexture(texLightningShockwave);
-			GL11.glColor4f(rLight, gLight, bLight, cloudAlpha * 0.65f);
-			renderHorizontalQuad(t, -stormCloudRadius * 0.75f, stormCloudRadius * 0.75f, -stormCloudRadius * 0.75f, stormCloudRadius * 0.75f, 0.05f, 0.0f, 1.0f, 0.0f, 1.0f);
-			GL11.glPopMatrix();
+				float puffRot = age * (0.8f + (cp % 4) * 0.4f) * (cp % 2 == 0 ? 1 : -1);
+
+				GL11.glPushMatrix();
+				GL11.glTranslatef(cx, cy, cz);
+				GL11.glRotatef(puffRot, 0.0f, 1.0f, 0.0f);
+
+				GL11.glColor4f(rDeep * 0.8f, gDeep * 0.8f, bDeep * 0.8f, cloudAlpha * 0.90f);
+				renderHorizontalQuad(t, -puffR, puffR, -puffR, puffR, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+
+				if ((effect.ticksExisted + cp * 3) % 7 < 2) {
+					GL11.glColor4f(rLight, gLight, bLight, cloudAlpha * 0.65f);
+					renderHorizontalQuad(t, -puffR * 0.85f, puffR * 0.85f, -puffR * 0.85f, puffR * 0.85f, 0.05f, 0.0f, 1.0f, 0.0f, 1.0f);
+				}
+				GL11.glPopMatrix();
+			}
 		}
 
-		// 2. O SELO RÚNICO DE TROVÃO QUE CRESCE NO CHÃO (Growing Ground Sigil)
-		float sigilGrowth = Math.min(1.0f, (progress / 0.60f));
-		float currentSigilR = aoeRadius * (0.25f + 0.85f * sigilGrowth);
-		float sigilFade = (float) Math.sin((1.0f - progress) * Math.PI * 0.5);
+		// 2. AURA ELÉTRICA NO CHÃO (Natural Ionized Ground Storm Field)
+		float fieldGrowth = Math.min(1.0f, progress / 0.60f);
+		float fieldR = aoeRadius * (0.25f + 0.85f * fieldGrowth);
+		float fieldAlpha = (float) Math.sin((1.0f - progress) * Math.PI * 0.5) * 0.70f;
 
+		GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
+		GL11.glPolygonOffset(-2.0f, -2.0f);
 		GL11.glPushMatrix();
-		GL11.glTranslatef((float) x, (float) y + 0.02f, (float) z);
-		GL11.glRotatef(age * 1.8f, 0.0f, 1.0f, 0.0f);
-		this.bindTexture(texLightningSigil);
-		GL11.glColor4f(rLight, gLight, bLight, sigilFade * 0.88f);
-		renderHorizontalQuad(t, -currentSigilR, currentSigilR, -currentSigilR, currentSigilR, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+		GL11.glTranslatef((float) x, (float) y + 0.05f, (float) z);
+		GL11.glRotatef(age * 2.5f, 0.0f, 1.0f, 0.0f);
+		this.bindTexture(texLightningShockwave);
+		GL11.glColor4f(rDeep, gDeep, bDeep, fieldAlpha * 0.85f);
+		renderHorizontalQuad(t, -fieldR, fieldR, -fieldR, fieldR, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
 
-		GL11.glRotatef(-age * 3.5f, 0.0f, 1.0f, 0.0f);
-		GL11.glColor4f(rCore, gCore, bCore, sigilFade * 0.60f);
-		renderHorizontalQuad(t, -currentSigilR * 0.45f, currentSigilR * 0.45f, -currentSigilR * 0.45f, currentSigilR * 0.45f, 0.01f, 0.0f, 1.0f, 0.0f, 1.0f);
+		GL11.glRotatef(-age * 4.0f, 0.0f, 1.0f, 0.0f);
+		GL11.glColor4f(rLight, gLight, bLight, fieldAlpha * 0.50f);
+		renderHorizontalQuad(t, -fieldR * 0.65f, fieldR * 0.65f, -fieldR * 0.65f, fieldR * 0.65f, 0.01f, 0.0f, 1.0f, 0.0f, 1.0f);
 		GL11.glPopMatrix();
+		GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
 
-		// 3. A CHUVA DE RAIOS QUE CRESCE (The Growing Dark Blue Lightning Rain)
-		int totalBolts = tier >= 4 ? 96 : (tier >= 3 ? 52 : (tier == 2 ? 26 : 6));
+		// 3. CHUVA MASSIVA DE RAIOS ZIG-ZAG (Procedural 3D Jagged Lightning)
+		int totalBolts = tier >= 4 ? 220 : (tier >= 3 ? 110 : (tier == 2 ? 45 : 12));
 		java.util.Random rnd = new java.util.Random(effect.getEntityId());
+		float stormDuration = (float) maxTicks * 0.82f;
 
-		float[] activeX = new float[16];
-		float[] activeZ = new float[16];
-		int activeCount = 0;
+		GL11.glDisable(GL11.GL_TEXTURE_2D);
+		GL11.glEnable(GL11.GL_LINE_SMOOTH);
+		GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
 
-		float stormDuration = (float) maxTicks * 0.78f;
+		float[] sparkX = new float[32];
+		float[] sparkZ = new float[32];
+		float[] sparkAlpha = new float[32];
+		int sparkCount = 0;
 
-		this.bindTexture(texLightningBolt);
+		float cloudBaseY = (float) y + (tier >= 2 ? 28.0f : 24.0f);
+		float groundSurfaceY = (float) y + 0.05f;
 
 		for (int i = 0; i < totalBolts; i++) {
 			float growFrac = (float) i / (float) totalBolts;
 			float strikeStartTick = growFrac * stormDuration;
 			float boltAge = age - strikeStartTick;
 
-			float currentRadiusLimit = aoeRadius * (0.15f + 0.85f * (float) Math.sqrt(growFrac));
+			float currentRadiusLimit = aoeRadius * (0.12f + 0.88f * (float) Math.sqrt(growFrac));
 			float dist = (float) Math.sqrt(rnd.nextFloat()) * currentRadiusLimit;
 			float ang = rnd.nextFloat() * (float) Math.PI * 2.0f;
-			float bx = (float) (x + dist * Math.cos(ang));
-			float bz = (float) (z + dist * Math.sin(ang));
+			float targetX = (float) (x + dist * Math.cos(ang));
+			float targetZ = (float) (z + dist * Math.sin(ang));
 
-			if (boltAge >= 0.0f && boltAge < 5.0f) {
-				float bNorm = boltAge / 5.0f;
-				float flicker = (1.0f - bNorm) * (0.85f + 0.15f * (float) Math.sin(boltAge * 14.0));
-				float bWidth = tier >= 4 ? 2.5f : (tier >= 3 ? 1.9f : 1.4f);
+			float startX = targetX + (rnd.nextFloat() - 0.5f) * 4.0f;
+			float startZ = targetZ + (rnd.nextFloat() - 0.5f) * 4.0f;
 
-				GL11.glColor4f(rLight, gLight, bLight, flicker * 0.90f);
-				renderVerticalQuadCross3(t, bx, y, y + 38.0f, bz, bWidth, 1.0f, 0.0f);
+			if (boltAge >= 0.0f && boltAge < 4.5f) {
+				float bNorm = boltAge / 4.5f;
+				float flicker = (1.0f - bNorm) * (0.80f + 0.20f * (float) Math.sin(boltAge * 16.0));
 
+				int numSegs = 10;
+				float[] segX = new float[numSegs + 1];
+				float[] segY = new float[numSegs + 1];
+				float[] segZ = new float[numSegs + 1];
+
+				segX[0] = startX; segY[0] = cloudBaseY; segZ[0] = startZ;
+				segX[numSegs] = targetX; segY[numSegs] = groundSurfaceY; segZ[numSegs] = targetZ;
+
+				for (int k = 1; k < numSegs; k++) {
+					float frac = (float) k / (float) numSegs;
+					float vertY = cloudBaseY - (cloudBaseY - groundSurfaceY) * frac;
+					float jitter = 2.4f * (float) Math.sin(frac * Math.PI);
+					float jx = (rnd.nextFloat() - 0.5f) * jitter * 2.4f;
+					float jz = (rnd.nextFloat() - 0.5f) * jitter * 2.4f;
+
+					segX[k] = startX + (targetX - startX) * frac + jx;
+					segY[k] = vertY;
+					segZ[k] = startZ + (targetZ - startZ) * frac + jz;
+				}
+
+				// Pass A: Outer Dark Blue Glow
+				GL11.glLineWidth(tier >= 4 ? 7.5f : (tier >= 3 ? 6.0f : 4.5f));
+				GL11.glColor4f(rLight, gLight, bLight, flicker * 0.85f);
+				GL11.glBegin(GL11.GL_LINE_STRIP);
+				for (int k = 0; k <= numSegs; k++) {
+					GL11.glVertex3f(segX[k], segY[k], segZ[k]);
+				}
+				GL11.glEnd();
+
+				// Pass B: Inner Electric Azure-White Core
+				GL11.glLineWidth(tier >= 4 ? 2.8f : (tier >= 3 ? 2.2f : 1.6f));
 				GL11.glColor4f(rCore, gCore, bCore, flicker * 0.95f);
-				renderVerticalQuadCross3(t, bx, y, y + 38.0f, bz, bWidth * 0.45f, 1.0f, 0.0f);
+				GL11.glBegin(GL11.GL_LINE_STRIP);
+				for (int k = 0; k <= numSegs; k++) {
+					GL11.glVertex3f(segX[k], segY[k], segZ[k]);
+				}
+				GL11.glEnd();
 
-				if (activeCount < 16) {
-					activeX[activeCount] = bx;
-					activeZ[activeCount] = bz;
-					activeCount++;
+				// Forked Branches splitting off from segments 3 and 6
+				for (int forkIdx : new int[]{3, 6}) {
+					if (forkIdx < numSegs) {
+						float fx0 = segX[forkIdx], fy0 = segY[forkIdx], fz0 = segZ[forkIdx];
+						float fx1 = fx0 + (rnd.nextFloat() - 0.5f) * 3.5f;
+						float fy1 = fy0 - 3.5f;
+						float fz1 = fz0 + (rnd.nextFloat() - 0.5f) * 3.5f;
+						float fx2 = fx1 + (rnd.nextFloat() - 0.5f) * 2.5f;
+						float fy2 = fy1 - 3.0f;
+						float fz2 = fz1 + (rnd.nextFloat() - 0.5f) * 2.5f;
+
+						GL11.glLineWidth(tier >= 4 ? 4.5f : 3.0f);
+						GL11.glColor4f(rLight, gLight, bLight, flicker * 0.70f);
+						GL11.glBegin(GL11.GL_LINE_STRIP);
+						GL11.glVertex3f(fx0, fy0, fz0);
+						GL11.glVertex3f(fx1, fy1, fz1);
+						GL11.glVertex3f(fx2, fy2, fz2);
+						GL11.glEnd();
+					}
 				}
 			}
 
-			if (boltAge >= 0.0f && boltAge < 8.0f) {
-				float spNorm = boltAge / 8.0f;
-				float spAlpha = (1.0f - spNorm) * 0.85f;
-				float spRadius = 0.4f + spNorm * 2.0f;
-
-				GL11.glPushMatrix();
-				GL11.glTranslatef(bx, (float) y + 0.03f, bz);
-				this.bindTexture(texLightningShockwave);
-				GL11.glColor4f(rLight, gLight, bLight, spAlpha);
-			renderHorizontalQuad(t, -spRadius, spRadius, -spRadius, spRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
-				GL11.glPopMatrix();
-				this.bindTexture(texLightningBolt);
+			if (boltAge >= 0.0f && boltAge < 7.0f) {
+				if (sparkCount < 32) {
+					sparkX[sparkCount] = targetX;
+					sparkZ[sparkCount] = targetZ;
+					sparkAlpha[sparkCount] = (1.0f - boltAge / 7.0f) * 0.85f;
+					sparkCount++;
+				}
 			}
 		}
 
-		// 4. TEIA DE ARCOS ELÉTRICOS NO CHÃO (Ground Plasma Arc Web)
-		if (tier >= 3 && activeCount >= 2) {
-			this.bindTexture(texLightningBolt);
-			GL11.glColor4f(rLight, gLight, bLight, 0.70f);
-			for (int a = 0; a < activeCount - 1; a++) {
-				float x1 = activeX[a];
-				float z1 = activeZ[a];
-				float x2 = activeX[a + 1];
-				float z2 = activeZ[a + 1];
-				float midX = (x1 + x2) * 0.5f;
-				float midZ = (z1 + z2) * 0.5f;
-				float arcDist = (float) Math.sqrt((x2 - x1) * (x2 - x1) + (z2 - z1) * (z2 - z1));
+		GL11.glDisable(GL11.GL_LINE_SMOOTH);
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
 
-				if (arcDist < aoeRadius * 0.65f) {
-					GL11.glPushMatrix();
-					GL11.glTranslatef(midX, (float) y + 0.04f, midZ);
-					float arcAngle = (float) Math.atan2(z2 - z1, x2 - x1) * (180.0f / (float) Math.PI);
-					GL11.glRotatef(-arcAngle, 0.0f, 1.0f, 0.0f);
-					renderHorizontalQuad(t, -arcDist * 0.5f, arcDist * 0.5f, -0.4f, 0.4f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
-					GL11.glPopMatrix();
-				}
+		// 4. FAÍSCAS DE IMPACTO NO CHÃO PARA CADA RAIO (Ground Sparks)
+		if (sparkCount > 0) {
+			this.bindTexture(texLightningShockwave);
+			for (int s = 0; s < sparkCount; s++) {
+				float spX = sparkX[s];
+				float spZ = sparkZ[s];
+				float spA = sparkAlpha[s];
+				float spR = 0.5f + (1.0f - spA) * 1.8f;
+
+				GL11.glPushMatrix();
+				GL11.glTranslatef(spX, groundSurfaceY, spZ);
+				GL11.glColor4f(rLight, gLight, bLight, spA);
+			renderHorizontalQuad(t, -spR, spR, -spR, spR, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+				GL11.glPopMatrix();
 			}
 		}
 

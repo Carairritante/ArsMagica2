@@ -45,7 +45,13 @@ public final class LightningStrikeRateLimiter {
 				net.minecraft.entity.EntityLivingBase livingCaster = (caster instanceof net.minecraft.entity.EntityLivingBase) ? (net.minecraft.entity.EntityLivingBase)caster : null;
 				net.minecraft.item.ItemStack itemStack = (stack instanceof net.minecraft.item.ItemStack) ? (net.minecraft.item.ItemStack)stack : null;
 				int casterID = livingCaster != null ? livingCaster.getEntityId() : -1;
-				net.minecraft.util.AxisAlignedBB bb = net.minecraft.util.AxisAlignedBB.getBoundingBox(x - searchRadius, y - 24, z - searchRadius, x + searchRadius, y + 24, z + searchRadius);
+
+				double actualY = y;
+				if (mcWorld.getBlock(x, y, z) != net.minecraft.init.Blocks.air){
+					actualY = y + 1.0;
+				}
+
+				net.minecraft.util.AxisAlignedBB bb = net.minecraft.util.AxisAlignedBB.getBoundingBox(x - searchRadius, actualY - 24, z - searchRadius, x + searchRadius, actualY + 24, z + searchRadius);
 				@SuppressWarnings("unchecked")
 				java.util.List<am2.entities.EntitySpellEffect> existing = mcWorld.getEntitiesWithinAABB(am2.entities.EntitySpellEffect.class, bb);
 				am2.entities.EntitySpellEffect activeFusion = null;
@@ -58,11 +64,11 @@ public final class LightningStrikeRateLimiter {
 				}
 
 				if (activeFusion != null){
-					activeFusion.addMergedLightning(x + 0.5, y, z + 0.5, x, y, z);
+					activeFusion.addMergedLightning(x + 0.5, actualY, z + 0.5, x, y, z);
 				}else{
 					am2.entities.EntitySpellEffect fusion = new am2.entities.EntitySpellEffect(mcWorld);
-					fusion.setPosition(x + 0.5, y, z + 0.5);
-					fusion.setLightningFusion(livingCaster, itemStack, x + 0.5, y, z + 0.5, x, y, z);
+					fusion.setPosition(x + 0.5, actualY, z + 0.5);
+					fusion.setLightningFusion(livingCaster, itemStack, x + 0.5, actualY, z + 0.5, x, y, z);
 					mcWorld.spawnEntityInWorld(fusion);
 				}
 			}
