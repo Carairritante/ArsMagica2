@@ -60,6 +60,9 @@ public class SkillData implements IExtendedEntityProperties, ISkillData{
 	public static final String identifier = "SpellKnowledgeData";
 
 	public static SkillData For(EntityPlayer player){
+		if (player == null){
+			return null;
+		}
 		return (SkillData)player.getExtendedProperties(identifier);
 	}
 

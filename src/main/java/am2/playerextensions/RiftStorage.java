@@ -19,6 +19,9 @@ public class RiftStorage implements IExtendedEntityProperties, IInventory{
 	public static final String identifier = "ArsMagicaVoidStorage";
 
 	public static RiftStorage For(EntityPlayer player){
+		if (player == null){
+			return null;
+		}
 		return (RiftStorage)player.getExtendedProperties(identifier);
 	}
 

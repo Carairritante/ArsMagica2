@@ -33,6 +33,9 @@ public class Lunar implements ISpellModifier{
 	@SuppressWarnings("incomplete-switch")
 	@Override
 	public float getModifier(SpellModifiers type, EntityLivingBase caster, Entity target, World world, byte[] metadata){
+		if (caster == null){
+			return 1.0f;
+		}
 		ExtendedProperties properties = ExtendedProperties.For(caster);
 		if (properties == null){
 			return 1.0f;
@@ -80,6 +83,9 @@ public class Lunar implements ISpellModifier{
 
 	@Override
 	public float getManaCostMultiplier(ItemStack spellStack, int stage, int quantity, EntityLivingBase caster){
+		if (caster == null || caster.worldObj == null){
+			return quantity * 3.5f;
+		}
 		World world = caster.worldObj;
 
 		float multiplier = 3.5f;

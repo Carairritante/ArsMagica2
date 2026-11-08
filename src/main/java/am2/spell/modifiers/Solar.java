@@ -28,7 +28,13 @@ public class Solar implements ISpellModifier{
 	@SuppressWarnings("incomplete-switch")
 	@Override
 	public float getModifier(SpellModifiers type, EntityLivingBase caster, Entity target, World world, byte[] metadata){
+		if (caster == null){
+			return 1.0f;
+		}
 		ExtendedProperties properties = ExtendedProperties.For(caster);
+		if (properties == null){
+			return 1.0f;
+		}
 		// Scale Solar by the caster's burnout capacity (magic level), not their
 		// currently accumulated burnout. Level 99 reaches 991 by default.
 		float maxBurnout = properties.getMaxFatigue();
@@ -58,6 +64,9 @@ public class Solar implements ISpellModifier{
 
 	@Override
 	public float getManaCostMultiplier(ItemStack spellStack, int stage, int quantity, EntityLivingBase caster){
+		if (caster == null || caster.worldObj == null){
+			return quantity * 2.5f;
+		}
 		World world = caster.worldObj;
 		float multiplier = 2.5f;
 

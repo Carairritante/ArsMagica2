@@ -78,7 +78,12 @@ public class RenderSpellEffect extends Render {
 
 	private void renderFirestorm(EntitySpellEffect effect, double x, double y, double z, float partialTicks) {
 		float age = effect.ticksExisted + partialTicks;
-		int maxTicks = effect.getTicksToExist();
+		int maxTicks = 100;
+		try {
+			maxTicks = effect.getTicksToExist();
+		} catch (Throwable t) {
+			maxTicks = 100;
+		}
 		if (maxTicks <= 0) maxTicks = 100;
 
 		// 1. Smooth intro / outro scaling and alpha
@@ -249,7 +254,12 @@ public class RenderSpellEffect extends Render {
 
 	private void renderBlizzard(EntitySpellEffect effect, double x, double y, double z, float partialTicks) {
 		float age = effect.ticksExisted + partialTicks;
-		int maxTicks = effect.getTicksToExist();
+		int maxTicks = 100;
+		try {
+			maxTicks = effect.getTicksToExist();
+		} catch (Throwable t) {
+			maxTicks = 100;
+		}
 		if (maxTicks <= 0) maxTicks = 100;
 
 		// 1. Smooth intro / outro scaling and alpha

@@ -124,15 +124,17 @@ public class EntitySpellEffect extends Entity{
 
 	public int getTicksToExist(){
 		int dw = this.dataWatcher.getWatchableObjectInt(WATCHER_TICKS_TO_EXIST);
-		if (dw > 0 && dw != 100) return dw;
+		if (dw > 0) return dw;
 		if (this.spellStack == null){
 			this.spellStack = this.dataWatcher.getWatchableObjectItemStack(WATCHER_STACK);
 		}
 		if (this.spellStack != null){
-			int calcDuration = SpellUtils.instance.getModifiedInt_Mul(100, this.spellStack, null, null, worldObj, 0, SpellModifiers.DURATION);
-			if (calcDuration > 0) return calcDuration;
+			try{
+				int calcDuration = SpellUtils.instance.getModifiedInt_Mul(100, this.spellStack, this.dummycaster, null, worldObj, 0, SpellModifiers.DURATION);
+				if (calcDuration > 0) return calcDuration;
+			}catch (Throwable ignored){}
 		}
-		return dw > 0 ? dw : this.ticksToExist;
+		return this.ticksToExist > 0 ? this.ticksToExist : 100;
 	}
 
 	public void setExplicitColor(int color){
@@ -193,7 +195,7 @@ public class EntitySpellEffect extends Entity{
 		this.dataWatcher.addObject(WATCHER_TYPE, 0);
 		this.dataWatcher.addObject(WATCHER_ROF_IGNITE, (byte)0);
 		this.dataWatcher.addObject(WATCHER_DAMAGEBONUS, 1.0f);
-		this.dataWatcher.addObject(WATCHER_TICKS_TO_EXIST, 100);
+		this.dataWatcher.addObject(WATCHER_TICKS_TO_EXIST, -1);
 	}
 
 	@Override

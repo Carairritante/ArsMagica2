@@ -55,6 +55,9 @@ public class AffinityData implements IExtendedEntityProperties, IAffinityData{
 	}
 
 	public static AffinityData For(EntityLivingBase living){
+		if (living == null){
+			return null;
+		}
 		return (AffinityData)living.getExtendedProperties(identifier);
 	}
 

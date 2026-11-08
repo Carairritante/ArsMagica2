@@ -193,6 +193,9 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 	}
 
 	public static ExtendedProperties For(EntityLivingBase living){
+		if (living == null){
+			return null;
+		}
 		return (ExtendedProperties)living.getExtendedProperties(identifier);
 	}
 
