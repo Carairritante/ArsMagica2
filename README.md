@@ -1,7 +1,7 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR20
+## Versão de manutenção 1.6.11-LE-CR24
 
 [Slide antes/depois e histórico cronológico das atualizações](docs/RESUMO-ANTES-DEPOIS.md)
 
@@ -15,6 +15,7 @@ a licença e os créditos originais foram preservados.
 
 - [Builds e artefatos do Actions](https://github.com/Carairritante/ArsMagica2/actions)
 - [Correções e mudanças de comportamento](CHANGELOG.md)
+- [Reformulação de VFX, fusões e estabilização multiplayer na CR24](#destaques-da-versão-1611-le-cr24)
 - [Expansão da Box of Illusions com mobs vanilla, sons, animações e dragão na CR22](docs/BOX-OF-ILLUSIONS-CR22.md)
 - [Estabilização da Box of Illusions e item na mão na CR21](docs/BOX-OF-ILLUSIONS-CR21.md)
 - [Vara Arcana e visual do Shrunken na CR20](docs/VARA-SHRUNKEN-CR20.md)
@@ -80,6 +81,32 @@ Na CR18, a engrenagem no menu do giz abre os ajustes da HUD: arraste o painel
 para reposicioná-lo, use **− / +** para mudar o tamanho ou a transparência do fundo
 e **Restaurar** para voltar ao padrão. As preferências ficam salvas localmente
 ao fechar os ajustes.
+
+### Destaques da Versão 1.6.11-LE-CR24
+
+A CR24 traz uma reformulação completa de efeitos visuais (VFX), otimização de desempenho e correções críticas de compatibilidade multiplayer:
+
+- **Tempestade Orbital (`Storm` + `LightningDamage`)**:
+  - Artilharia orbital com raio de 10 chunks (160 blocos) e proteção contra carregamento forçado de chunks (`world.blockExists`).
+  - Efeito volumétrico no céu com funil de tempestade, anéis de plasma ionizado e faíscas dinâmicas no solo.
+  - Sincronização da duração da tempestade com o container `Zone` e encerramento sincronizado com o `Lightning Strike`.
+  - Frequência acelerada de raios com fuzilamento focado em criaturas hostis.
+- **Lightning Strike (4 Tiers de Fusão Visual)**:
+  - Nuvens escuras volumétricas 3D no céu, chuva de raios zigue-zague 3D, faíscas de impacto no chão e pilar de plasma.
+  - Efeito de fogo incendiando entidades atingidas.
+  - Fusão visual por tiers: Raio Individual (T1) -> Tempestade Concentrada (T2) -> Dragão do Trovão (T3) -> Dragão Divino Primordial (T4).
+- **Rework de VFX e Fusões Mágicas**:
+  - **Explosion**: Fusão unificada em 64 blocos com escavação suave, eliminação do lag gerado por partículas de fumaça vanilla, onda de choque geométrica e pilar de erupção.
+  - **Grow**: Mandala botânica sagrada em 4 tiers concêntricos sem poluição de partículas.
+  - **Starfall**: Queda celestial de estrela cadente, disco de acreção cósmico, supernova e agrupamento de estrelas com dano acumulativo.
+  - **Blizzard e Firestorm**: Conjuntos arcanos rúnicos hexagonais e circulares limpos, removendo caixas de colisão físicas invisíveis.
+  - **Mana Shield**: Visual minimalista de "segunda pele" hexagonal com runas corporais reativas a dano.
+- **Balanceamento de Formas**:
+  - Limite de 3 pulsos para o formato `Wave` quando combinado com magias de alto impacto (`Lightning Strike`, `Explosion` e `Dig`), prevenindo sobrecargas severas de blocos.
+- **Estabilização de Servidores Dedicados e Multiplayer**:
+  - Isolamento rigoroso de métodos de renderização de clientes (`ArmorClientEventHandler` cliente-only vs `ArmorEventHandler` common-safe), eliminando `ClassNotFoundException` no carregamento de servidores dedicados.
+  - Restauração de estados OpenGL em renderizadores para compatibilidade plena com Angelica e shaders.
+  - Total interoperabilidade e compatibilidade retroativa com versões clássicas e de manutenção do AM2PlayGround.
 
 O Actions compila o código desta branch a cada push e pull request. Nas execuções
 concluídas com sucesso, a seção **Artifacts** disponibiliza o JAR reobfuscado e o
