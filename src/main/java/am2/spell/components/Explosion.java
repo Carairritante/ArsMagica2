@@ -24,25 +24,26 @@ import java.util.Random;
 
 public class Explosion implements ISpellComponent{
 
-	private boolean triggerExplosion(ItemStack stack, World world, double x, double y, double z, EntityLivingBase caster){
+	private boolean triggerExplosion(ItemStack stack, World world, double x, double y, double z, EntityLivingBase caster, int bx, int by, int bz){
 		int explosion = 2 + SpellUtils.instance.countModifiers(SpellModifiers.MINING_POWER, stack, 0);
 
 		if (!world.isRemote){
-			double fusionRadius = 20.0;
+			// Broad 64-block fusion radius: ensures all blocks in any size AoE merge into ONE central explosion
+			double fusionRadius = 64.0;
 			@SuppressWarnings("unchecked")
 			List<EntitySpellEffect> nearby = world.getEntitiesWithinAABB(EntitySpellEffect.class,
-					AxisAlignedBB.getBoundingBox(x - fusionRadius, y - 8.0, z - fusionRadius, x + fusionRadius, y + 8.0, z + fusionRadius));
+					AxisAlignedBB.getBoundingBox(x - fusionRadius, y - 24.0, z - fusionRadius, x + fusionRadius, y + 24.0, z + fusionRadius));
 
 			for (EntitySpellEffect effect : nearby){
-				if (effect.isExplosionFusion() && !effect.isDead){
-					effect.addMergedExplosion(x, y, z, explosion);
+				if (effect.isExplosionFusion() && !effect.isDead && (caster == null || effect.getCasterEntityID() == caster.getEntityId())){
+					effect.addMergedExplosion(x, y, z, explosion, bx, by, bz);
 					return true;
 				}
 			}
 
 			EntitySpellEffect fusion = new EntitySpellEffect(world);
 			fusion.setPosition(x, y, z);
-			fusion.setExplosionFusion(caster, stack, explosion);
+			fusion.setExplosionFusion(caster, stack, explosion, bx, by, bz);
 			world.spawnEntityInWorld(fusion);
 		}
 		return true;
@@ -50,27 +51,31 @@ public class Explosion implements ISpellComponent{
 
 	@Override
 	public boolean applyEffectBlock(ItemStack stack, World world, int blockx, int blocky, int blockz, int blockFace, double impactX, double impactY, double impactZ, EntityLivingBase caster){
+		int targetX = blockx;
+		int targetY = blocky;
+		int targetZ = blockz;
+
 		switch (blockFace){
 		case 5:
-			blockx++;
+			targetX++;
 			break;
 		case 2:
-			blockz--;
+			targetZ--;
 			break;
 		case 3:
-			blockz++;
+			targetZ++;
 			break;
 		case 4:
-			blockx--;
+			targetX--;
 			break;
 		}
 
-		return triggerExplosion(stack, world, blockx + 0.5, blocky + 0.5, blockz + 0.5, caster);
+		return triggerExplosion(stack, world, targetX + 0.5, targetY + 0.5, targetZ + 0.5, caster, blockx, blocky, blockz);
 	}
 
 	@Override
 	public boolean applyEffectEntity(ItemStack stack, World world, EntityLivingBase caster, Entity target){
-		return triggerExplosion(stack, world, target.posX, target.posY, target.posZ, caster);
+		return triggerExplosion(stack, world, target.posX, target.posY, target.posZ, caster, (int)Math.floor(target.posX), (int)Math.floor(target.posY), (int)Math.floor(target.posZ));
 	}
 
 	@Override

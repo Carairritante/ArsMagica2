@@ -13,6 +13,7 @@ import am2.spell.SpellHelper;
 import am2.spell.SpellUtils;
 import am2.spell.modifiers.Colour;
 import am2.utility.DummyEntityPlayer;
+import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.boss.EntityDragonPart;
@@ -775,23 +776,33 @@ public class EntitySpellEffect extends Entity{
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_GROW_MANDALA;
 	}
 
-	public void setExplosionFusion(EntityLivingBase caster, ItemStack stack, float basePower){
+	private final List<int[]> blocksToDestroy = new ArrayList<int[]>();
+
+	public int getCasterEntityID(){
+		return this.casterEntityID;
+	}
+
+	public void setExplosionFusion(EntityLivingBase caster, ItemStack stack, float basePower, int bx, int by, int bz){
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_EXPLOSION_FUSION);
 		this.setTicksToExist(5);
 		this.setRadius(basePower);
 		this.mergeCount = 1;
 		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster);
+		this.casterEntityID = caster != null ? caster.getEntityId() : -1;
 		this.spellStack = stack;
 		this.ignoreFrustumCheck = true;
+		this.blocksToDestroy.clear();
+		this.blocksToDestroy.add(new int[]{bx, by, bz});
 	}
 
-	public void addMergedExplosion(double x, double y, double z, float extraPower){
+	public void addMergedExplosion(double x, double y, double z, float extraPower, int bx, int by, int bz){
 		this.mergeCount++;
 		double count = this.mergeCount;
 		this.posX = (this.posX * (count - 1.0) + x) / count;
 		this.posY = (this.posY * (count - 1.0) + y) / count;
 		this.posZ = (this.posZ * (count - 1.0) + z) / count;
 		this.setPosition(this.posX, this.posY, this.posZ);
+		this.blocksToDestroy.add(new int[]{bx, by, bz});
 	}
 
 	public boolean isExplosionFusion(){
@@ -817,12 +828,42 @@ public class EntitySpellEffect extends Entity{
 			finalPower = basePower + (count - 1) * 0.15f;
 		}
 
-		finalPower = Math.min(13.5f, finalPower);
+		finalPower = Math.min(14.0f, finalPower);
 
-		// Single unified Minecraft explosion
-		this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, finalPower, false, true);
+		if (count <= 1){
+			// Single target cast: standard vanilla explosion
+			this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, finalPower, false, true);
+		}else{
+			// Multi-block AoE cast: break all targeted blocks across the entire area!
+			int miningPower = 0;
+			if (this.spellStack != null){
+				miningPower = SpellUtils.instance.countModifiers(SpellModifiers.MINING_POWER, this.spellStack, 0);
+			}
 
-		// Send client visual packet
+			int maxDepth = 2 + miningPower;
+			for (int[] pos : this.blocksToDestroy){
+				int bx = pos[0];
+				int by = pos[1];
+				int bz = pos[2];
+
+				for (int dy = 0; dy < maxDepth; dy++){
+					int curY = by - dy;
+					if (curY < 1) break;
+					Block block = this.worldObj.getBlock(bx, curY, bz);
+					if (block != Blocks.air && block.getBlockHardness(this.worldObj, bx, curY, bz) >= 0){
+						if (block.getExplosionResistance(this) <= 45.0f){
+							block.dropBlockAsItem(this.worldObj, bx, curY, bz, this.worldObj.getBlockMetadata(bx, curY, bz), 0);
+							this.worldObj.setBlock(bx, curY, bz, Blocks.air, 0, 2);
+						}
+					}
+				}
+			}
+
+			// Single centralized explosion for entity damage, knockback and central crater
+			this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, Math.min(8.0f, finalPower), false, true);
+		}
+
+		// Send visual effect packet to all clients in 96-block radius!
 		AMNetHandler.INSTANCE.sendExplosionImpactToClients(this.posX, this.posY, this.posZ, this.worldObj, this.spellStack, count);
 
 		this.setDead();
