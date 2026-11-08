@@ -208,6 +208,30 @@ public class AMNetHandler{
 		sendPacketToAllClientsNear(world.provider.dimensionId, x, y, z, 128, AMPacketIDs.LIGHTNING_IMPACT, writer.generate());
 	}
 
+	public void sendOrbitalStormToClients(
+			World world, int stormEntityId,
+			double cx, double cy, double cz,
+			float radius, int remainingTicks, int totalDuration,
+			int customColor, boolean overcharged,
+			double[] sx, double[] sy, double[] sz, boolean[] hitMob, int count
+	){
+		if (world == null || world.isRemote) return;
+		AMDataWriter writer = new AMDataWriter()
+				.add(stormEntityId)
+				.add(cx).add(cy).add(cz)
+				.add(radius)
+				.add(remainingTicks)
+				.add(totalDuration)
+				.add(customColor)
+				.add(overcharged)
+				.add((byte) Math.min(count, 24));
+		int limit = Math.min(count, 24);
+		for (int i = 0; i < limit; i++){
+			writer.add((float) sx[i]).add((float) sy[i]).add((float) sz[i]).add(hitMob[i]);
+		}
+		sendPacketToAllClientsNear(world.provider.dimensionId, cx, cy, cz, 320, AMPacketIDs.ORBITAL_STORM_STRIKE, writer.generate());
+	}
+
 	public void sendStarImpactToClients(double x, double y, double z, World world, ItemStack spellStack){
 		sendStarImpactToClients(x, y, z, world, spellStack, 1);
 	}

@@ -19,6 +19,8 @@ import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.boss.EntityDragonPart;
+import net.minecraft.entity.monster.IMob;
+import net.minecraft.util.MathHelper;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
@@ -28,7 +30,10 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class EntitySpellEffect extends Entity{
 
@@ -65,6 +70,7 @@ public class EntitySpellEffect extends Entity{
 	public static final int TYPE_EXPLOSION_FUSION = 8;
 	public static final int TYPE_LIGHTNING_FUSION = 9;
 	public static final int TYPE_LIGHTNING_IMPACT = 10;
+	public static final int TYPE_ORBITAL_STORM = 11;
 
 	private int explicitColor = -1;
 
@@ -219,6 +225,9 @@ public class EntitySpellEffect extends Entity{
 			break;
 		case TYPE_LIGHTNING_IMPACT:
 			lightningImpactUpdate();
+			break;
+		case TYPE_ORBITAL_STORM:
+			orbitalStormUpdate();
 			break;
 		}
 
@@ -1015,6 +1024,220 @@ public class EntitySpellEffect extends Entity{
 				}
 			}
 		}
+	}
+
+	private float orbitalDamage = 5.0f;
+	private float orbitalRadius = 240.0f;
+	private boolean orbitalOvercharged = false;
+	private boolean orbitalFollowCaster = false;
+	private int orbitalDuration = 160;
+	private int orbitalStrikeCursor = 0;
+	private final Map<Integer, Integer> orbitalMobCooldowns = new HashMap<Integer, Integer>();
+
+	public void setOrbitalStorm(EntityLivingBase caster, ItemStack stack, double x, double y, double z,
+	                            boolean overcharged, float damage, float radius, int durationTicks, boolean followCaster){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_ORBITAL_STORM);
+		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster);
+		this.casterEntityID = caster != null ? caster.getEntityId() : -1;
+		this.spellStack = stack;
+		if (stack != null){
+			this.dataWatcher.updateObject(WATCHER_STACK, stack);
+		}
+		this.orbitalOvercharged = overcharged;
+		this.orbitalDamage = damage;
+		this.orbitalRadius = radius;
+		this.orbitalFollowCaster = followCaster;
+		this.orbitalDuration = durationTicks == 100 ? 101 : Math.max(80, durationTicks);
+		this.setTicksToExist(this.orbitalDuration);
+		this.setRadius(radius);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 16.0D;
+		this.setPosition(x, y, z);
+		this.orbitalMobCooldowns.clear();
+		dispatchOrbitalWave(true);
+	}
+
+	public void refreshOrbitalStorm(double x, double y, double z, int durationTicks,
+	                                boolean overcharged, float damage, float radius, boolean followCaster){
+		if (followCaster){
+			this.setPosition(x, y, z);
+		}
+		int dur = Math.max(80, durationTicks);
+		this.orbitalFollowCaster = this.orbitalFollowCaster || followCaster;
+		this.orbitalDuration = Math.max(this.orbitalDuration, dur);
+		int nextEnd = this.ticksExisted + dur;
+		if (nextEnd == 100) nextEnd = 101;
+		this.setTicksToExist(nextEnd);
+		if (overcharged) this.orbitalOvercharged = true;
+		this.orbitalDamage = Math.max(this.orbitalDamage, damage);
+		this.orbitalRadius = Math.max(this.orbitalRadius, radius);
+	}
+
+	public boolean isOrbitalStorm(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_ORBITAL_STORM;
+	}
+
+	private void orbitalStormUpdate(){
+		if (this.worldObj.isRemote) return;
+
+		// Decrement per-mob strike cooldowns
+		if (!this.orbitalMobCooldowns.isEmpty()){
+			Iterator<Map.Entry<Integer, Integer>> it = this.orbitalMobCooldowns.entrySet().iterator();
+			while (it.hasNext()){
+				Map.Entry<Integer, Integer> e = it.next();
+				int rem = e.getValue() - 1;
+				if (rem <= 0){
+					it.remove();
+				}else{
+					e.setValue(rem);
+				}
+			}
+		}
+
+		EntityLivingBase liveCaster = null;
+		if (this.casterEntityID != -1){
+			Entity cEnt = this.worldObj.getEntityByID(this.casterEntityID);
+			if (cEnt instanceof EntityLivingBase){
+				liveCaster = (EntityLivingBase) cEnt;
+			}
+		}
+		EntityLivingBase sourceCaster = liveCaster != null ? liveCaster : this.dummycaster;
+
+		if (this.orbitalFollowCaster && liveCaster != null && !liveCaster.isDead){
+			this.setPosition(liveCaster.posX, liveCaster.posY, liveCaster.posZ);
+		}
+
+		if (!this.worldObj.getWorldInfo().isRaining()){
+			this.worldObj.getWorldInfo().setRaining(true);
+		}
+
+		int interval = this.orbitalOvercharged ? 3 : 4;
+		if (this.ticksExisted <= 1 || this.ticksExisted % interval == 0){
+			dispatchOrbitalWave(false);
+		}
+	}
+
+	private void dispatchOrbitalWave(boolean syncOnlyIfEmpty){
+		if (this.worldObj.isRemote) return;
+
+		EntityLivingBase liveCaster = null;
+		if (this.casterEntityID != -1){
+			Entity cEnt = this.worldObj.getEntityByID(this.casterEntityID);
+			if (cEnt instanceof EntityLivingBase){
+				liveCaster = (EntityLivingBase) cEnt;
+			}
+		}
+		EntityLivingBase sourceCaster = liveCaster != null ? liveCaster : this.dummycaster;
+
+		double r = Math.min(240.0, Math.max(48.0, this.orbitalRadius));
+		AxisAlignedBB scanBox = AxisAlignedBB.getBoundingBox(
+				this.posX - r, Math.max(0.0, this.posY - 96.0), this.posZ - r,
+				this.posX + r, Math.min(256.0, this.posY + 128.0), this.posZ + r
+		);
+
+		@SuppressWarnings("unchecked")
+		List<Entity> rawEntities = this.worldObj.getEntitiesWithinAABB(IMob.class, scanBox);
+		List<EntityLivingBase> candidates = new ArrayList<EntityLivingBase>();
+
+		for (Entity ent : rawEntities){
+			if (!(ent instanceof EntityLivingBase)) continue;
+			if (ent == sourceCaster || ent == liveCaster || ent.isDead) continue;
+			EntityLivingBase mob = (EntityLivingBase) ent;
+			if (mob.getHealth() <= 0.0f) continue;
+
+			double dx = mob.posX - this.posX;
+			double dz = mob.posZ - this.posZ;
+			if (dx * dx + dz * dz > r * r) continue;
+
+			int mx = MathHelper.floor_double(mob.posX);
+			int mz = MathHelper.floor_double(mob.posZ);
+			if (!this.worldObj.blockExists(mx, 64, mz)) continue;
+
+			int topY = this.worldObj.getPrecipitationHeight(mx, mz);
+			if (mob.posY < topY - 12 && !this.worldObj.canBlockSeeTheSky(mx, MathHelper.floor_double(mob.posY), mz)){
+				continue;
+			}
+
+			if (!this.orbitalMobCooldowns.containsKey(mob.getEntityId())){
+				candidates.add(mob);
+			}
+		}
+
+		double[] sx = new double[24];
+		double[] sy = new double[24];
+		double[] sz = new double[24];
+		boolean[] hitMob = new boolean[24];
+		int strikeCount = 0;
+
+		int maxMobStrikes = this.orbitalOvercharged ? 6 : 4;
+		if (!candidates.isEmpty()){
+			int n = candidates.size();
+			int toHit = Math.min(maxMobStrikes, n);
+			int cooldownTicks = this.orbitalOvercharged ? 6 : 8;
+			int fireSec = this.orbitalOvercharged ? 7 : 5;
+
+			for (int i = 0; i < toHit && strikeCount < 20; i++){
+				int idx = (this.orbitalStrikeCursor + i) % n;
+				EntityLivingBase target = candidates.get(idx);
+
+				this.orbitalMobCooldowns.put(target.getEntityId(), cooldownTicks);
+				target.setFire(fireSec);
+				target.hurtResistantTime = 0;
+
+				EntityLivingBase attacker = sourceCaster != null ? sourceCaster : target;
+				if (this.spellStack != null && sourceCaster != null){
+					SpellHelper.instance.attackTargetSpecial(this.spellStack, target, DamageSources.causeEntityLightningDamage(attacker), this.orbitalDamage);
+				}else{
+					target.attackEntityFrom(DamageSources.causeEntityLightningDamage(attacker), this.orbitalDamage);
+				}
+
+				sx[strikeCount] = target.posX;
+				sy[strikeCount] = target.posY;
+				sz[strikeCount] = target.posZ;
+				hitMob[strikeCount] = true;
+				strikeCount++;
+
+				// Twin cascading trail bolt on fleeing mobs when overcharged with LightningDamage
+				if (this.orbitalOvercharged && strikeCount < 20){
+					sx[strikeCount] = target.posX + (this.rand.nextDouble() - 0.5) * 2.4;
+					sy[strikeCount] = target.posY;
+					sz[strikeCount] = target.posZ + (this.rand.nextDouble() - 0.5) * 2.4;
+					hitMob[strikeCount] = true;
+					strikeCount++;
+				}
+			}
+			this.orbitalStrikeCursor = (this.orbitalStrikeCursor + toHit) % n;
+		}
+
+		// Scenic distant horizon lightning bolts across the 15 chunks
+		int ambientBolts = this.orbitalOvercharged ? 3 : 2;
+		if (!syncOnlyIfEmpty){
+			for (int a = 0; a < ambientBolts && strikeCount < 24; a++){
+				double ang = this.rand.nextDouble() * Math.PI * 2.0;
+				double maxHorizon = Math.min(185.0, r);
+				double dist = 16.0 + Math.sqrt(this.rand.nextDouble()) * (maxHorizon - 16.0);
+				int ax = MathHelper.floor_double(this.posX + Math.cos(ang) * dist);
+				int az = MathHelper.floor_double(this.posZ + Math.sin(ang) * dist);
+				if (this.worldObj.blockExists(ax, 64, az)){
+					int ay = this.worldObj.getPrecipitationHeight(ax, az);
+					sx[strikeCount] = ax + 0.5;
+					sy[strikeCount] = ay;
+					sz[strikeCount] = az + 0.5;
+					hitMob[strikeCount] = false;
+					strikeCount++;
+				}
+			}
+		}
+
+		int remTicks = Math.max(0, this.getTicksToExist() - this.ticksExisted);
+		int customColor = this.getSpellColor();
+		AMNetHandler.INSTANCE.sendOrbitalStormToClients(
+				this.worldObj, this.getEntityId(),
+				this.posX, this.posY, this.posZ,
+				(float) r, remTicks, this.orbitalDuration,
+				customColor, this.orbitalOvercharged,
+				sx, sy, sz, hitMob, strikeCount
+		);
 	}
 
 	@Override

@@ -159,6 +159,9 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			case AMPacketIDs.LIGHTNING_IMPACT:
 				handleLightningImpact(remaining);
 				break;
+			case AMPacketIDs.ORBITAL_STORM_STRIKE:
+				handleOrbitalStormStrike(remaining);
+				break;
 			case AMPacketIDs.HIDDEN_COMPONENT_UNLOCK:
 				Minecraft.getMinecraft().guiAchievement.func_146256_a(ArcaneCompendium.componentUnlock);
 				break;
@@ -454,6 +457,52 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			float pitch = mergeCount >= 30 ? 0.60f : (mergeCount >= 15 ? 0.75f : (mergeCount >= 5 ? 0.88f : 1.0f));
 			float volume = mergeCount >= 30 ? 5.0f : (mergeCount >= 15 ? 3.5f : (mergeCount >= 5 ? 2.5f : 1.8f));
 			Minecraft.getMinecraft().theWorld.playSound(x, y, z, "ambient.weather.thunder", volume, pitch, false);
+		}
+	}
+
+	private static long lastOrbitalThunderMs = 0L;
+	private static long lastOrbitalZapMs = 0L;
+
+	private void handleOrbitalStormStrike(byte[] data){
+		AMDataReader rdr = new AMDataReader(data, false);
+		int stormId = rdr.getInt();
+		double cx = rdr.getDouble();
+		double cy = rdr.getDouble();
+		double cz = rdr.getDouble();
+		float radius = rdr.getFloat();
+		int remainingTicks = rdr.getInt();
+		int totalDuration = rdr.getInt();
+		int customColor = rdr.getInt();
+		boolean overcharged = rdr.getBoolean();
+		int count = rdr.getByte() & 0xFF;
+
+		double[] sx = new double[count];
+		double[] sy = new double[count];
+		double[] sz = new double[count];
+		boolean[] hitMob = new boolean[count];
+		for (int i = 0; i < count; i++){
+			sx[i] = rdr.getFloat();
+			sy[i] = rdr.getFloat();
+			sz[i] = rdr.getFloat();
+			hitMob[i] = rdr.getBoolean();
+		}
+
+		am2.client.vfx.OrbitalStormVFX.handleOrbitalStormPacket(stormId, cx, cy, cz, radius, remainingTicks, totalDuration, customColor, overcharged, sx, sy, sz, hitMob);
+
+		Minecraft mc = Minecraft.getMinecraft();
+		if (mc != null && mc.theWorld != null && count > 0){
+			long now = Minecraft.getSystemTime();
+			if (now - lastOrbitalThunderMs > 1100L){
+				lastOrbitalThunderMs = now;
+				float pitch = overcharged ? (0.60f + mc.theWorld.rand.nextFloat() * 0.25f) : (0.72f + mc.theWorld.rand.nextFloat() * 0.25f);
+				mc.theWorld.playSound(cx, cy, cz, "ambient.weather.thunder", overcharged ? 2.8f : 1.9f, pitch, false);
+			}
+			if (now - lastOrbitalZapMs > 280L){
+				lastOrbitalZapMs = now;
+				double zX = sx[0], zY = sy[0], zZ = sz[0];
+				float zapPitch = 0.85f + mc.theWorld.rand.nextFloat() * 0.35f;
+				mc.theWorld.playSound(zX, zY, zZ, "arsmagica2:spell.cast.lightning", 1.2f, zapPitch, false);
+			}
 		}
 	}
 

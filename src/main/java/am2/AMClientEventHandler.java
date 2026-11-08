@@ -45,6 +45,8 @@ import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.client.event.RenderPlayerEvent;
+import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -248,6 +250,20 @@ public class AMClientEventHandler{
 	@SideOnly(Side.CLIENT)
 	public void onPlayerRenderSpecials(RenderPlayerEvent.Specials.Post event){
 		am2.client.vfx.ManaShieldVFX.renderThirdPerson(event);
+	}
+
+	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
+	public void onRenderWorldLast(RenderWorldLastEvent event){
+		am2.client.vfx.OrbitalStormVFX.renderAll(event.partialTicks);
+	}
+
+	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
+	public void onWorldUnload(WorldEvent.Unload event){
+		if (event.world != null && event.world.isRemote){
+			am2.client.vfx.OrbitalStormVFX.clearAll();
+		}
 	}
 
 	@SubscribeEvent
