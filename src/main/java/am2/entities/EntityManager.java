@@ -152,7 +152,7 @@ public class EntityManager implements IEntityManager{
 		RenderingRegistry.registerEntityRenderingHandler(EntityRiftStorage.class, new RenderRiftStorage());
 		RenderingRegistry.registerEntityRenderingHandler(EntityManaCreeper.class, new RenderManaCreeper());
 		RenderingRegistry.registerEntityRenderingHandler(EntitySpellProjectile.class, new RenderSpellProjectile());
-		RenderingRegistry.registerEntityRenderingHandler(EntitySpellEffect.class, new RenderHidden());
+		RenderingRegistry.registerEntityRenderingHandler(EntitySpellEffect.class, new RenderSpellEffect());
 		RenderingRegistry.registerEntityRenderingHandler(EntityDryad.class, new RenderDryad());
 
 		RenderingRegistry.registerEntityRenderingHandler(EntitySpecificHallucinations.EntityHallucinationCreeper.class, new RenderHallucination(new ModelCreeper(), new ResourceLocation("textures/entity/creeper/creeper.png")));

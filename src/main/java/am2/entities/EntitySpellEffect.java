@@ -76,6 +76,10 @@ public class EntitySpellEffect extends Entity{
 		this.dataWatcher.updateObject(WATCHER_RADIUS, newRadius);
 	}
 
+	public float getRadius(){
+		return this.dataWatcher.getWatchableObjectFloat(WATCHER_RADIUS);
+	}
+
 	public void setTickRate(int newTickRate){
 		this.maxTicksToEffect = newTickRate;
 		this.ticksToEffect = newTickRate;
@@ -83,6 +87,27 @@ public class EntitySpellEffect extends Entity{
 
 	public void setTicksToExist(int ticks){
 		this.ticksToExist = ticks;
+	}
+
+	public int getTicksToExist(){
+		return this.ticksToExist;
+	}
+
+	public int getSpellColor(){
+		if (spellStack == null){
+			spellStack = this.dataWatcher.getWatchableObjectItemStack(WATCHER_STACK);
+		}
+		if (spellStack != null && SpellUtils.instance.modifierIsPresent(SpellModifiers.COLOR, spellStack, 0)){
+			ISpellModifier[] mods = SpellUtils.instance.getModifiersForStage(spellStack, 0);
+			int ordinalCount = 0;
+			for (ISpellModifier mod : mods){
+				if (mod instanceof Colour){
+					byte[] meta = SpellUtils.instance.getModifierMetadataFromStack(spellStack, mod, 0, ordinalCount++);
+					return (int)mod.getModifier(SpellModifiers.COLOR, null, null, null, meta);
+				}
+			}
+		}
+		return -1;
 	}
 
 	public void setGravity(double gravity){
@@ -264,18 +289,19 @@ public class EntitySpellEffect extends Entity{
 				}
 			}
 
-			for (int i = 0; i < 10; ++i){
+			if (rand.nextInt(3) == 0){
 				double x = this.posX - radius + (rand.nextDouble() * radius * 2);
 				double z = this.posZ - radius + (rand.nextDouble() * radius * 2);
-				double y = this.posY + 10;
+				double y = this.posY + 0.5 + rand.nextDouble() * 1.5;
 
-				AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "explosion_2", x, y, z);
+				AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "ember", x, y, z);
 				if (particle != null){
-					particle.setMaxAge(20);
-					particle.addVelocity(rand.nextDouble() * 0.2f, 0, rand.nextDouble() * 0.2f);
-					particle.setAffectedByGravity();
+					particle.setMaxAge(16);
+					particle.addVelocity((rand.nextDouble() - 0.5) * 0.05f, 0.04f, (rand.nextDouble() - 0.5) * 0.05f);
 					particle.setDontRequireControllers();
-					particle.setRGBColorI(color);
+					int col = getSpellColor();
+					if (col != -1) particle.setRGBColorI(col);
+					else particle.setRGBColorI(0xFF6600);
 					particle.noClip = false;
 				}
 			}
