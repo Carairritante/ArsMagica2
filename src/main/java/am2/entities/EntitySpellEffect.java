@@ -55,6 +55,7 @@ public class EntitySpellEffect extends Entity{
 	private static final int TYPE_BLIZ = 2;
 	private static final int TYPE_WALL = 3;
 	private static final int TYPE_WAVE = 4;
+	public static final int TYPE_STARFALL_IMPACT = 5;
 
 	private boolean firstApply = true;
 
@@ -647,6 +648,20 @@ public class EntitySpellEffect extends Entity{
 
 	public boolean isRainOfFire(){
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_ROF;
+	}
+
+	public void setStarfallImpact(ItemStack stack){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_STARFALL_IMPACT);
+		this.setTicksToExist(22);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
+		if (stack != null) {
+			this.dataWatcher.updateObject(WATCHER_STACK, stack);
+		}
+	}
+
+	public boolean isStarfallImpact(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_STARFALL_IMPACT;
 	}
 
 	@Override

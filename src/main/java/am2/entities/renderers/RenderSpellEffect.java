@@ -31,6 +31,12 @@ public class RenderSpellEffect extends Render {
 	private static final ResourceLocation texBlizzardVortex = new ResourceLocation("arsmagica2", "textures/misc/vfx/blizzard_vortex.png");
 	private static final ResourceLocation texBlizzardShatter = new ResourceLocation("arsmagica2", "textures/misc/vfx/blizzard_shatter.png");
 
+	// Starfall Impact textures
+	private static final ResourceLocation texStarfallCore = new ResourceLocation("arsmagica2", "textures/misc/vfx/starfall_core.png");
+	private static final ResourceLocation texStarfallShockwave = new ResourceLocation("arsmagica2", "textures/misc/vfx/starfall_shockwave.png");
+	private static final ResourceLocation texStarfallPillar = new ResourceLocation("arsmagica2", "textures/misc/vfx/starfall_pillar.png");
+	private static final ResourceLocation texStarfallGround = new ResourceLocation("arsmagica2", "textures/misc/vfx/starfall_ground.png");
+
 	@Override
 	public void doRender(Entity entity, double x, double y, double z, float yaw, float partialTicks) {
 		if (!(entity instanceof EntitySpellEffect)) {
@@ -43,6 +49,8 @@ public class RenderSpellEffect extends Render {
 			renderFirestorm(effect, x, y, z, partialTicks);
 		} else if (effect.isBlizzard()) {
 			renderBlizzard(effect, x, y, z, partialTicks);
+		} else if (effect.isStarfallImpact()) {
+			renderStarfallImpact(effect, x, y, z, partialTicks);
 		}
 	}
 
@@ -516,10 +524,125 @@ public class RenderSpellEffect extends Render {
 		GL11.glEnd();
 	}
 
+	private void renderStarfallImpact(EntitySpellEffect effect, double x, double y, double z, float partialTicks) {
+		float age = effect.ticksExisted + partialTicks;
+		int maxTicks = effect.getTicksToExist();
+		if (maxTicks <= 0) maxTicks = 22;
+
+		float progress = Math.min(1.0f, age / (float) maxTicks);
+		float fadeAlpha = (float) Math.pow(1.0f - progress, 1.4);
+		if (fadeAlpha <= 0.005f) return;
+
+		int customColor = effect.getSpellColor();
+		float rStar = 0.70f, gStar = 0.90f, bStar = 1.0f;
+		float rPillar = 0.60f, gPillar = 0.85f, bPillar = 1.0f;
+		float rShock = 0.80f, gShock = 0.95f, bShock = 1.0f;
+
+		if (customColor != -1) {
+			float cr = ((customColor >> 16) & 0xFF) / 255.0f;
+			float cg = ((customColor >> 8) & 0xFF) / 255.0f;
+			float cb = (customColor & 0xFF) / 255.0f;
+			rStar = cr; gStar = cg; bStar = cb;
+			rPillar = cr; gPillar = cg; bPillar = cb;
+			rShock = Math.min(1.0f, cr * 1.15f); gShock = Math.min(1.0f, cg * 1.15f); bShock = Math.min(1.0f, cb * 1.15f);
+		}
+
+		Tessellator t = Tessellator.instance;
+
+		GL11.glPushMatrix();
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+
+		GL11.glDisable(GL11.GL_LIGHTING);
+		RenderHelper.disableStandardItemLighting();
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0f, 240.0f);
+
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+		GL11.glDepthMask(false);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+
+		// 1. Ground Scorched Celestial Reticle (dimming slowly)
+		this.bindTexture(texStarfallGround);
+		GL11.glPushMatrix();
+		GL11.glTranslatef((float) x, (float) y + 0.03f, (float) z);
+		GL11.glRotatef(age * 0.8f, 0.0f, 1.0f, 0.0f);
+		float gRadius = 3.8f;
+		GL11.glColor4f(rStar, gStar, bStar, 0.65f * fadeAlpha);
+		renderHorizontalQuad(t, -gRadius, gRadius, -gRadius, gRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+		GL11.glPopMatrix();
+
+		// 2. Expanding Celestial Supernova Blastwave Ring
+		this.bindTexture(texStarfallShockwave);
+		GL11.glPushMatrix();
+		GL11.glTranslatef((float) x, (float) y + 0.05f, (float) z);
+		float shockExpansion = (float) Math.sin(progress * Math.PI * 0.5);
+		float shockRadius = 0.8f + shockExpansion * 8.5f;
+		GL11.glColor4f(rShock, gShock, bShock, 0.90f * fadeAlpha);
+		renderHorizontalQuad(t, -shockRadius, shockRadius, -shockRadius, shockRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+		GL11.glPopMatrix();
+
+		// 3. Ascending Pillar of Holy Starlight (shoots straight up to y + 36.0)
+		float pillarDuration = 0.70f;
+		if (progress < pillarDuration) {
+			float pNorm = progress / pillarDuration;
+			float pAlpha = (float) Math.sin((1.0f - pNorm) * Math.PI * 0.5);
+			float pWidth = 3.2f * (1.0f - pNorm * 0.4f);
+			float pillarHeight = 36.0f;
+
+			this.bindTexture(texStarfallPillar);
+			GL11.glColor4f(rPillar, gPillar, bPillar, pAlpha * 0.92f);
+			renderVerticalQuadCross3(t, x, y, y + pillarHeight, z, pWidth, 1.0f, 0.0f);
+		}
+
+		// 4. Initial Supernova Diamond Flash (bursts and vanishes in first 6 ticks)
+		float flashDuration = 0.28f;
+		if (progress < flashDuration) {
+			float fNorm = progress / flashDuration;
+			float fAlpha = 1.0f - fNorm;
+			float fRadius = 1.2f + fNorm * 3.5f;
+
+			this.bindTexture(texStarfallCore);
+			GL11.glPushMatrix();
+			GL11.glTranslatef((float) x, (float) y + 1.2f, (float) z);
+			GL11.glRotatef(age * 5.0f, 0.0f, 1.0f, 0.0f);
+			GL11.glColor4f(1.0f, 1.0f, 1.0f, fAlpha);
+			renderVerticalQuadCross3(t, 0.0, -fRadius, fRadius, 0.0, fRadius * 2.0f, 0.0f, 1.0f);
+			renderHorizontalQuad(t, -fRadius, fRadius, -fRadius, fRadius, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);
+			GL11.glPopMatrix();
+		}
+
+		GL11.glDepthMask(true);
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glDisable(GL11.GL_BLEND);
+		GL11.glEnable(GL11.GL_LIGHTING);
+		RenderHelper.enableStandardItemLighting();
+		GL11.glPopAttrib();
+		GL11.glPopMatrix();
+	}
+
+	private void renderVerticalQuadCross3(Tessellator t, double x, double yStart, double yEnd, double z,
+	                                      float width, float vBottom, float vTop) {
+		float hw = width * 0.5f;
+		for (int k = 0; k < 3; k++) {
+			double angle = Math.toRadians(k * 60.0);
+			double dx = Math.cos(angle) * hw;
+			double dz = Math.sin(angle) * hw;
+
+			t.startDrawingQuads();
+			t.addVertexWithUV(x - dx, yStart, z - dz, 0.0, vBottom);
+			t.addVertexWithUV(x + dx, yStart, z + dz, 1.0, vBottom);
+			t.addVertexWithUV(x + dx, yEnd, z + dz, 1.0, vTop);
+			t.addVertexWithUV(x - dx, yEnd, z - dz, 0.0, vTop);
+			t.draw();
+		}
+	}
+
 	@Override
 	protected ResourceLocation getEntityTexture(Entity entity) {
-		if (entity instanceof EntitySpellEffect && ((EntitySpellEffect) entity).isBlizzard()) {
-			return texBlizzardOuter;
+		if (entity instanceof EntitySpellEffect) {
+			EntitySpellEffect effect = (EntitySpellEffect) entity;
+			if (effect.isBlizzard()) return texBlizzardOuter;
+			if (effect.isStarfallImpact()) return texStarfallShockwave;
 		}
 		return texOuter;
 	}

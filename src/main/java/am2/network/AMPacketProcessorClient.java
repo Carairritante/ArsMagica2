@@ -9,6 +9,7 @@ import am2.api.spell.enums.SpellModifiers;
 import am2.blocks.tileentities.*;
 import am2.bosses.BossActions;
 import am2.bosses.IArsMagicaBoss;
+import am2.entities.EntitySpellEffect;
 import am2.buffs.BuffList;
 import am2.containers.ContainerMagiciansWorkbench;
 import am2.customdata.CustomWorldData;
@@ -392,32 +393,32 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			}
 		}
 
-		for (int i = 0; i < 360; i += AMCore.config.FullGFX() ? 5 : AMCore.config.LowGFX() ? 10 : 20){
-			AMParticle effect = (AMParticle)AMCore.instance.proxy.particleManager.spawn(Minecraft.getMinecraft().theWorld, "sparkle2", x, y + 1.5, z);
+		if (Minecraft.getMinecraft().theWorld != null){
+			EntitySpellEffect impact = new EntitySpellEffect(Minecraft.getMinecraft().theWorld);
+			impact.setPosition(x, y, z);
+			impact.setStarfallImpact(spellStack);
+			Minecraft.getMinecraft().theWorld.spawnEntityInWorld(impact);
+		}
+
+		for (int i = 0; i < 360; i += 30){
+			AMParticle effect = (AMParticle)AMCore.instance.proxy.particleManager.spawn(Minecraft.getMinecraft().theWorld, "sparkle2", x, y + 1.2, z);
 			if (effect != null){
 				effect.setIgnoreMaxAge(true);
-				effect.AddParticleController(new ParticleMoveOnHeading(effect, i, 0, 0.7f, 1, false));
+				effect.AddParticleController(new ParticleMoveOnHeading(effect, i, 0, 0.45f, 1, false));
 				float clrMod = Minecraft.getMinecraft().theWorld.rand.nextFloat();
 				int finalColor = -1;
 				if (color == -1)
-					finalColor = MathUtilities.colorFloatsToInt(0.24f * clrMod, 0.58f * clrMod, 0.71f * clrMod);
+					finalColor = MathUtilities.colorFloatsToInt(0.35f * clrMod, 0.75f * clrMod, 1.0f * clrMod);
 				else{
 					float[] colors = MathUtilities.colorIntToFloats(color);
 					for (int c = 0; c < colors.length; ++c)
 						colors[c] = colors[c] * clrMod;
 					finalColor = MathUtilities.colorFloatsToInt(colors[0], colors[1], colors[2]);
 				}
-				effect.setParticleScale(1.2f);
+				effect.setParticleScale(0.8f);
 				effect.noClip = false;
 				effect.setRGBColorI(finalColor);
-				effect.AddParticleController(new ParticleFadeOut(effect, 1, false).setFadeSpeed(0.05f).setKillParticleOnFinish(true));
-				effect.AddParticleController(
-						new ParticleLeaveParticleTrail(effect, "sparkle2", false, 15, 1, false)
-								.addControllerToParticleList(new ParticleChangeSize(effect, 1.2f, 0.01f, 15, 1, false))
-								.setParticleRGB_I(finalColor)
-								.setChildAffectedByGravity()
-								.addRandomOffset(0.2f, 0.2f, 0.2f)
-				);
+				effect.AddParticleController(new ParticleFadeOut(effect, 1, false).setFadeSpeed(0.06f).setKillParticleOnFinish(true));
 			}
 		}
 

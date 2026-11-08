@@ -38,22 +38,26 @@ public class FallingStar implements ISpellComponent{
 	}
 
 	private boolean spawnStar(ItemStack spellStack, EntityLivingBase caster, Entity target, World world, double x, double y, double z){
-
-		List<EntityThrownRock> rocks = world.getEntitiesWithinAABB(EntityThrownRock.class, AxisAlignedBB.getBoundingBox(x - 10, y - 10, z - 10, x + 10, y + 10, z + 10));
-
-		int damageMultitplier = SpellUtils.instance.getModifiedInt_Mul(15, spellStack, caster, target, world, 0, SpellModifiers.DAMAGE);
-
-		for (EntityThrownRock rock : rocks){
-			if (rock.getIsShootingStar())
-				return false;
-		}
+		int damageMultiplier = SpellUtils.instance.getModifiedInt_Mul(15, spellStack, caster, target, world, 0, SpellModifiers.DAMAGE);
 
 		if (!world.isRemote){
+			double targetY = y - 50.0;
+			double maxSpawnY = Math.min((double)world.getActualHeight() - 5.0, targetY + 65.0);
+			double spawnY = maxSpawnY;
+
+			for (int checkY = (int)Math.floor(targetY) + 2; checkY <= (int)Math.floor(maxSpawnY); checkY++){
+				if (!world.isAirBlock((int)Math.floor(x), checkY, (int)Math.floor(z))){
+					spawnY = Math.max(targetY + 4.0, (double)checkY - 1.5);
+					break;
+				}
+			}
+
 			EntityThrownRock star = new EntityThrownRock(world);
-			star.setPosition(x, world.getActualHeight(), z);
-			star.setShootingStar(2 * damageMultitplier);
+			star.setPosition(x, spawnY, z);
+			star.setShootingStar(2 * damageMultiplier);
 			star.setThrowingEntity(caster);
 			star.setSpellStack(spellStack.copy());
+			star.motionY = -1.0;
 			world.spawnEntityInWorld(star);
 		}
 		return true;

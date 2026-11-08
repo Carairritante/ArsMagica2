@@ -47,6 +47,8 @@ public class EntityThrownRock extends EntityLiving{
 		ticksExisted = 0;
 		maxTicksToExist = 120;
 		this.noClip = true;
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
 	}
 
 	public void setMoonstoneMeteor(){
@@ -56,6 +58,8 @@ public class EntityThrownRock extends EntityLiving{
 	public void setShootingStar(float damage){
 		this.dataWatcher.updateObject(IS_SHOOTING_STAR, (byte)1);
 		this.damage = damage;
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
 	}
 
 	public void setMoonstoneMeteorTarget(AMVector3 target){
@@ -120,7 +124,7 @@ public class EntityThrownRock extends EntityLiving{
 		this.dataWatcher.addObject(SPELL_STACK, new ItemStack(ItemsCommonProxy.spell));
 	}
 
-	private ItemStack getSpellStack(){
+	public ItemStack getSpellStack(){
 		return this.dataWatcher.getWatchableObjectItemStack(SPELL_STACK);
 	}
 
@@ -198,15 +202,14 @@ public class EntityThrownRock extends EntityLiving{
 					}
 				}
 
-				for (float i = 0; i < Math.abs(motionY); i += 0.1f){
-					AMParticle star = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "ember", posX + motionX * i, posY + motionY * i, posZ + motionZ * i);
+				if (this.ticksExisted % 2 == 0){
+					AMParticle star = (AMParticle)AMCore.proxy.particleManager.spawn(worldObj, "ember", posX, posY, posZ);
 					if (star != null){
-						star.setMaxAge(22);
-						float clr = rand.nextFloat();
-						float clrMod = Minecraft.getMinecraft().theWorld.rand.nextFloat();
+						star.setMaxAge(14);
+						float clrMod = rand.nextFloat();
 						int finalColor = -1;
 						if (color == -1)
-							finalColor = MathUtilities.colorFloatsToInt(0.24f * clrMod, 0.58f * clrMod, 0.71f * clrMod);
+							finalColor = MathUtilities.colorFloatsToInt(0.35f * clrMod, 0.75f * clrMod, 1.0f * clrMod);
 						else{
 							float[] colors = MathUtilities.colorIntToFloats(color);
 							for (int c = 0; c < colors.length; ++c)
@@ -214,8 +217,8 @@ public class EntityThrownRock extends EntityLiving{
 							finalColor = MathUtilities.colorFloatsToInt(colors[0], colors[1], colors[2]);
 						}
 						star.setRGBColorI(finalColor);
-						star.AddParticleController(new ParticleHoldPosition(star, 20, 1, false));
-						star.AddParticleController(new ParticleChangeSize(star, 0.5f, 0.05f, 20, 1, false));
+						star.setParticleScale(0.35f);
+						star.AddParticleController(new ParticleHoldPosition(star, 14, 1, false));
 					}
 				}
 			}
@@ -352,5 +355,34 @@ public class EntityThrownRock extends EntityLiving{
 		super.writeEntityToNBT(par1nbtTagCompound);
 
 		par1nbtTagCompound.setFloat("star_damage", damage);
+	}
+
+	@Override
+	@cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
+	public boolean isInRangeToRenderDist(double distanceSq){
+		if (getIsShootingStar()) return distanceSq < 65536.0D;
+		return super.isInRangeToRenderDist(distanceSq);
+	}
+
+	@Override
+	@cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
+	public boolean isInRangeToRender3d(double x, double y, double z){
+		if (getIsShootingStar()){
+			double dx = this.posX - x;
+			double dy = this.posY - y;
+			double dz = this.posZ - z;
+			return (dx * dx + dy * dy + dz * dz) < 65536.0D;
+		}
+		return super.isInRangeToRender3d(x, y, z);
+	}
+
+	@Override
+	public boolean canBeCollidedWith(){
+		return !getIsShootingStar();
+	}
+
+	@Override
+	public boolean canBePushed(){
+		return !getIsShootingStar();
 	}
 }
