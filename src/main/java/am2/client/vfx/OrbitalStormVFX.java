@@ -25,9 +25,9 @@ public class OrbitalStormVFX {
 	private static final ResourceLocation texLightningShockwave = new ResourceLocation("arsmagica2", "textures/misc/vfx/lightning_shockwave.png");
 	private static final ResourceLocation texStarfallCore = new ResourceLocation("arsmagica2", "textures/misc/vfx/starfall_core.png");
 
-	private static final int MAX_ACTIVE_BOLTS = 96;
-	private static final int MAX_ACTIVE_RINGS = 72;
-	private static final int MAX_ACTIVE_SPARKS = 400;
+	private static final int MAX_ACTIVE_BOLTS = 240;
+	private static final int MAX_ACTIVE_RINGS = 180;
+	private static final int MAX_ACTIVE_SPARKS = 650;
 
 	private static final Map<Integer, ActiveStorm> activeStorms = new ConcurrentHashMap<Integer, ActiveStorm>();
 	private static final List<OrbitalBolt> activeBolts = new ArrayList<OrbitalBolt>();

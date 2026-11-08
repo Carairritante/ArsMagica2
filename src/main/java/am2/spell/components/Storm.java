@@ -53,7 +53,7 @@ public class Storm implements ISpellComponent{
 		float finalDamage = caster != null ? SpellUtils.instance.modifyDamage(caster, baseDamage) : baseDamage;
 
 		// Up to 15 chunks (15 * 16 = 240 blocks)
-		float radius = 240.0f;
+		float radius = 160.0f;
 
 		int duration = 160;
 		if (stack != null){
@@ -62,7 +62,7 @@ public class Storm implements ISpellComponent{
 		}
 
 		int casterId = caster != null ? caster.getEntityId() : -1;
-		AxisAlignedBB searchBox = AxisAlignedBB.getBoundingBox(x - 300.0, 0.0, z - 300.0, x + 300.0, 256.0, z + 300.0);
+		AxisAlignedBB searchBox = AxisAlignedBB.getBoundingBox(x - 200.0, 0.0, z - 200.0, x + 200.0, 256.0, z + 200.0);
 		@SuppressWarnings("unchecked")
 		List<EntitySpellEffect> existingEffects = world.getEntitiesWithinAABB(EntitySpellEffect.class, searchBox);
 		EntitySpellEffect activeStorm = null;

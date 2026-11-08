@@ -1027,7 +1027,7 @@ public class EntitySpellEffect extends Entity{
 	}
 
 	private float orbitalDamage = 5.0f;
-	private float orbitalRadius = 240.0f;
+	private float orbitalRadius = 160.0f;
 	private boolean orbitalOvercharged = false;
 	private boolean orbitalFollowCaster = false;
 	private int orbitalDuration = 160;
@@ -1070,7 +1070,7 @@ public class EntitySpellEffect extends Entity{
 		this.setTicksToExist(nextEnd);
 		if (overcharged) this.orbitalOvercharged = true;
 		this.orbitalDamage = Math.max(this.orbitalDamage, damage);
-		this.orbitalRadius = Math.max(this.orbitalRadius, radius);
+		this.orbitalRadius = radius;
 	}
 
 	public boolean isOrbitalStorm(){
@@ -1111,7 +1111,7 @@ public class EntitySpellEffect extends Entity{
 			this.worldObj.getWorldInfo().setRaining(true);
 		}
 
-		int interval = this.orbitalOvercharged ? 3 : 4;
+		int interval = this.orbitalOvercharged ? 2 : 3;
 		if (this.ticksExisted <= 1 || this.ticksExisted % interval == 0){
 			dispatchOrbitalWave(false);
 		}
@@ -1129,7 +1129,7 @@ public class EntitySpellEffect extends Entity{
 		}
 		EntityLivingBase sourceCaster = liveCaster != null ? liveCaster : this.dummycaster;
 
-		double r = Math.min(240.0, Math.max(48.0, this.orbitalRadius));
+		double r = Math.min(160.0, Math.max(48.0, this.orbitalRadius));
 		AxisAlignedBB scanBox = AxisAlignedBB.getBoundingBox(
 				this.posX - r, Math.max(0.0, this.posY - 96.0), this.posZ - r,
 				this.posX + r, Math.min(256.0, this.posY + 128.0), this.posZ + r
@@ -1163,20 +1163,20 @@ public class EntitySpellEffect extends Entity{
 			}
 		}
 
-		double[] sx = new double[24];
-		double[] sy = new double[24];
-		double[] sz = new double[24];
-		boolean[] hitMob = new boolean[24];
+		double[] sx = new double[48];
+		double[] sy = new double[48];
+		double[] sz = new double[48];
+		boolean[] hitMob = new boolean[48];
 		int strikeCount = 0;
 
-		int maxMobStrikes = this.orbitalOvercharged ? 6 : 4;
+		int maxMobStrikes = this.orbitalOvercharged ? 14 : 9;
 		if (!candidates.isEmpty()){
 			int n = candidates.size();
 			int toHit = Math.min(maxMobStrikes, n);
-			int cooldownTicks = this.orbitalOvercharged ? 6 : 8;
+			int cooldownTicks = this.orbitalOvercharged ? 4 : 6;
 			int fireSec = this.orbitalOvercharged ? 7 : 5;
 
-			for (int i = 0; i < toHit && strikeCount < 20; i++){
+			for (int i = 0; i < toHit && strikeCount < 34; i++){
 				int idx = (this.orbitalStrikeCursor + i) % n;
 				EntityLivingBase target = candidates.get(idx);
 
@@ -1197,11 +1197,12 @@ public class EntitySpellEffect extends Entity{
 				hitMob[strikeCount] = true;
 				strikeCount++;
 
-				// Twin cascading trail bolt on fleeing mobs when overcharged with LightningDamage
-				if (this.orbitalOvercharged && strikeCount < 20){
-					sx[strikeCount] = target.posX + (this.rand.nextDouble() - 0.5) * 2.4;
+				// Cascading multi-bolt barrage on targeted mobs
+				int extraBolts = this.orbitalOvercharged ? 2 : 1;
+				for (int eb = 0; eb < extraBolts && strikeCount < 36; eb++){
+					sx[strikeCount] = target.posX + (this.rand.nextDouble() - 0.5) * 2.8;
 					sy[strikeCount] = target.posY;
-					sz[strikeCount] = target.posZ + (this.rand.nextDouble() - 0.5) * 2.4;
+					sz[strikeCount] = target.posZ + (this.rand.nextDouble() - 0.5) * 2.8;
 					hitMob[strikeCount] = true;
 					strikeCount++;
 				}
@@ -1209,20 +1210,25 @@ public class EntitySpellEffect extends Entity{
 			this.orbitalStrikeCursor = (this.orbitalStrikeCursor + toHit) % n;
 		}
 
-		// Scenic distant horizon lightning bolts across the 15 chunks
-		int ambientBolts = this.orbitalOvercharged ? 3 : 2;
+		// Heavy simultaneous lightning barrage across the 10 chunks
+		int ambientBolts = this.orbitalOvercharged ? 12 : 8;
 		if (!syncOnlyIfEmpty){
-			for (int a = 0; a < ambientBolts && strikeCount < 24; a++){
+			for (int a = 0; a < ambientBolts && strikeCount < 48; a++){
 				double ang = this.rand.nextDouble() * Math.PI * 2.0;
-				double maxHorizon = Math.min(185.0, r);
-				double dist = 16.0 + Math.sqrt(this.rand.nextDouble()) * (maxHorizon - 16.0);
+				double maxHorizon = Math.min(160.0, r);
+				double dist;
+				if (a % 3 == 0){
+					dist = 8.0 + this.rand.nextDouble() * Math.min(56.0, maxHorizon - 8.0);
+				}else{
+					dist = 14.0 + Math.sqrt(this.rand.nextDouble()) * (maxHorizon - 14.0);
+				}
 				int ax = MathHelper.floor_double(this.posX + Math.cos(ang) * dist);
 				int az = MathHelper.floor_double(this.posZ + Math.sin(ang) * dist);
 				if (this.worldObj.blockExists(ax, 64, az)){
 					int ay = this.worldObj.getPrecipitationHeight(ax, az);
-					sx[strikeCount] = ax + 0.5;
+					sx[strikeCount] = ax + 0.5 + (this.rand.nextDouble() - 0.5) * 0.6;
 					sy[strikeCount] = ay;
-					sz[strikeCount] = az + 0.5;
+					sz[strikeCount] = az + 0.5 + (this.rand.nextDouble() - 0.5) * 0.6;
 					hitMob[strikeCount] = false;
 					strikeCount++;
 				}
