@@ -153,6 +153,9 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			case AMPacketIDs.EXPLOSION_IMPACT:
 				handleExplosionImpact(remaining);
 				break;
+			case AMPacketIDs.MANA_SHIELD_HIT:
+				handleManaShieldHit(remaining);
+				break;
 			case AMPacketIDs.HIDDEN_COMPONENT_UNLOCK:
 				Minecraft.getMinecraft().guiAchievement.func_146256_a(ArcaneCompendium.componentUnlock);
 				break;
@@ -412,6 +415,12 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 	private static long lastExplosionSoundTime = 0;
 	private static double lastExplosionSoundX = 0;
 	private static double lastExplosionSoundZ = 0;
+
+	private void handleManaShieldHit(byte[] data){
+		AMDataReader rdr = new AMDataReader(data, false);
+		int entityId = rdr.getInt();
+		am2.client.vfx.ManaShieldVFX.triggerHitFlash(entityId);
+	}
 
 	private void handleExplosionImpact(byte[] data){
 		AMDataReader rdr = new AMDataReader(data, false);

@@ -246,6 +246,12 @@ public class AMClientEventHandler{
 
 	@SubscribeEvent
 	@SideOnly(Side.CLIENT)
+	public void onPlayerRenderSpecials(RenderPlayerEvent.Specials.Post event){
+		am2.client.vfx.ManaShieldVFX.renderThirdPerson(event);
+	}
+
+	@SubscribeEvent
+	@SideOnly(Side.CLIENT)
 	public void onPlayerRender(RenderPlayerEvent.Post event){
 		ModelBiped mainModel = ReflectionHelper.getPrivateValue(RenderPlayer.class, event.renderer, "field_77109_a", "modelBipedMain");
 		if (mainModel != null){

@@ -60,4 +60,5 @@ public class AMPacketIDs{
 	public static final byte SYNCCOMPENDIUMRESPONSE = 70;
 	public static final byte RITUAL_ARCHITECT = 71;
 	public static final byte EXPLOSION_IMPACT = 72;
+	public static final byte MANA_SHIELD_HIT = 73;
 }
