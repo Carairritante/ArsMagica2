@@ -1049,8 +1049,11 @@ public class EntitySpellEffect extends Entity{
 		this.orbitalDamage = damage;
 		this.orbitalRadius = radius;
 		this.orbitalFollowCaster = followCaster;
-		this.orbitalDuration = durationTicks == 100 ? 101 : Math.max(80, durationTicks);
-		this.setTicksToExist(this.orbitalDuration);
+		int dur = Math.max(60, durationTicks);
+		this.orbitalDuration = dur;
+		int totalDuration = dur + 25;
+		if (totalDuration == 100) totalDuration = 101;
+		this.setTicksToExist(totalDuration);
 		this.setRadius(radius);
 		this.ignoreFrustumCheck = true;
 		this.renderDistanceWeight = 16.0D;
@@ -1064,15 +1067,19 @@ public class EntitySpellEffect extends Entity{
 		if (followCaster){
 			this.setPosition(x, y, z);
 		}
-		int dur = Math.max(80, durationTicks);
+		int dur = Math.max(60, durationTicks);
 		this.orbitalFollowCaster = this.orbitalFollowCaster || followCaster;
-		this.orbitalDuration = Math.max(this.orbitalDuration, dur);
-		int nextEnd = this.ticksExisted + dur;
-		if (nextEnd == 100) nextEnd = 101;
-		this.setTicksToExist(nextEnd);
-		if (overcharged) this.orbitalOvercharged = true;
 		this.orbitalDamage = Math.max(this.orbitalDamage, damage);
 		this.orbitalRadius = radius;
+		if (overcharged) this.orbitalOvercharged = true;
+
+		// Keep orbital storm synchronized with the continuous spell container (e.g. Zone/Channel pulses)
+		// rather than endlessly stacking full spell durations on every 30-tick pulse.
+		int currentEnd = this.getTicksToExist();
+		int pulseEnd = this.ticksExisted + 35;
+		int nextEnd = Math.max(currentEnd, pulseEnd);
+		if (nextEnd == 100) nextEnd = 101;
+		this.setTicksToExist(nextEnd);
 	}
 
 	public boolean isOrbitalStorm(){

@@ -55,10 +55,10 @@ public class Storm implements ISpellComponent{
 		// Up to 15 chunks (15 * 16 = 240 blocks)
 		float radius = 160.0f;
 
-		int duration = 160;
+		int duration = 100;
 		if (stack != null){
-			duration = SpellUtils.instance.getModifiedInt_Mul(160, stack, caster, null, world, 0, SpellModifiers.DURATION);
-			if (duration < 120) duration = 120;
+			duration = SpellUtils.instance.getModifiedInt_Mul(100, stack, caster, null, world, 0, SpellModifiers.DURATION);
+			if (duration < 60) duration = 60;
 		}
 
 		int casterId = caster != null ? caster.getEntityId() : -1;
