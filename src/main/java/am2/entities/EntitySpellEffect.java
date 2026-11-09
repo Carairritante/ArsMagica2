@@ -49,7 +49,7 @@ public class EntitySpellEffect extends Entity{
 
 	private ItemStack spellStack;
 	private EntityPlayer dummycaster;
-	private int casterEntityID;
+	private int casterEntityID = -1;
 	private float moveSpeed;    //used by waves only
 
 	private static final int WATCHER_STACK = 22;
@@ -88,8 +88,10 @@ public class EntitySpellEffect extends Entity{
 
 	public void SetCasterAndStack(EntityLivingBase caster, ItemStack spellScroll){
 		this.spellStack = spellScroll;
-		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster);
-		casterEntityID = caster.getEntityId();
+		// Unowned effects use the same neutral context as Zone/Wall. Do not pass
+		// null into DummyEntityPlayer or associate the effect with entity zero.
+		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster != null ? caster : new EntityDummyCaster(worldObj));
+		casterEntityID = caster != null ? caster.getEntityId() : -1;
 		if (spellStack != null)
 			this.dataWatcher.updateObject(WATCHER_STACK, spellStack);
 	}
@@ -809,9 +811,7 @@ public class EntitySpellEffect extends Entity{
 		this.setTicksToExist(5);
 		this.setRadius(basePower);
 		this.mergeCount = 1;
-		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster);
-		this.casterEntityID = caster != null ? caster.getEntityId() : -1;
-		this.spellStack = stack;
+		this.SetCasterAndStack(caster, stack);
 		this.ignoreFrustumCheck = true;
 		this.blocksToDestroy.clear();
 		this.blocksToDestroy.add(new int[]{bx, by, bz});
@@ -923,9 +923,7 @@ public class EntitySpellEffect extends Entity{
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_LIGHTNING_FUSION);
 		this.setTicksToExist(5);
 		this.mergeCount = 1;
-		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster);
-		this.casterEntityID = caster != null ? caster.getEntityId() : -1;
-		this.spellStack = stack;
+		this.SetCasterAndStack(caster, stack);
 		this.ignoreFrustumCheck = true;
 		this.lightningAoERadius = 4.0;
 		this.blocksToDestroy.clear();
@@ -1041,12 +1039,7 @@ public class EntitySpellEffect extends Entity{
 	public void setOrbitalStorm(EntityLivingBase caster, ItemStack stack, double x, double y, double z,
 	                            boolean overcharged, float damage, float radius, int durationTicks, boolean followCaster){
 		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_ORBITAL_STORM);
-		this.dummycaster = DummyEntityPlayer.fromEntityLiving(caster);
-		this.casterEntityID = caster != null ? caster.getEntityId() : -1;
-		this.spellStack = stack;
-		if (stack != null){
-			this.dataWatcher.updateObject(WATCHER_STACK, stack);
-		}
+		this.SetCasterAndStack(caster, stack);
 		this.orbitalOvercharged = overcharged;
 		this.orbitalDamage = damage;
 		this.orbitalRadius = radius;

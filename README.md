@@ -1,7 +1,16 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR24
+## Versão de manutenção 1.6.11-LE-CR25
+
+A CR25 corrige a criação de efeitos de área, fusões de Explosion/Lightning e
+Storm quando não há um conjurador disponível. O efeito usa um contexto neutro,
+como os efeitos de área nativos, mantendo a identificação do conjurador real
+quando ele existe. A versão exibida pelo Forge e por `mcmod.info` acompanha agora
+o nome do JAR. [Correção e validação da CR25](docs/CORRECAO-SERVIDOR-CR25.md).
+
+O CI também verifica a ausência de referências gráficas no handler comum de
+armaduras e a consistência da versão, usando o JAR reofuscado que será entregue.
 
 [Slide antes/depois e histórico cronológico das atualizações](docs/RESUMO-ANTES-DEPOIS.md)
 

@@ -3,7 +3,7 @@ plugins {
     id 'com.gtnewhorizons.retrofuturagradle' version '1.4.9'
 }
 group = 'am2'
-version = '1.6.11-LE-CR24'
+version = '1.6.11-LE-CR25'
 base { archivesName = 'AM2.5-LTS' }
 java { toolchain { languageVersion = JavaLanguageVersion.of(8) } }
 minecraft {
@@ -30,11 +30,11 @@ tasks.register('verifyMaintenanceJar') {
     description = 'Check the maintenance hooks in the reobfuscated Java 8 mod.'
     dependsOn tasks.named('reobfJar'), tasks.named('verificationClasses')
     doLast {
-        ['VerifyLightningJar', 'VerifySolarLunarTierJar', 'VerifySilverPointsJar', 'VerifyRitualArchitectJar', 'VerifyItemFrameWatcherJar'].each { verifier ->
+        ['VerifyLightningJar', 'VerifySolarLunarTierJar', 'VerifySilverPointsJar', 'VerifyRitualArchitectJar', 'VerifyItemFrameWatcherJar', 'VerifyServerBoundaryJar'].each { verifier ->
             javaexec {
                 classpath = sourceSets.verification.runtimeClasspath
                 mainClass = verifier
-                args tasks.named('jar', Jar).get().archiveFile.get().asFile.absolutePath
+                args layout.buildDirectory.file("libs/AM2.5-LTS-${project.version}.jar").get().asFile.absolutePath
             }
         }
     }

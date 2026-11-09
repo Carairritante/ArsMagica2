@@ -1,5 +1,27 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR25 — 2026-11-09
+
+- Criação de efeitos de área e fusões de Explosion, Lightning e Storm protegida
+  contra conjurador ausente, usando o contexto neutro nativo do mod.
+- Efeitos sem dono usam ID -1; efeitos com conjurador preservam sua identidade.
+- Versão do Forge e dos metadados alinhada com o nome CR25 do JAR.
+- Verificações de manutenção passam a inspecionar o JAR reofuscado jogável,
+  com uma nova barreira contra modelos gráficos no handler comum do servidor.
+- Incluída regressão executável em servidor dedicado e cópia descartável de um
+  modpack. Resultados e limites: `docs/CORRECAO-SERVIDOR-CR25.md`.
+
+## 1.6.11-LE-CR24 — 2026-11-07/08
+
+- Reformulação dos efeitos de Firestorm, Blizzard, Starfall, Grow, Explosion,
+  Lightning Strike, Storm e Mana Shield, com fusões e novos limites de Wave.
+- Métodos de modelos e renderização de armaduras isolados no cliente para
+  corrigir o carregamento em servidores dedicados.
+- Cálculo de duração sincronizada e acesso a Solar/Lunar protegidos contra
+  conjurador nulo; removidos auxiliares internos envolvidos em falhas de carga.
+- As compilações intermediárias conservaram o mesmo sufixo CR24. Para identificar
+  uma delas, consulte o commit e o checksum da execução correspondente do CI.
+
 ## 1.6.11-LE-CR23 — 2026-11-05
 
 - Velocidade de animacao do bater de asas do Dragao do End e da Galinha reduzida pela metade, tornando o movimento suave e visualmente natural.

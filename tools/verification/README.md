@@ -13,6 +13,13 @@ o arquivo de entrada.
   no núcleo. Confere também a API opcional World Fusion mantida por compatibilidade.
 - `VerifyRitualArchitectJar.java`: processador de ações registrado antes dos proxies,
   incluindo o servidor integrado, e processamento pelo evento de tick do Forge.
+- `VerifyServerBoundaryJar.java`: ausência de tipos gráficos no handler comum de
+  armaduras e correspondência entre o nome do JAR, a anotação Forge e `mcmod.info`.
+
+Desde a CR25, `./gradlew build` executa os verificadores no JAR reofuscado jogável,
+em vez de usar o artefato `-dev.jar`. A regressão de execução real para conjurador
+ausente fica em `tools/integration/ServerEffectsProbe.java`; ela deve ser instalada
+somente em diretório de teste descartável, nunca em um mundo do jogador.
 
 ## Uso
 
