@@ -79,6 +79,9 @@ def main():
         for path in classes.rglob('*.class'):jar.write(path,path.relative_to(classes))
     command=[str(a.java),'-Xms512M','-Xmx'+('8G' if a.client else '2G'),'-Dlog4j2.formatMsgNoLookups=true']
     if a.legacy:command.append('-Dam2.probe.legacy=true')
+    else:
+        assert a.jar.name.startswith('AM2.5-LTS-')
+        command.append('-Dam2.probe.expectedVersion='+a.jar.stem.removeprefix('AM2.5-LTS-'))
     if a.client:
         natives=game/'natives';natives.mkdir()
         for path in (a.prism/'libraries').rglob('*natives-windows*.jar'):

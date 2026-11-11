@@ -1,5 +1,97 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR40 — 2026-11-11 — publicada na branch `correcoes`
+
+- **CR40 (Otimização de FPS em Starfall e Storm + Lightning):** tabela estática pré-computada de seno/cosseno (`GLOW_COS`/`GLOW_SIN`, 24 segmentos) em `CastingAtmosphereVFX`, redução de spawn e limite de 22 cometas ativos por conjurador em Starfall, refatoração de `astralStar` para billboarding em diamante de 18 vértices, anéis de impacto com tabela pré-computada e redução de passos/vértices na nuvem e funil 3D de tempestade.
+- **CR39 (Expansão do solo e Câmara Estelar de Starfall):** camada dupla aditiva incandescente nos círculos de solo de Starfall (`CastingCircleVFX`), ondas de choque terrestres aos 40 ticks (25 m) e 80 ticks (37,5 m), 12 nós estelares na Fase 2, 24 nós + 24 espículas radiais na Fase 3 e 16 fitas verticais ascendentes de 76 blocos ligando o círculo de 75 m ao portal celeste (`renderStarfallChamberAndShockwaves`).
+- **CR38 (Abertura do portal e cometas 3D):** abertura sincronizada do portal estelar em 4 estágios (`getStarfallPortalProgress`: 0–16, 16–40, 40–80 e 80–100 ticks) acompanhando o crescimento dos círculos, e cometas balísticos 3D inclinados com histórico de rastro de 8 pontos (`drawAnimeComet3D`).
+- **CR37 (Pilar celestial e portal cósmico de Starfall):** pilar vertical exclusivo de 76 blocos (`renderStarfallCelestialBeam`) conectando o conjurador ao portal de até 96 m de diâmetro (`drawAstralSky`), com dupla hélice, anéis ascendentes e impactos com coluna luminosa.
+- **CR32–CR36 (Céus elementais estilo anime e correção de Storm + Lightning):** descargas horizontais ramificadas no Firestorm, placas hexagonais fragmentáveis no Blizzard, textura `anime_storm_cloud_cr34.png` e funil volumétrico 3D compartilhado entre carga e `OrbitalStormVFX` (`renderActiveStormCanopy`), resolução de IDs deslocados (`+1000`) em `hasAnyComponent` (incluindo Storm + Lightning + modificadores Lunar) e conversão do Starfall para portal circular no zênite.
+
+## 1.6.11-LE-CR31 — 2026-11-09 — local, não publicada
+
+- Nuvem, funil, espirais e olho da CR30 preservados exclusivamente em Storm +
+  Lightning. Os outros quatro tipos têm formas próprias.
+- Firestorm com oito rios de lava e doze ramificações, fluxo amarelo animado e
+  pingos; Blizzard com placas fraturadas; Starfall com fendas; Lunar com eclipse.
+- Raio das quedas de 36 para 64 blocos, maior frequência e quantidade. Até 384
+  grandes quedas, 96 impactos e 40 raios, com opções reduzidas e limites por jogador.
+- Todas as 1.660 imagens e as regras de magia preservadas. Sem alteração no
+  Playground ou AM2 Archmage. Dedicado e Forbidden descartáveis aprovados, com
+  raio real 63,984 blocos e pico 384. Detalhes em `docs/CEUS-ELEMENTAIS-CR31.md`.
+
+## 1.6.11-LE-CR30 — 2026-11-09 — local, não publicada
+
+- Coberturas de nuvens em espiral, funil, olho e fissuras coloridas no céu; auroras
+  astrais, frentes de nevasca e motes elementais. Progressão pelas três fases.
+- Mais quedas e impactos maiores, mantendo limites globais e por conjurador.
+  Nuvens do mesmo elemento próximas compartilham uma cobertura.
+- Até três coberturas desenhadas, 192 quedas, 64 impactos e 24 raios. Clarões com
+  intervalo global; opções reduzidas/mínimas respeitadas; pausa congela o efeito.
+- Preservadas todas as imagens e a restauração exata do clima. Sem alteração no
+  Playground, AM2 Archmage ou nas regras de magia.
+- Dedicado e Forbidden descartáveis aprovados; carga real de 192 quedas e dez
+  capturas das cinco famílias. Detalhes em `docs/ATMOSFERA-APOCALIPTICA-CR30.md`.
+
+## 1.6.11-LE-CR29 — 2026-11-09 — local, não publicada
+
+- Corrigidas partículas que desapareciam no primeiro tick por falta de controlador.
+  Quedas de fogo, gelo e estrelas usam formas próprias maiores e rastros.
+- Impactos agora acompanham a chegada ao solo; início no terceiro círculo.
+- Atualização por tick, limites globais e por conjurador, terreno apenas em chunks
+  carregados e posições independentes da câmera livre.
+- Clima visual em três fases, restaurando os quatro valores naturais ao fim de
+  cada quadro. Raios cosméticos não criam entidades ou dano.
+- Preservadas as 1.660 imagens, paletas e regras de magia. Sem mudança no Playground
+  ou AM2 Archmage. Dedicado e bateria funcional no Forbidden aprovados.
+- Regressão de famílias, impactos, clima, cancelamento e opções gráficas, com
+  capturas individuais opcionais. Detalhes em `docs/ATMOSFERA-E-QUEDAS-CR29.md`.
+
+## 1.6.11-LE-CR28 — 2026-11-09 — local, não publicada
+
+- Círculos de conjuração e partículas usam a posição real interpolada do corpo,
+  capturada antes do render do mundo, corrigindo o deslocamento até a câmera livre.
+- Limites de distância usam corpo e câmera separadamente; cache fraco limpo no
+  unload. Sem dependência de Freecam, Playground ou outros addons.
+- Preservadas as paletas por afinidade, tradução e correção do menu de teclas
+  presentes na CR27 recebida nesta revisão, além das 1.660 imagens.
+- Regressão opcional com Freecam 2.3.1, onze afinidades, Mesa de Inscrição no
+  servidor e categorias de teclas com traduções iguais. Dedicado e Forbidden
+  descartáveis aprovados. Detalhes em `docs/FREECAM-E-AUDITORIA-CR28.md`.
+
+## 1.6.11-LE-CR27 — 2026-11-09 — local, não publicada
+
+- Círculos de conjuração reutilizam a análise da magia por quatro ticks, sem
+  reconstruir livros e varas a cada quadro.
+- Emissão de partículas limitada por tick e pelas opções gráficas do jogo,
+  evitando multiplicação conforme o FPS.
+- Orçamento de oito conjuradores por quadro, prioridade ao jogador local,
+  distância máxima de 96 blocos e descarte de efeitos fora da câmera.
+- Proteções para definições visuais excessivas e afinidades inválidas; cache
+  fraco limpo ao sair do mundo e fases reiniciadas ao reconjurar.
+- Todas as 1.660 imagens PNG da CR26 recebida foram preservadas byte a byte.
+- Nova regressão descartável de VFX com oito conjuradores e cinco arquétipos,
+  mantendo os testes do livro e do servidor. Nenhuma alteração no Playground.
+
+
+## 1.6.11-LE-CR26 — 2026-11-09 — local, não publicada
+
+- Integradas as animações locais do livro e do círculo de conjuração que estavam
+  somente na versão experimental do teste-ars.
+- Livros comuns e do Guardião Arcano abrem e fecham suavemente; páginas animadas
+  e glifo da afinidade ficam visíveis durante a conjuração.
+- Corrigidos o enquadramento em primeira pessoa, a posição do braço e o tamanho
+  e orientação do livro em terceira pessoa. O inventário do Guardião mantém o
+  modelo anterior.
+- Abertura respeita a tecla de uso configurada, inclusive em livro vazio; em
+  jogadores remotos usa o indicador sincronizado de utilização.
+- Estado visual limpo ao sair do mundo e iluminação restaurada após os efeitos.
+- Mantida a versão de compatibilidade 1.6.7 no metadado estático para preloaders
+  legados; versão real CR26 preservada no Forge, na tela de mods, no nome do JAR
+  e no campo maintenanceVersion. Sem alteração ou dependência nova de addons.
+- Mantidas as correções de servidor da CR25. Detalhes e limites em
+  `docs/LIVRO-ANIMADO-CR26.md`.
+
 ## 1.6.11-LE-CR25 — 2026-11-09
 
 - Criação de efeitos de área e fusões de Explosion, Lightning e Storm protegida

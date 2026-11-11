@@ -63,7 +63,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 //@Mod(modid = "arsmagica2", modLanguage = "java", name = "Ars Magica 2", version = "1.6.7", dependencies = "required-after:AnimationAPI")
-@Mod(modid = "arsmagica2", modLanguage = "java", name = "Ars Magica 2", version = "1.6.11-LE-CR25", dependencies = "required-after:AnimationAPI;required-after:CoFHCore")
+@Mod(modid = "arsmagica2", modLanguage = "java", name = "Ars Magica 2", version = "1.6.11-LE-CR40", dependencies = "required-after:AnimationAPI;required-after:CoFHCore")
 public class AMCore{
 
 	@Instance(value = "arsmagica2")
@@ -84,6 +84,9 @@ public class AMCore{
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event){
+		// Legacy preloaders inspect the original mcmod.info version before Forge.
+		// Forge/network use @Mod's maintenance version; show it in the Mods UI too.
+		event.getModMetadata().version = getVersion();
 
 		String configBase = event.getSuggestedConfigurationFile().getAbsolutePath();
 		configBase = popPathFolder(configBase);

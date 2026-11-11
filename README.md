@@ -1,13 +1,62 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR25
+## Versão de manutenção 1.6.11-LE-CR40 (branch `correcoes`)
+
+A série CR32–CR40 evolui os efeitos atmosféricos e círculos de conjuração no
+cliente com foco em Firestorm (arcos de lava no céu), Blizzard (placas
+hexagonais), Storm + Lightning (nuvem e funil 3D em estilo anime compartilhados
+com `OrbitalStormVFX` e correção de seleção com IDs `+1000` / Lunar) e Starfall
+(portal circular progressivo de até 96 m sincronizado aos círculos, pilar
+celestial de 76 blocos, câmara de 16 fitas verticais, ondas de choque no solo,
+cometas 3D com rastro e otimizações de FPS via tabela trigonométrica e redução
+de vértices na CR40), mantendo compatibilidade de metadata `1.6.7` em
+`mcmod.info` e limites de servidor/protocolo preservados.
+[Formatos elementais e validação](docs/CEUS-ELEMENTAIS-CR31.md).
+
+## Versão local anterior 1.6.11-LE-CR30
+
+A CR30 intensifica a atmosfera com nuvens em espiral, um funil, fissuras no céu,
+auroras e quedas elementais mais densas. Mantém limites de carga e restauração
+do clima natural. Validada localmente no Forbidden e em servidor dedicado.
+[Visual apocalíptico e validação](docs/ATMOSFERA-APOCALIPTICA-CR30.md).
+
+## Versão local anterior 1.6.11-LE-CR29
+
+A CR29 corrige as quedas de fogo, gelo e estrelas durante a terceira fase de
+conjuração, com trajetórias, impactos e clima temporário de desenho. Preserva
+as texturas e a correção do Freecam. Continua local, sem publicação no GitHub.
+[Quedas elementais, atmosfera e validação](docs/ATMOSFERA-E-QUEDAS-CR29.md).
+
+## Versão local anterior 1.6.11-LE-CR28
+
+A CR28 mantém os círculos e suas partículas no personagem ao usar câmera livre,
+preservando as paletas por afinidade e as animações. Validada em servidor dedicado
+e numa cópia do Forbidden; continua local, sem publicação no GitHub.
+[Correção do Freecam e auditoria](docs/FREECAM-E-AUDITORIA-CR28.md).
+
+## Versão local anterior 1.6.11-LE-CR27
+
+A CR27 controla o custo dos círculos de conjuração e protege a leitura de dados
+visuais inválidos, mantendo as novas texturas e o livro animado da CR26. A versão
+continua local, sem publicação no GitHub nesta etapa.
+[Segurança e validação dos VFX](docs/VFX-SEGURANCA-CR27.md).
+
+## Animações da CR26
+
+A CR26 corrige a abertura, o enquadramento e o glifo dos livros de magia em
+primeira e terceira pessoa, incluindo o Livro Arcano do Guardião. Esta atualização
+foi validada localmente, sem publicação no GitHub por enquanto.
+[Detalhes do livro e compatibilidade de versão](docs/LIVRO-ANIMADO-CR26.md).
+
+## Correção anterior: CR25
 
 A CR25 corrige a criação de efeitos de área, fusões de Explosion/Lightning e
 Storm quando não há um conjurador disponível. O efeito usa um contexto neutro,
 como os efeitos de área nativos, mantendo a identificação do conjurador real
-quando ele existe. A versão exibida pelo Forge e por `mcmod.info` acompanha agora
-o nome do JAR. [Correção e validação da CR25](docs/CORRECAO-SERVIDOR-CR25.md).
+quando ele existe. A CR26 preserva essa correção e a identificação CR no Forge e
+no nome do JAR; o campo legado de `mcmod.info` mantém a identificação da base para
+preloaders antigos. [Correção e validação da CR25](docs/CORRECAO-SERVIDOR-CR25.md).
 
 O CI também verifica a ausência de referências gráficas no handler comum de
 armaduras e a consistência da versão, usando o JAR reofuscado que será entregue.

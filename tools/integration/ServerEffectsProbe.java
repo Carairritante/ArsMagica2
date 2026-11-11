@@ -86,7 +86,7 @@ public final class ServerEffectsProbe {
         anchorX=((Number)get(spawn,"field_71574_a")).intValue();
         anchorZ=((Number)get(spawn,"field_71573_c")).intValue();
         String version=Loader.instance().getIndexedModList().get("arsmagica2").getVersion();
-        need(version.equals(legacy ? "1.6.7" : "1.6.11-LE-CR25"),"unexpected mod version: "+version);
+        need(version.equals(legacy ? "1.6.7" : System.getProperty("am2.probe.expectedVersion","1.6.11-LE-CR25")),"unexpected mod version: "+version);
         results.add("VERSION="+version);
         results.add("PHYSICAL_SIDE="+FMLCommonHandler.instance().getSide());
         if (FMLCommonHandler.instance().getSide()==Side.SERVER) {
@@ -95,7 +95,16 @@ public final class ServerEffectsProbe {
             Class.forName("am2.armor.ArmorEventHandler").getDeclaredMethods();
             pass("DEDICATED_SERVER_WITHOUT_CLIENT_CLASSES");
         }
-        checkInitialization("AREA_BINDING", e -> call(e,"SetCasterAndStack",null,null));
+        Object area=checkInitialization("AREA_BINDING", e -> call(e,"SetCasterAndStack",null,null));
+        Object player=get(area,"dummycaster");
+        Object block=get(Class.forName("am2.blocks.BlocksCommonProxy"),"inscriptionTable");
+        call(world,"func_147465_d",anchorX+4,80,anchorZ+4,block,0,3);
+        Object gui=make("am2.proxy.gui.ServerGuiManager");
+        int id=((Number)get(Class.forName("am2.guis.ArsMagicaGuiIdList"),"GUI_INSCRIPTION_TABLE")).intValue();
+        Object container=call(gui,"getServerGuiElement",id,player,world,anchorX+4,80,anchorZ+4);
+        need(container!=null&&container.getClass().getName().equals("am2.containers.ContainerInscriptionTable"),"inscription container did not open on server");
+        need(((List<?>)get(container,"field_75151_b")).size()==37,"inscription inventory layout changed");
+        pass("SERVER_INSCRIPTION_CONTAINER_OPEN");
         Object explosion=checkInitialization("EXPLOSION",e -> {
             call(e,"func_70107_b",anchorX+32.5,80.5,anchorZ+32.5);
             call(e,"setExplosionFusion",null,null,2.0f,anchorX+32,80,anchorZ+32);

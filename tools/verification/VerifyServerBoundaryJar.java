@@ -41,9 +41,11 @@ public final class VerifyServerBoundaryJar {
                 metadata=new String(out.toByteArray(),StandardCharsets.UTF_8);
             }
             Matcher match=Pattern.compile("\"version\"\\s*:\\s*\"([^\"]+)\"").matcher(metadata);
-            if (!match.find() || !version.equals(match.group(1))) throw new IllegalStateException("@Mod and mcmod.info versions disagree");
+            if (!match.find() || !"1.6.7".equals(match.group(1))) throw new IllegalStateException("Legacy metadata compatibility version changed");
+            Matcher maintenance=Pattern.compile("\"maintenanceVersion\"\\s*:\\s*\"([^\"]+)\"").matcher(metadata);
+            if (!maintenance.find() || !version.equals(maintenance.group(1))) throw new IllegalStateException("@Mod and metadata maintenance versions disagree");
             if (!jar.getName().endsWith("AM2.5-LTS-"+version+".jar")) throw new IllegalStateException("Filename and internal mod version disagree: "+version);
-            System.out.println("Verified: common armor handler has no client graphics references; JAR filename, @Mod and mcmod.info agree ("+version+").");
+            System.out.println("Verified: common armor handler has no client graphics references; filename, @Mod and maintenanceVersion agree ("+version+"); legacy preloader metadata remains 1.6.7.");
         }
     }
     private static ClassNode read(JarFile jar,String name) throws Exception {

@@ -14,12 +14,20 @@ o arquivo de entrada.
 - `VerifyRitualArchitectJar.java`: processador de ações registrado antes dos proxies,
   incluindo o servidor integrado, e processamento pelo evento de tick do Forge.
 - `VerifyServerBoundaryJar.java`: ausência de tipos gráficos no handler comum de
-  armaduras e correspondência entre o nome do JAR, a anotação Forge e `mcmod.info`.
+  armaduras e correspondência entre o nome do JAR, a anotação Forge e o campo
+  `maintenanceVersion` de `mcmod.info`. Desde a CR26, o campo estático `version`
+  conserva 1.6.7 para preloaders legados; o Forge e a tela de mods usam a versão CR.
 
 Desde a CR25, `./gradlew build` executa os verificadores no JAR reofuscado jogável,
 em vez de usar o artefato `-dev.jar`. A regressão de execução real para conjurador
 ausente fica em `tools/integration/ServerEffectsProbe.java`; ela deve ser instalada
 somente em diretório de teste descartável, nunca em um mundo do jogador.
+
+A regressão visual `tools/integration/BookAnimationProbe.java` captura livros
+comuns, do Guardião, vazios e de outro jogador. O lançador
+`tools/integration/run_book_animation_probe.py --help` informa os caminhos locais
+necessários. Ele cria uma instância descartável, sem copiar saves ou contas, e
+encerra o jogo ao concluir. Os arquivos dessa instrumentação não entram no mod.
 
 ## Uso
 
@@ -36,3 +44,12 @@ java -cp "build;C:\dependencias\asm-9.9.jar;C:\dependencias\asm-tree-9.9.jar" Ve
 Uma saída de sucesso indica que as verificações estruturais passaram. Não equivale
 a um teste de desempenho ou a uma validação completa dentro do jogo. Veja o
 [registro de validação](../../docs/VALIDACAO-CR2.md).
+
+
+A regressão gráfica também verifica as onze paletas, a abertura do container da
+Mesa de Inscrição e o menu de teclas com categorias de tradução igual.
+`run_vfx_safety_probe.py --freecam-jar <jar>` acrescenta o ensaio opcional com
+Zergatul Freecam 2.3.1; `--playground-jar <jar>` troca apenas o addon na cópia
+descartável. Não execute o teste numa instância original. A classe de diagnóstico
+nunca deve ser incluída no JAR distribuído. A regressão dedicada também abre o
+container da Mesa de Inscrição sem bibliotecas gráficas.
