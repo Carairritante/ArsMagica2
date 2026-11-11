@@ -347,8 +347,10 @@ public class ClientTickHandler{
 				gameTick_End();
 			}
 
-			if (Minecraft.getMinecraft().theWorld != null)
+			if (Minecraft.getMinecraft().theWorld != null) {
 				spawnPowerPathVisuals();
+			}
+			am2.client.vfx.CastingAtmosphereVFX.onClientTick(Minecraft.getMinecraft());
 		}
 
 		if (Minecraft.getMinecraft().thePlayer != null){
@@ -408,9 +410,13 @@ public class ClientTickHandler{
 
 	@SubscribeEvent
 	public void onRenderTick(TickEvent.RenderTickEvent event){
+		am2.client.vfx.CastingAnimationState.setPartialTicks(event.renderTickTime);
 		if (event.phase == TickEvent.Phase.START){
+			am2.client.vfx.CastingCircleVFX.captureBodyPositions(event.renderTickTime);
+			am2.client.vfx.CastingAtmosphereVFX.beginRender(event.renderTickTime);
 			renderTick_Start();
 		}else if (event.phase == TickEvent.Phase.END){
+			am2.client.vfx.CastingAtmosphereVFX.endRender();
 			renderTick_End();
 		}
 	}

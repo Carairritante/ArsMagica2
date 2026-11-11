@@ -267,161 +267,18 @@ public class OrbitalStormVFX {
 		GL11.glPopMatrix();
 	}
 
-	private static void renderSkyVortex(Minecraft mc, Tessellator t, ActiveStorm storm, double camX, double camY, double camZ, long now) {
-		float elapsedSinceSync = (now - storm.lastSyncTimeMs) / 1000.0f;
-		float totalTimeAlive = (now - storm.spawnTimeMs) / 1000.0f;
-		float remainSec = (storm.remainingTicks * 0.05f) - elapsedSinceSync;
+    private static void renderSkyVortex(Minecraft mc,Tessellator t,ActiveStorm storm,double camX,double camY,double camZ,long now){
+        float elapsed=(now-storm.lastSyncTimeMs)/1000.0f,time=(now-storm.spawnTimeMs)/1000.0f;
+        float remain=storm.remainingTicks*.05f-elapsed;
+        float alpha=Math.min(1,time/.7f)*Math.min(1,Math.max(0,remain/1.1f));
+        if(elapsed<.25f)alpha=Math.min(1,time/.7f);
+        if(alpha<=.01f)return;
+        CastingAtmosphereVFX.renderActiveStormCanopy(mc,t,storm.centerX,Math.min(storm.centerY+64,240),
+                storm.centerZ,camX,camY,camZ,alpha,time,storm.overcharged);
+    }
 
-		float intro = Math.min(1.0f, totalTimeAlive / 0.70f);
-		float outro = Math.min(1.0f, Math.max(0.0f, remainSec / 1.10f));
-		if (elapsedSinceSync < 0.25f) outro = 1.0f; // smooth stay while channel pulses arrive
-		float alpha = intro * outro;
-		if (alpha <= 0.01f) return;
+    public static boolean hasActiveStorms(){return !activeStorms.isEmpty();}
 
-		float rDeep = 0.04f, gDeep = 0.14f, bDeep = 0.65f;
-		float rLight = 0.12f, gLight = 0.45f, bLight = 1.0f;
-		float rCore = 0.80f, gCore = 0.94f, bCore = 1.0f;
-		float cloudR = 0.06f, cloudG = 0.08f, cloudB = 0.14f;
-
-		if (storm.customColor != -1) {
-			rLight = ((storm.customColor >> 16) & 0xFF) / 255.0f;
-			gLight = ((storm.customColor >> 8) & 0xFF) / 255.0f;
-			bLight = (storm.customColor & 0xFF) / 255.0f;
-			rDeep = rLight * 0.45f;
-			gDeep = gLight * 0.45f;
-			bDeep = bLight * 0.45f;
-			rCore = Math.min(1.0f, rLight * 1.3f + 0.2f);
-			gCore = Math.min(1.0f, gLight * 1.3f + 0.2f);
-			bCore = Math.min(1.0f, bLight * 1.3f + 0.2f);
-			cloudR = Math.max(0.04f, rLight * 0.15f);
-			cloudG = Math.max(0.04f, gLight * 0.15f);
-			cloudB = Math.max(0.05f, bLight * 0.18f);
-		}
-
-		double cx = storm.centerX - camX;
-		double cz = storm.centerZ - camZ;
-		double funnelTipY = Math.min(storm.centerY + 38.0, 212.0) - camY;
-		double deckY = Math.min(storm.centerY + 64.0, 240.0) - camY;
-
-		float spin = totalTimeAlive * 14.0f;
-
-		// --- Pass A: Dark Swirling Cloud Canopy & Tornado Funnel (Alpha Darkening Blend) ---
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
-		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-		mc.renderEngine.bindTexture(texStormCloud);
-
-		// A1. Overhead horizontal overcast ceiling (wide dark canopy)
-		float canopyR = 88.0f * (0.45f + 0.55f * intro);
-		GL11.glPushMatrix();
-		GL11.glTranslated(cx, deckY + 2.0, cz);
-		GL11.glRotatef(spin * 0.4f, 0.0f, 1.0f, 0.0f);
-		GL11.glColor4f(cloudR * 0.85f, cloudG * 0.85f, cloudB * 0.85f, alpha * 0.85f);
-		t.startDrawingQuads();
-		t.addVertexWithUV(-canopyR, 0, canopyR, 0, 1);
-		t.addVertexWithUV(canopyR, 0, canopyR, 1, 1);
-		t.addVertexWithUV(canopyR, 0, -canopyR, 1, 0);
-		t.addVertexWithUV(-canopyR, 0, -canopyR, 0, 0);
-		t.draw();
-		GL11.glPopMatrix();
-
-		// A2. Outer Spiral Cloud Arms (44 giant volumetric billboards swirling across the sky)
-		Random cloudRnd = new Random(storm.entityId + 4242L);
-		int numArms = 4;
-		int puffsPerArm = 11;
-		for (int arm = 0; arm < numArms; arm++) {
-			float armBaseAng = (float) (arm * (Math.PI * 2.0 / numArms));
-			for (int p = 0; p < puffsPerArm; p++) {
-				float frac = (float) p / (float) (puffsPerArm - 1);
-				float spiralDist = (16.0f + frac * 68.0f) * (0.5f + 0.5f * intro);
-				float spiralAng = armBaseAng + frac * 1.95f - (spin * 0.015f) + (cloudRnd.nextFloat() - 0.5f) * 0.25f;
-
-				double px = cx + Math.cos(spiralAng) * spiralDist;
-				double pz = cz + Math.sin(spiralAng) * spiralDist;
-				double py = deckY - 3.5 + (cloudRnd.nextFloat() - 0.5f) * 6.0;
-				float puffSize = (14.5f + frac * 10.0f) * (0.6f + 0.4f * intro);
-				float rotZ = spin * (0.8f + (p % 3) * 0.3f) * (arm % 2 == 0 ? 1 : -1);
-
-				float shade = 0.75f + 0.45f * frac;
-				GL11.glColor4f(cloudR * shade, cloudG * shade, cloudB * shade, alpha * (0.90f - frac * 0.20f));
-				drawBillboardQuad(t, px, py, pz, puffSize, rotZ);
-			}
-		}
-
-		// A3. Swirling Tornado Funnel Throat descending from deckY down to funnelTipY
-		int funnelSteps = 18;
-		for (int f = 0; f < funnelSteps; f++) {
-			float hFrac = (float) f / (float) (funnelSteps - 1); // 0 = bottom tip, 1 = cloud base
-			double fy = funnelTipY + (deckY - funnelTipY) * hFrac;
-			double funnelRadius = 3.2 + Math.pow(hFrac, 1.85) * 24.0;
-			int puffsInRing = (f > 10) ? 4 : 3;
-			float angularSpeed = spin * (3.2f - 1.8f * hFrac);
-
-			for (int q = 0; q < puffsInRing; q++) {
-				double ringAng = Math.toRadians(angularSpeed) + (q * Math.PI * 2.0 / puffsInRing) + (hFrac * 3.5);
-				double fx = cx + Math.cos(ringAng) * funnelRadius;
-				double fz = cz + Math.sin(ringAng) * funnelRadius;
-				float fSize = (float) (4.2 + hFrac * 9.5) * (0.5f + 0.5f * intro);
-
-				float darkness = 0.60f + 0.40f * hFrac;
-				GL11.glColor4f(cloudR * darkness, cloudG * darkness, cloudB * darkness, alpha * 0.88f);
-				drawBillboardQuad(t, fx, fy, fz, fSize, spin * 1.5f);
-			}
-		}
-
-		// --- Pass B: Illuminated Azure Vortex Eye, Backlit Clouds & Intracloud Lightning Arcs ---
-		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
-
-		// B1. Swirling glowing cobalt aura inside the tornado throat & eye
-		int eyePulseSeed = (int) (now / 90L);
-		Random flashRnd = new Random(storm.entityId + eyePulseSeed * 919L);
-		float eyeGlow = 0.55f + 0.35f * flashRnd.nextFloat();
-
-		for (int f = 0; f < 10; f++) {
-			float hFrac = (float) f / 9.0f;
-			double fy = funnelTipY + (deckY - funnelTipY) * hFrac;
-			float gSize = (float) (5.5 + hFrac * 18.0) * intro;
-			GL11.glColor4f(rDeep, gDeep, bDeep, alpha * eyeGlow * (storm.overcharged ? 0.65f : 0.45f));
-			drawBillboardQuad(t, cx, fy, cz, gSize, -spin * 2.0f);
-		}
-
-		// B2. Random sheet lightning flashes lighting up cloud pockets
-		int flashes = storm.overcharged ? 6 : 4;
-		for (int fl = 0; fl < flashes; fl++) {
-			if (flashRnd.nextFloat() < 0.72f) {
-				double fDist = 12.0 + flashRnd.nextDouble() * 58.0;
-				double fAng = flashRnd.nextDouble() * Math.PI * 2.0;
-				double fx = cx + Math.cos(fAng) * fDist;
-				double fz = cz + Math.sin(fAng) * fDist;
-				double fy = deckY - 3.0 + (flashRnd.nextDouble() - 0.5) * 4.0;
-				float fSize = 14.0f + flashRnd.nextFloat() * 10.0f;
-				GL11.glColor4f(rLight, gLight, bLight, alpha * (0.45f + 0.35f * flashRnd.nextFloat()));
-				drawBillboardQuad(t, fx, fy, fz, fSize, flashRnd.nextFloat() * 360.0f);
-			}
-		}
-
-		// B3. Cracking horizontal lightning arcs spiraling inside the vortex clouds
-		GL11.glDisable(GL11.GL_TEXTURE_2D);
-		GL11.glEnable(GL11.GL_LINE_SMOOTH);
-		int arcCount = storm.overcharged ? 7 : 4;
-		for (int a = 0; a < arcCount; a++) {
-			if (flashRnd.nextFloat() < 0.65f) {
-				double a1 = flashRnd.nextDouble() * Math.PI * 2.0;
-				double a2 = a1 + (flashRnd.nextDouble() - 0.5) * 1.4;
-				double r1 = 8.0 + flashRnd.nextDouble() * 44.0;
-				double r2 = 8.0 + flashRnd.nextDouble() * 48.0;
-				double y1 = deckY - 2.0 - (flashRnd.nextDouble() * 12.0);
-				double y2 = deckY - 2.0 - (flashRnd.nextDouble() * 12.0);
-				drawJaggedLineStrip(
-						cx + Math.cos(a1) * r1, y1, cz + Math.sin(a1) * r1,
-						cx + Math.cos(a2) * r2, y2, cz + Math.sin(a2) * r2,
-						8, 3.2f, flashRnd, rLight, gLight, bLight, rCore, gCore, bCore,
-						alpha * 0.75f, 4.5f, 1.8f
-				);
-			}
-		}
-		GL11.glDisable(GL11.GL_LINE_SMOOTH);
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
-	}
 
 	private static void renderOrbitalBolts(Minecraft mc, Tessellator t, double camX, double camY, double camZ, long now) {
 		if (activeBolts.isEmpty()) return;

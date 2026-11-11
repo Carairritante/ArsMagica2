@@ -1,22 +1,27 @@
 package am2.items.renderers;
 
 import am2.api.spell.ItemSpellBase;
+import am2.client.vfx.CastingAnimationState;
 import am2.api.spell.enums.Affinity;
 import am2.items.ItemSpellBook;
+import am2.items.ItemsCommonProxy;
 import am2.particles.AMParticleIcons;
 import am2.spell.SpellUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.model.ModelBiped;
+import net.minecraft.client.model.ModelBook;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.RenderItem;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.EnumAction;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.IIcon;
 import net.minecraft.util.MathHelper;
@@ -32,15 +37,19 @@ public class SpellScrollRenderer implements IItemRenderer{
 
 	private static RenderItem renderItem = new RenderItem();
 	private final ModelBiped modelBipedMain;
+	private final ModelBook modelBook;
 	private final Minecraft mc;
 	private final Map<Affinity, IIcon> icons;
 	private boolean setupIcons = false;
 	private static final ResourceLocation rLoc = new ResourceLocation("textures/atlas/items.png");
+	private static final ResourceLocation bookTexture = new ResourceLocation("textures/entity/enchanting_table_book.png");
+	private static final ResourceLocation arcaneBookTexture = new ResourceLocation("arsmagica2", "textures/models/arcane_book_open.png");
 
 	public static SpellScrollRenderer instance = new SpellScrollRenderer();
 
 	private SpellScrollRenderer(){
 		modelBipedMain = new ModelBiped(0.0F);
+		modelBook = new ModelBook();
 		mc = Minecraft.getMinecraft();
 		icons = new HashMap<Affinity, IIcon>();
 	}
@@ -48,10 +57,8 @@ public class SpellScrollRenderer implements IItemRenderer{
 	@Override
 	public boolean handleRenderType(ItemStack item, ItemRenderType type){
 		if (type == ItemRenderType.EQUIPPED || type == ItemRenderType.EQUIPPED_FIRST_PERSON){
-			if (Minecraft.getMinecraft().inGameHasFocus){
-				if (item.getItem() instanceof ItemSpellBase || (item.getItem() instanceof ItemSpellBook && ((ItemSpellBook)item.getItem()).GetActiveScroll(item) != null)){
-					return true;
-				}
+			if (item != null && (item.getItem() instanceof ItemSpellBase || item.getItem() instanceof ItemSpellBook)){
+				return true;
 			}
 		}
 		return false;
@@ -65,21 +72,22 @@ public class SpellScrollRenderer implements IItemRenderer{
 	@Override
 	public void renderItem(ItemRenderType type, ItemStack item, Object... data){
 
-		if (mc.thePlayer.isPotionActive(Potion.invisibility.id)) return;
+		if (mc.thePlayer != null && mc.thePlayer.isPotionActive(Potion.invisibility.id)) return;
 
 		ItemStack scrollStack = null;
 		if (item.getItem() instanceof ItemSpellBase){
 			scrollStack = item;
 		}else if (item.getItem() instanceof ItemSpellBook){
-			scrollStack = ((ItemSpellBook)item.getItem()).getActiveScrollInventory(item)[((ItemSpellBook)item.getItem()).GetActiveSlot(item)];
+			scrollStack = ((ItemSpellBook)item.getItem()).GetActiveItemStack(item);
 		}
 
+		Affinity affinity = scrollStack != null ? am2.client.vfx.CastingCircleVFX.safeAffinity(scrollStack) : Affinity.NONE;
 
-		if (scrollStack == null) return;
-
-		Affinity affinity = SpellUtils.instance.mainAffinityFor(scrollStack);
-
-		renderEffect(affinity, true, data);
+		if (item.getItem() instanceof ItemSpellBook){
+			renderSpellBook(type, item, scrollStack, affinity, data);
+		}else if (scrollStack != null){
+			renderEffect(affinity, true, data);
+		}
 	}
 
 	public void renderEffect(Affinity affinity, boolean includeArm, Object... data){
@@ -109,30 +117,32 @@ public class SpellScrollRenderer implements IItemRenderer{
 				GL11.glTranslatef(2f, 0f, 0.8f);
 			}else{
 				GL11.glTranslatef(3f, -1.2f, -2.5f);
-				GL11.glScalef(scale, scale, scale);
-				GL11.glRotatef(-45, 0, 1, 0);
+				GL11.glRotatef(120, 1, 0, 1);
+				GL11.glRotatef(-20, 0, 1, 0);
 			}
-			RenderHelper.disableStandardItemLighting();
-			GL11.glTranslatef(0.6f, 0.0f, -0.4f);
+
+			GL11.glScalef(scale, scale, scale);
 			RenderByAffinity(affinity);
-			RenderHelper.enableStandardItemLighting();
+
 			GL11.glPopMatrix();
 
 			if (includeArm){
-				if (entity instanceof EntityPlayer && ((EntityPlayer)entity).getItemInUseCount() > 0){
-					GL11.glRotatef(-130, 0, 1, 0);
-					GL11.glTranslatef(-1f, 0.2f, -2.5f);
-				}
+				GL11.glPushMatrix();
 
+				if (((EntityPlayer)entity).getItemInUseCount() > 0){
+					GL11.glRotatef(-120, 0, 1, 0);
+					GL11.glTranslatef(-0.85f, 0.25f, -2.3f);
+				}
 				GL11.glScalef(scale, scale, scale);
 				GL11.glTranslatef(0f, 0.6f, 1.1f);
-
 				Minecraft.getMinecraft().renderEngine.bindTexture(mc.thePlayer.getLocationSkin());
 				renderFirstPersonArm(mc.thePlayer);
+				GL11.glPopMatrix();
 			}
+
 		}else{
-			if (entity instanceof EntityPlayer && ((EntityPlayer)entity).getItemInUseCount() > 0){
-				GL11.glTranslatef(0.0f, 0.0f, 1.0f);
+			if (entity instanceof EntityPlayer && ((EntityPlayer)entity).isUsingItem()){
+				GL11.glTranslatef(-0.1f, 0.3f, 0.8f);
 			}else{
 				GL11.glTranslatef(0.0f, 0.0f, 1.6f);
 			}
@@ -147,6 +157,106 @@ public class SpellScrollRenderer implements IItemRenderer{
 		GL11.glDisable(3042);
 
 		GL11.glPopMatrix();
+	}
+
+	private void renderSpellBook(ItemRenderType type, ItemStack bookStack, ItemStack scrollStack, Affinity affinity, Object... data){
+		if (!setupIcons){ setupAffinityIcons(); setupIcons = true; }
+		EntityLivingBase entity = data.length > 1 && data[1] instanceof EntityLivingBase ? (EntityLivingBase)data[1] : null;
+		if (entity == null && type == ItemRenderType.EQUIPPED_FIRST_PERSON) entity = mc.thePlayer;
+		EntityPlayer player = entity instanceof EntityPlayer ? (EntityPlayer)entity : null;
+		float partial = CastingAnimationState.getPartialTicks();
+		float open = CastingAnimationState.getOpenProgress(entity, bookStack, partial);
+		float age = (entity != null ? entity.ticksExisted : 0) + partial;
+		float pageLeft = MathHelper.clamp_float((age * 0.065f % 1.0f) * 1.6f - 0.3f, 0, 1);
+		float pageRight = MathHelper.clamp_float(((age * 0.065f + 0.5f) % 1.0f) * 1.6f - 0.3f, 0, 1);
+		float lightX = OpenGlHelper.lastBrightnessX, lightY = OpenGlHelper.lastBrightnessY;
+
+		GL11.glPushMatrix();
+		GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+		try {
+			GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+			GL11.glEnable(GL11.GL_BLEND);
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+			GL11.glColor4f(1, 1, 1, 1);
+			if (type == ItemRenderType.EQUIPPED_FIRST_PERSON && player == mc.thePlayer
+					&& player.getItemInUseCount() > 0 && bookStack.getItemUseAction() == EnumAction.block){
+				// Undo only the vanilla blocking pose, inside Forge's half-block offset.
+				// Casting remains unchanged; the book supplies its own continuous pose.
+				GL11.glTranslatef(0.5f, 0.5f, 0.5f);
+				GL11.glRotatef(-60, 0, 1, 0);
+				GL11.glRotatef(80, 1, 0, 0);
+				GL11.glRotatef(-30, 0, 1, 0);
+				GL11.glTranslatef(0.5f, -0.2f, 0);
+				GL11.glTranslatef(-0.5f, -0.5f, -0.5f);
+			}
+			GL11.glPushMatrix();
+			if (type == ItemRenderType.EQUIPPED_FIRST_PERSON){
+				GL11.glTranslatef(0.85f - 0.55f * open, 0.65f + 0.45f * open, -0.05f - 0.30f * open);
+				GL11.glRotatef(35.0f - 13.0f * open, 1, 0, 0);
+				GL11.glRotatef(-45.0f + 10.0f * open, 0, 1, 0);
+				GL11.glRotatef(180.0f, 0, 0, 1);
+				float scale = 1.15f + 0.20f * open;
+				GL11.glScalef(scale, scale, scale);
+			}else{
+				// RenderPlayer supplies the BLOCK_3D pose because this renderer uses
+				// that helper. Return to the hand before applying the book's pose.
+				GL11.glTranslatef(0.5f, 0.5f, 0.5f);
+				GL11.glScalef(-1.0f / 0.375f, -1.0f / 0.375f, 1.0f / 0.375f);
+				GL11.glRotatef(-45, 0, 1, 0);
+				GL11.glRotatef(-20, 1, 0, 0);
+				GL11.glTranslatef(0, -0.1875f, 0.3125f);
+				GL11.glTranslatef(0, 0, -0.12f - 0.08f * open);
+				GL11.glRotatef(180, 0, 1, 0);
+				float scale = 0.85f + 0.10f * open;
+				GL11.glScalef(scale, scale, scale);
+			}
+			ResourceLocation tex = (bookStack != null && bookStack.getItem() == ItemsCommonProxy.arcaneSpellbook) ? arcaneBookTexture : bookTexture;
+			mc.renderEngine.bindTexture(tex);
+			GL11.glPushMatrix();
+			// ModelBook opens towards +X. Turn that face towards the reader's +Z.
+			GL11.glRotatef(-90.0f * open, 0, 1, 0);
+			modelBook.render((Entity)null, age, pageLeft, pageRight, open, 0.0f, 0.0625f);
+			GL11.glPopMatrix();
+			if (scrollStack != null && open > 0.15f){
+				GL11.glPushMatrix();
+				float hover = (float)Math.sin(age * 0.2f) * 0.025f;
+				GL11.glTranslatef(0.0f, hover, 0.18f);
+				GL11.glRotatef(age * 2.5f, 0, 0, 1);
+				float scale = 0.50f * open;
+				GL11.glScalef(scale, scale, scale);
+				GL11.glTranslatef(-0.5f, -0.5f, 0);
+				GL11.glDisable(GL11.GL_CULL_FACE);
+				GL11.glDisable(GL11.GL_LIGHTING);
+				GL11.glDepthMask(false);
+				OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240, 240);
+				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+				GL11.glColor4f(1, 1, 1, open);
+				RenderByAffinity(affinity);
+				OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lightX, lightY);
+				GL11.glDepthMask(true);
+				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+				GL11.glEnable(GL11.GL_LIGHTING);
+				GL11.glPopMatrix();
+			}
+			GL11.glPopMatrix();
+			if (type == ItemRenderType.EQUIPPED_FIRST_PERSON && player == mc.thePlayer){
+				GL11.glPushMatrix();
+				GL11.glTranslatef(0.55f - 0.10f * open, -0.40f + 0.075f * open, 0.52f);
+				GL11.glRotatef(-30, 1, 0, 0);
+				GL11.glScalef(1.7f, 1.7f, 1.7f);
+				GL11.glTranslatef(0.3125f, -0.125f, 0);
+				mc.renderEngine.bindTexture(mc.thePlayer.getLocationSkin());
+				modelBipedMain.bipedRightArm.rotateAngleX = 0;
+				modelBipedMain.bipedRightArm.rotateAngleY = 0;
+				modelBipedMain.bipedRightArm.rotateAngleZ = 0;
+				modelBipedMain.bipedRightArm.render(0.0625f);
+				GL11.glPopMatrix();
+			}
+		} finally {
+			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, lightX, lightY);
+			GL11.glPopAttrib();
+			GL11.glPopMatrix();
+		}
 	}
 
 	private void setupAffinityIcons(){
@@ -180,7 +290,6 @@ public class SpellScrollRenderer implements IItemRenderer{
 
 
 	private void doRender(float TLX, float TLY, float BRX, float BRY){
-		//ItemRenderer.renderItemIn2D(Tessellator.instance, TLX, TLY, BRX, BRY, 1, 1, 0.0625F);
 		Tessellator t = Tessellator.instance;
 		t.startDrawingQuads();
 		t.setNormal(0.0F, 0.0F, 1.0F);
@@ -225,30 +334,14 @@ public class SpellScrollRenderer implements IItemRenderer{
 		f7 = entityclientplayermp.getSwingProgress(par1);
 		f8 = MathHelper.sin(f7 * (float)Math.PI);
 		f6 = MathHelper.sin(MathHelper.sqrt_float(f7) * (float)Math.PI);
-		GL11.glTranslatef(-f6 * 0.3F, MathHelper.sin(MathHelper.sqrt_float(f7) * (float)Math.PI * 2.0F) * 0.4F, -f8 * 0.4F);
-		GL11.glTranslatef(0.8F * f12, -0.75F * f12 - (1.0F - f1) * 0.6F, -0.9F * f12);
-		GL11.glRotatef(45.0F, 0.0F, 1.0F, 0.0F);
-		GL11.glEnable(GL12.GL_RESCALE_NORMAL);
-		f7 = entityclientplayermp.getSwingProgress(par1);
-		f8 = MathHelper.sin(f7 * f7 * (float)Math.PI);
-		f6 = MathHelper.sin(MathHelper.sqrt_float(f7) * (float)Math.PI);
-		GL11.glRotatef(f6 * 70.0F, 0.0F, 1.0F, 0.0F);
+		GL11.glRotatef(-f6 * 20.0F, 0.0F, 1.0F, 0.0F);
 		GL11.glRotatef(-f8 * 20.0F, 0.0F, 0.0F, 1.0F);
-		this.mc.getTextureManager().bindTexture(entityclientplayermp.getLocationSkin());
-		GL11.glTranslatef(-1.0F, 3.6F, 3.5F);
-		GL11.glRotatef(120.0F, 0.0F, 0.0F, 1.0F);
-		GL11.glRotatef(200.0F, 1.0F, 0.0F, 0.0F);
-		GL11.glRotatef(-135.0F, 0.0F, 1.0F, 0.0F);
-		GL11.glScalef(1.0F, 1.0F, 1.0F);
-		GL11.glTranslatef(5.6F, 0.0F, 0.0F);
-
-		float f = 1.0F;
-		GL11.glColor3f(f, f, f);
+		GL11.glRotatef(-f8 * 80.0F, 1.0F, 0.0F, 0.0F);
+		GL11.glScalef(f12, f12, f12);
 		this.modelBipedMain.onGround = 0.0F;
-		this.modelBipedMain.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, player);
+		this.modelBipedMain.setRotationAngles(0.0F, 0.0F, 0.0F, 0.0F, 0.0F, 0.0625F, entityclientplayermp);
 		this.modelBipedMain.bipedRightArm.render(0.0625F);
-
 		GL11.glPopMatrix();
-
 	}
+
 }

@@ -6,7 +6,9 @@ import am2.bosses.models.ModelPlantGuardianSickle;
 import am2.items.ItemsCommonProxy;
 import am2.proxy.gui.ModelLibrary;
 import am2.texture.ResourceManager;
+import am2.client.vfx.CastingAnimationState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -51,6 +53,17 @@ public class CustomItemRenderer implements IItemRenderer{
 
 	@Override
 	public void renderItem(ItemRenderType type, ItemStack item, Object... data){
+		if (item.getItem() == ItemsCommonProxy.arcaneSpellbook &&
+				(type == ItemRenderType.EQUIPPED || type == ItemRenderType.EQUIPPED_FIRST_PERSON)){
+			EntityLivingBase entity = data.length > 1 && data[1] instanceof EntityLivingBase ? (EntityLivingBase)data[1] : null;
+			if (entity == null && type == ItemRenderType.EQUIPPED_FIRST_PERSON) entity = mc.thePlayer;
+			float partial = CastingAnimationState.getPartialTicks();
+			float open = CastingAnimationState.getOpenProgress(entity, item, partial);
+			if (open > 0.001f){
+				SpellScrollRenderer.instance.renderItem(type, item, data);
+				return;
+			}
+		}
 		bindTextureByItem(item);
 
 		GL11.glPushMatrix();
