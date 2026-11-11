@@ -794,3 +794,11 @@ am2.ritual_architect.hud_drag=Arraste o painel para mover. Ajuste tamanho e tran
 am2.ritual_architect.hud_reset=Restaurar
 am2.ritual_architect.hud_size=Tamanho: %s%%
 am2.ritual_architect.hud_transparency=Transparência: %s%%
+
+# Compatibilidade / Traduções FreeCam
+category.zergatul.freecam=Câmera Livre
+key.zergatul.freecam.toggle=Ativar Câmera Livre
+key.zergatul.freecam.cameralock.toggle=Travar Ângulo da Câmera
+key.zergatul.freecam.eyelock.toggle=Travar Visão nos Olhos
+key.zergatul.freecam.followcam.toggle=Seguir Jogador
+

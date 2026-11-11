@@ -26,6 +26,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
 import net.minecraft.client.audio.SoundManager;
 import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.resources.I18n;
+import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelMagmaCube;
 import net.minecraft.client.model.ModelSkeleton;
@@ -749,6 +751,32 @@ public class MysteriumPatchesFixesMagicka{
 			spellSlotColumnFrom = -1;
 			return result;
 		}
+	}
+
+	@Fix(returnSetting = EnumReturnSetting.ALWAYS)
+	@SideOnly(Side.CLIENT)
+	public static int compareTo(KeyBinding thisKb, KeyBinding otherKb) {
+		String cat1 = thisKb.getKeyCategory() == null ? "" : thisKb.getKeyCategory();
+		String cat2 = otherKb.getKeyCategory() == null ? "" : otherKb.getKeyCategory();
+		int i = I18n.format(cat1, new Object[0]).compareTo(I18n.format(cat2, new Object[0]));
+		if (i == 0) {
+			i = cat1.compareTo(cat2);
+		}
+		if (i == 0) {
+			String desc1 = thisKb.getKeyDescription() == null ? "" : thisKb.getKeyDescription();
+			String desc2 = otherKb.getKeyDescription() == null ? "" : otherKb.getKeyDescription();
+			i = I18n.format(desc1, new Object[0]).compareTo(I18n.format(desc2, new Object[0]));
+		}
+		return i;
+	}
+
+	@Fix(returnSetting = EnumReturnSetting.ALWAYS)
+	@SideOnly(Side.CLIENT)
+	public static int compareTo(KeyBinding thisKb, Object otherKb) {
+		if (otherKb instanceof KeyBinding) {
+			return compareTo(thisKb, (KeyBinding) otherKb);
+		}
+		return 0;
 	}
 
 }
