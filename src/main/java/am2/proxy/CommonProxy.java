@@ -197,6 +197,9 @@ public class CommonProxy{
 		NetworkRegistry.INSTANCE.registerGuiHandler(AMCore.instance, guiManager);
 
 		serverTickHandler = new ServerTickHandler();
+        am2.compass.AstralCompassService astralService=new am2.compass.AstralCompassService();
+        FMLCommonHandler.instance().bus().register(astralService);
+        MinecraftForge.EVENT_BUS.register(astralService);
 
 		FMLCommonHandler.instance().bus().register(serverTickHandler);
 		MinecraftForge.EVENT_BUS.register(serverTickHandler);

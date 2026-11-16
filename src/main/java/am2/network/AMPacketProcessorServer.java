@@ -502,13 +502,14 @@ public class AMPacketProcessorServer{
 	}
 
 	private void handleAstralCompassAction(byte[] data, EntityPlayerMP player){
-		if (player == null) return;
-		AMDataReader rdr = new AMDataReader(data, false);
-		int heldSlot = rdr.getInt();
-		int action = rdr.getInt();
-		String targetId = rdr.getString();
-		am2.items.ItemAstralCompass.handleServerAction(player, heldSlot, action, targetId);
-	}
+        if(player==null || data==null || data.length<10 || data.length>396)return;
+        try {
+            java.io.DataInputStream input=new java.io.DataInputStream(new java.io.ByteArrayInputStream(data));
+            int slot=input.readInt(),action=input.readInt();String id=input.readUTF();
+            if(input.available()!=0 || id.length()>128)return;
+            am2.items.ItemAstralCompass.handleServerAction(player,slot,action,id);
+        } catch(java.io.IOException ignored) { /* Reject malformed requests without fallback actions or log spam. */ }
+    }
 
 	public WorldServer[] getWorldServers(){
 		return FMLServerHandler.instance().getServer().worldServers;

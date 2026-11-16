@@ -1239,3 +1239,7 @@ am2.astral_compass.hud.coords=X: %s   Z: %s
 am2.astral_compass.hud.dimension=Travel to Dim %s
 am2.nei.ritual.handler=AM2 Rituals
 am2.nei.ritual.astral_divination.req=Mark on Lapis | Lvl 50 | 20k Mana
+
+am2.astral_compass.searching=Searching the astral currents...
+am2.astral_compass.err_dimension=Search this structure in dimension %s.
+am2.astral_compass.err_resources_changed=Your magic level or mana changed during the search. No mana was spent.

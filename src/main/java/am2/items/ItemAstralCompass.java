@@ -46,7 +46,6 @@ public class ItemAstralCompass extends ArsMagicaItem {
 	private static final String TAG_HAS_Y = "hasY";
 	private static final String TAG_COOLDOWN_UNTIL = "cooldownUntil";
 
-	@SideOnly(Side.CLIENT)
 	private static List<StructureTargetInfo> clientCatalog = AstralStructureLocator.getBuiltinCatalog();
 
 	public ItemAstralCompass() {
@@ -74,7 +73,7 @@ public class ItemAstralCompass extends ArsMagicaItem {
 	@Override
 	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
 		if (!world.isRemote && player instanceof EntityPlayerMP) {
-			sendCatalogToClient((EntityPlayerMP) player);
+			handleServerAction((EntityPlayerMP)player,player.inventory.currentItem,ACT_REQUEST_CATALOG,"");
 		} else if (world.isRemote) {
 			AMCore.proxy.openAstralCompassGui(player);
 		}
@@ -177,11 +176,22 @@ public class ItemAstralCompass extends ArsMagicaItem {
 	}
 
 	public static void handleServerAction(EntityPlayerMP player, int heldSlot, int action, String targetId) {
+        am2.compass.AstralCompassService.enqueue(player,heldSlot,action,targetId);
+    }
+
+    public static void processServerAction(EntityPlayerMP player, int heldSlot, int action, String targetId) {
 		if (player == null || player.isDead || player.worldObj == null) return;
 		if (heldSlot < 0 || heldSlot >= 9 || player.inventory.currentItem != heldSlot) return;
 
 		ItemStack stack = player.inventory.getStackInSlot(heldSlot);
 		if (stack == null || !(stack.getItem() instanceof ItemAstralCompass)) return;
+
+        long clock=net.minecraft.server.MinecraftServer.getServer().worldServers[0].getTotalWorldTime();
+        if(action==ACT_REQUEST_CATALOG){
+            long previous=player.getEntityData().getLong("am2AstralCatalogUntil");
+            if(clock<previous)return;
+            player.getEntityData().setLong("am2AstralCatalogUntil",clock+20);
+        }
 
 		if (action == ACT_REQUEST_CATALOG) {
 			sendCatalogToClient(player);
@@ -197,10 +207,9 @@ public class ItemAstralCompass extends ArsMagicaItem {
 		}
 
 		if (action == ACT_SEARCH) {
-			NBTTagCompound root = stack.hasTagCompound() ? stack.getTagCompound() : new NBTTagCompound();
-			NBTTagCompound tag = root.getCompoundTag(TAG_ROOT);
-			long now = player.worldObj.getTotalWorldTime();
-			long cooldownUntil = tag.getLong(TAG_COOLDOWN_UNTIL);
+			NBTTagCompound tag = player.getEntityData();
+			long now = clock;
+			long cooldownUntil = tag.getLong("am2AstralRequestUntil");
 			if (now < cooldownUntil) {
 				player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_cooldown"));
 				return;
@@ -224,10 +233,24 @@ public class ItemAstralCompass extends ArsMagicaItem {
 				return;
 			}
 
-			AstralStructureLocator.SearchResult result = AstralStructureLocator.locateNearest(player.worldObj, player, targetId);
-			tag.setLong(TAG_COOLDOWN_UNTIL, now + AstralStructureLocator.COOLDOWN_TICKS);
-			root.setTag(TAG_ROOT, tag);
-			stack.setTagCompound(root);
+            StructureTargetInfo selected=null;
+            for(StructureTargetInfo info:AstralStructureLocator.discoverCatalog(player.worldObj)) if(info.id.equals(targetId)){selected=info;break;}
+            if(selected==null)return;
+            if(selected.dimensionRestricted && selected.preferredDimension!=player.dimension){
+                player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_dimension",selected.preferredDimension));return;
+            }
+            tag.setLong("am2AstralRequestUntil",now+AstralStructureLocator.COOLDOWN_TICKS);
+            am2.compass.AstralCompassService.start(player,stack,selected);
+        }
+    }
+
+    public static void finishSearch(EntityPlayerMP player,ItemStack stack,AstralStructureLocator.SearchResult result) {
+            ExtendedProperties props=ExtendedProperties.For(player);
+            // Mana may have changed while the incremental search ran.
+            if(props==null || !AstralStructureLocator.hasRequiredLevel(props.getMagicLevel())
+                    || !AstralStructureLocator.hasEnoughMana(props.getCurrentMana(),props.getBonusCurrentMana())){
+                player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_resources_changed"));return;
+            }
 
 			if (result == null) {
 				player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_not_found"));
@@ -245,7 +268,6 @@ public class ItemAstralCompass extends ArsMagicaItem {
 			player.addChatMessage(new ChatComponentTranslation(
 					"am2.astral_compass.locked",
 					result.displayName, result.x, result.z, dist));
-		}
 	}
 
 	public static void sendCatalogToClient(EntityPlayerMP player) {

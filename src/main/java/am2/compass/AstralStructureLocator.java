@@ -2,346 +2,180 @@ package am2.compass;
 
 import am2.worldgen.BiomeWitchwoodForest;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ChunkCoordinates;
-import net.minecraft.world.ChunkPosition;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldSavedData;
+import net.minecraft.nbt.*;
+import net.minecraft.world.*;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.ChunkProviderServer;
-import net.minecraft.world.gen.MapGenBase;
-import net.minecraft.world.gen.structure.MapGenStructure;
-import net.minecraft.world.gen.structure.MapGenStructureData;
-import net.minecraft.world.gen.structure.MapGenStructureIO;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import net.minecraft.world.gen.structure.*;
+import java.lang.reflect.*;
 import java.util.*;
 
-/**
- * Discovers all Vanilla, Ars Magica 2, and modded worldgen structures without forcing chunk generation,
- * and computes nearest structure coordinates for the Astral Structure Compass.
- */
+/** Read-only, incrementally budgeted searches. Never calls a foreign generator. */
 public final class AstralStructureLocator {
+    public static final int REQUIRED_MAGIC_LEVEL = 50;
+    public static final float MANA_COST = 20000F;
+    public static final int COOLDOWN_TICKS = 20;
+    public static final String ID_VILLAGE="Village", ID_STRONGHOLD="Stronghold",
+        ID_DESERT_PYRAMID="Temple:DesertPyramid", ID_JUNGLE_TEMPLE="Temple:JungleTemple",
+        ID_WITCH_HUT="Temple:WitchHut", ID_MINESHAFT="Mineshaft", ID_FORTRESS="Fortress",
+        ID_WITCHWOOD_FOREST="am2:witchwood_forest";
+    public static final int MAX_CATALOG = 256;
+    private AstralStructureLocator() {}
 
-	public static final int REQUIRED_MAGIC_LEVEL = 50;
-	public static final float MANA_COST = 20000.0F;
-	public static final int COOLDOWN_TICKS = 20;
-
-	public static final String ID_VILLAGE = "Village";
-	public static final String ID_STRONGHOLD = "Stronghold";
-	public static final String ID_DESERT_PYRAMID = "Temple:DesertPyramid";
-	public static final String ID_JUNGLE_TEMPLE = "Temple:JungleTemple";
-	public static final String ID_WITCH_HUT = "Temple:WitchHut";
-	public static final String ID_MINESHAFT = "Mineshaft";
-	public static final String ID_FORTRESS = "Fortress";
-	public static final String ID_WITCHWOOD_FOREST = "am2:witchwood_forest";
-
-	private static final int MAX_CHUNK_SPIRAL_RADIUS = 220; // ~3,520 blocks around caster
-	private static final int BIOME_SAMPLE_STEP_BLOCKS = 32;
-	private static final int MAX_BIOME_RADIUS_BLOCKS = 4096;
-
-	private AstralStructureLocator() {
-	}
-
-	public static final class SearchResult {
-		public final String targetId;
-		public final String displayName;
-		public final int dimension;
-		public final int x;
-		public final int y;
-		public final int z;
-		public final boolean hasY;
-
-		public SearchResult(String targetId, String displayName, int dimension, int x, int y, int z, boolean hasY) {
-			this.targetId = targetId;
-			this.displayName = displayName;
-			this.dimension = dimension;
-			this.x = x;
-			this.y = y;
-			this.z = z;
-			this.hasY = hasY;
-		}
-	}
-
-	public static boolean hasRequiredLevel(int magicLevel) {
-		return magicLevel >= REQUIRED_MAGIC_LEVEL;
-	}
-
-	public static boolean hasEnoughMana(float currentMana, float bonusMana) {
-		return (currentMana + bonusMana) >= MANA_COST;
-	}
-
-	public static List<StructureTargetInfo> getBuiltinCatalog() {
-		List<StructureTargetInfo> list = new ArrayList<StructureTargetInfo>();
-		list.add(new StructureTargetInfo(ID_STRONGHOLD, "Stronghold", StructureTargetInfo.CAT_VANILLA, 0, true, 1));
-		list.add(new StructureTargetInfo(ID_VILLAGE, "Village", StructureTargetInfo.CAT_VANILLA, 0, true, 3));
-		list.add(new StructureTargetInfo(ID_DESERT_PYRAMID, "Desert Pyramid", StructureTargetInfo.CAT_VANILLA, 0, true, 5));
-		list.add(new StructureTargetInfo(ID_JUNGLE_TEMPLE, "Jungle Temple", StructureTargetInfo.CAT_VANILLA, 0, true, 6));
-		list.add(new StructureTargetInfo(ID_WITCH_HUT, "Witch Hut", StructureTargetInfo.CAT_VANILLA, 0, true, 7));
-		list.add(new StructureTargetInfo(ID_MINESHAFT, "Mineshaft", StructureTargetInfo.CAT_VANILLA, 0, true, 9));
-		list.add(new StructureTargetInfo(ID_FORTRESS, "Nether Fortress", StructureTargetInfo.CAT_VANILLA, -1, true, 11));
-		list.add(new StructureTargetInfo(ID_WITCHWOOD_FOREST, "Witchwood Forest", StructureTargetInfo.CAT_AM2, 0, false, 13));
-		return list;
-	}
-
-	/**
-	 * Discovers all built-in + MapGenStructureIO + IChunkProvider MapGenStructure entries on the server world.
-	 */
-	public static List<StructureTargetInfo> discoverCatalog(World world) {
-		LinkedHashMap<String, StructureTargetInfo> map = new LinkedHashMap<String, StructureTargetInfo>();
-		for (StructureTargetInfo info : getBuiltinCatalog()) {
-			map.put(info.id, info);
-		}
-
-		if (world != null) {
-			for (MapGenStructure gen : collectMapGenStructures(world)) {
-				try {
-					String name = gen.func_143025_a();
-					if (name != null && !name.trim().isEmpty() && !isBuiltinGroupedName(name) && !map.containsKey(name)) {
-						String cat = name.toLowerCase().contains("am2") ? StructureTargetInfo.CAT_AM2 : StructureTargetInfo.CAT_MODDED;
-						map.put(name, new StructureTargetInfo(name, name, cat, world.provider.dimensionId, false, Math.abs(name.hashCode()) & 15));
-					}
-				} catch (Throwable ignored) {
-				}
-			}
-		}
-
-		for (String registered : collectRegisteredStructureIONames()) {
-			if (registered != null && !registered.trim().isEmpty() && !isBuiltinGroupedName(registered) && !map.containsKey(registered)) {
-				String cat = registered.toLowerCase().contains("am2") ? StructureTargetInfo.CAT_AM2 : StructureTargetInfo.CAT_MODDED;
-				map.put(registered, new StructureTargetInfo(registered, registered, cat, 0, false, Math.abs(registered.hashCode()) & 15));
-			}
-		}
-
-		return new ArrayList<StructureTargetInfo>(map.values());
-	}
-
-	public static List<StructureTargetInfo> filterCatalog(List<StructureTargetInfo> catalog, String category, String query) {
-		String normQuery = StructureTargetInfo.normalizeQuery(query);
-		String compactQuery = StructureTargetInfo.compactQuery(normQuery);
-		List<StructureTargetInfo> out = new ArrayList<StructureTargetInfo>();
-		for (StructureTargetInfo info : catalog) {
-			if (category != null && !StructureTargetInfo.CAT_ALL.equals(category) && !category.equals(info.category)) {
-				continue;
-			}
-			if (info.matchesQuery(normQuery, compactQuery)) {
-				out.add(info);
-			}
-		}
-		return out;
-	}
-
-	private static boolean isBuiltinGroupedName(String name) {
-		return ID_VILLAGE.equals(name)
-				|| ID_STRONGHOLD.equals(name)
-				|| "Temple".equals(name)
-				|| ID_MINESHAFT.equals(name)
-				|| ID_FORTRESS.equals(name);
-	}
-
-	public static SearchResult locateNearest(World world, EntityPlayer player, String targetId) {
-		if (world == null || player == null || targetId == null || targetId.isEmpty()) {
-			return null;
-		}
-		int px = (int) Math.floor(player.posX);
-		int py = (int) Math.floor(player.posY);
-		int pz = (int) Math.floor(player.posZ);
-
-		if (ID_WITCHWOOD_FOREST.equals(targetId)) {
-			ChunkCoordinates pos = findNearestBiome(world, BiomeWitchwoodForest.instance.biomeID, px, pz);
-			if (pos == null) return null;
-			return new SearchResult(targetId, resolveDisplayName(world, targetId), world.provider.dimensionId, pos.posX, pos.posY, pos.posZ, false);
-		}
-
-		if (ID_STRONGHOLD.equals(targetId)) {
-			ChunkPosition cp = world.findClosestStructure("Stronghold", px, py, pz);
-			if (cp != null) {
-				return new SearchResult(targetId, resolveDisplayName(world, targetId), world.provider.dimensionId, cp.chunkPosX, cp.chunkPosY, cp.chunkPosZ, true);
-			}
-		}
-
-		String baseStructureName = targetId;
-		int requiredBiomeId = -1;
-		boolean requirePyramidOrTemple = false;
-		if (ID_DESERT_PYRAMID.equals(targetId)) {
-			baseStructureName = "Temple";
-			requiredBiomeId = BiomeGenBase.desert.biomeID;
-			requirePyramidOrTemple = true;
-		} else if (ID_JUNGLE_TEMPLE.equals(targetId)) {
-			baseStructureName = "Temple";
-			requiredBiomeId = BiomeGenBase.jungle.biomeID;
-			requirePyramidOrTemple = true;
-		} else if (ID_WITCH_HUT.equals(targetId)) {
-			baseStructureName = "Temple";
-			requiredBiomeId = BiomeGenBase.swampland.biomeID;
-			requirePyramidOrTemple = true;
-		}
-
-		// 1. Check already-persisted MapGenStructureData first without loading or generating chunks
-		ChunkPosition savedPos = findNearestInSavedData(world, baseStructureName, px, pz, requirePyramidOrTemple ? requiredBiomeId : -1);
-		if (savedPos != null) {
-			return new SearchResult(targetId, resolveDisplayName(world, targetId), world.provider.dimensionId, savedPos.chunkPosX, savedPos.chunkPosY, savedPos.chunkPosZ, false);
-		}
-
-		// 2. Query any matching MapGenStructure instance via deterministic chunk-coord seed probing (zero chunk gen)
-		for (MapGenStructure gen : collectMapGenStructures(world)) {
-			try {
-				String genName = gen.func_143025_a();
-				if (!baseStructureName.equals(genName)) continue;
-
-				ChunkPosition predicted = spiralQueryMapGen(gen, world, px, pz, requirePyramidOrTemple ? requiredBiomeId : -1);
-				if (predicted != null) {
-					return new SearchResult(targetId, resolveDisplayName(world, targetId), world.provider.dimensionId, predicted.chunkPosX, predicted.chunkPosY, predicted.chunkPosZ, false);
-				}
-
-				ChunkPosition fallback = gen.func_151545_a(world, px, py, pz);
-				if (fallback != null && (!requirePyramidOrTemple || matchesTempleBiome(world, fallback.chunkPosX, fallback.chunkPosZ, requiredBiomeId))) {
-					return new SearchResult(targetId, resolveDisplayName(world, targetId), world.provider.dimensionId, fallback.chunkPosX, fallback.chunkPosY, fallback.chunkPosZ, true);
-				}
-			} catch (Throwable ignored) {
-			}
-		}
-
-		return null;
-	}
-
-	private static String resolveDisplayName(World world, String targetId) {
-		for (StructureTargetInfo info : discoverCatalog(world)) {
-			if (info.id.equals(targetId)) {
-				return info.getDisplayName();
-			}
-		}
-		return StructureTargetInfo.prettify(targetId);
-	}
-
-	private static boolean matchesTempleBiome(World world, int blockX, int blockZ, int requiredBiomeId) {
-		BiomeGenBase biome = world.getWorldChunkManager().getBiomeGenAt(blockX, blockZ);
-		if (biome == null) return false;
-		if (requiredBiomeId == BiomeGenBase.desert.biomeID) {
-			return biome.biomeID == BiomeGenBase.desert.biomeID || biome.biomeID == BiomeGenBase.desertHills.biomeID;
-		}
-		if (requiredBiomeId == BiomeGenBase.jungle.biomeID) {
-			return biome.biomeID == BiomeGenBase.jungle.biomeID || biome.biomeID == BiomeGenBase.jungleHills.biomeID;
-		}
-		return biome.biomeID == requiredBiomeId;
-	}
-
-	private static ChunkCoordinates findNearestBiome(World world, int targetBiomeId, int startX, int startZ) {
-		int maxSteps = MAX_BIOME_RADIUS_BLOCKS / BIOME_SAMPLE_STEP_BLOCKS;
-		int x = 0, z = 0, dx = 0, dz = -1;
-		int maxIter = (2 * maxSteps + 1) * (2 * maxSteps + 1);
-		for (int i = 0; i < maxIter; i++) {
-			if (Math.abs(x) <= maxSteps && Math.abs(z) <= maxSteps) {
-				int bx = startX + x * BIOME_SAMPLE_STEP_BLOCKS;
-				int bz = startZ + z * BIOME_SAMPLE_STEP_BLOCKS;
-				BiomeGenBase biome = world.getWorldChunkManager().getBiomeGenAt(bx, bz);
-				if (biome != null && biome.biomeID == targetBiomeId) {
-					return new ChunkCoordinates(bx, 64, bz);
-				}
-			}
-			if (x == z || (x < 0 && x == -z) || (x > 0 && x == 1 - z)) {
-				int tmp = dx;
-				dx = -dz;
-				dz = tmp;
-			}
-			x += dx;
-			z += dz;
-		}
-		return null;
-	}
-
-	private static ChunkPosition findNearestInSavedData(World world, String structureName, int originX, int originZ, int templeBiomeId) {
-		if (world.perWorldStorage == null) return null;
-		WorldSavedData raw = world.perWorldStorage.loadData(MapGenStructureData.class, structureName);
-		if (!(raw instanceof MapGenStructureData)) return null;
-
-		NBTTagCompound features = ((MapGenStructureData) raw).func_143041_a();
-		if (features == null) return null;
-
-		ChunkPosition best = null;
-		double bestDistSq = Double.MAX_VALUE;
-		@SuppressWarnings("unchecked")
-		Set<String> keys = features.func_150296_c();
-		for (String key : keys) {
-			NBTBase tag = features.getTag(key);
-			if (!(tag instanceof NBTTagCompound)) continue;
-			NBTTagCompound entry = (NBTTagCompound) tag;
-			if (!entry.hasKey("ChunkX") || !entry.hasKey("ChunkZ")) continue;
-			int cx = (entry.getInteger("ChunkX") << 4) + 8;
-			int cz = (entry.getInteger("ChunkZ") << 4) + 8;
-			if (templeBiomeId >= 0 && !matchesTempleBiome(world, cx, cz, templeBiomeId)) continue;
-			double dx = cx - originX;
-			double dz = cz - originZ;
-			double dSq = dx * dx + dz * dz;
-			if (dSq < bestDistSq) {
-				bestDistSq = dSq;
-				best = new ChunkPosition(cx, 64, cz);
-			}
-		}
-		return best;
-	}
-
-	private static ChunkPosition spiralQueryMapGen(MapGenStructure gen, World world, int originX, int originZ, int templeBiomeId) {
-		Method canSpawn = findCanSpawnMethod(gen.getClass());
-		if (canSpawn == null) return null;
-
-		Field worldField = findTypedField(gen.getClass(), MapGenBase.class, World.class);
-		Field randField = findTypedField(gen.getClass(), MapGenBase.class, Random.class);
-		if (worldField == null || randField == null) return null;
-
-		try {
-			worldField.setAccessible(true);
-			randField.setAccessible(true);
-			World prevWorld = (World) worldField.get(gen);
-			Random rand = (Random) randField.get(gen);
-			if (rand == null) {
-				rand = new Random();
-				randField.set(gen, rand);
-			}
-			worldField.set(gen, world);
-			try {
-				rand.setSeed(world.getSeed());
-				long seedL = rand.nextLong();
-				long seedI1 = rand.nextLong();
-
-				int startChunkX = originX >> 4;
-				int startChunkZ = originZ >> 4;
-				int rx = 0, rz = 0, dx = 0, dz = -1;
-				int maxIter = (2 * MAX_CHUNK_SPIRAL_RADIUS + 1) * (2 * MAX_CHUNK_SPIRAL_RADIUS + 1);
-				for (int i = 0; i < maxIter; i++) {
-					if (Math.abs(rx) <= MAX_CHUNK_SPIRAL_RADIUS && Math.abs(rz) <= MAX_CHUNK_SPIRAL_RADIUS) {
-						int cx = startChunkX + rx;
-						int cz = startChunkZ + rz;
-						long chunkSeed = ((long) cx * seedL) ^ ((long) cz * seedI1) ^ world.getSeed();
-						rand.setSeed(chunkSeed);
-						if ((Boolean) canSpawn.invoke(gen, cx, cz)) {
-							int bx = (cx << 4) + 8;
-							int bz = (cz << 4) + 8;
-							if (templeBiomeId < 0 || matchesTempleBiome(world, bx, bz, templeBiomeId)) {
-								return new ChunkPosition(bx, 64, bz);
-							}
-						}
-					}
-					if (rx == rz || (rx < 0 && rx == -rz) || (rx > 0 && rx == 1 - rz)) {
-						int tmp = dx;
-						dx = -dz;
-						dz = tmp;
-					}
-					rx += dx;
-					rz += dz;
-				}
-			} finally {
-				worldField.set(gen, prevWorld);
-			}
-		} catch (Throwable ignored) {
-		}
-		return null;
-	}
-
-	private static List<MapGenStructure> collectMapGenStructures(World world) {
+    public static final class SearchResult {
+        public final String targetId, displayName;
+        public final int dimension,x,y,z;
+        public final boolean hasY;
+        public SearchResult(String id,String name,int dim,int x,int y,int z,boolean hasY) {
+            targetId=id; displayName=name; dimension=dim; this.x=x;this.y=y;this.z=z;this.hasY=hasY;
+        }
+    }
+    public static boolean hasRequiredLevel(int level) { return level>=REQUIRED_MAGIC_LEVEL; }
+    public static boolean hasEnoughMana(float mana,float bonus) {
+        return !Float.isNaN(mana) && !Float.isInfinite(mana) && !Float.isNaN(bonus)
+            && !Float.isInfinite(bonus) && mana+bonus>=MANA_COST;
+    }
+    public static List<StructureTargetInfo> getBuiltinCatalog() {
+        List<StructureTargetInfo> list=new ArrayList<StructureTargetInfo>();
+        String[] ids={ID_STRONGHOLD,ID_VILLAGE,ID_DESERT_PYRAMID,ID_JUNGLE_TEMPLE,ID_WITCH_HUT,ID_MINESHAFT,ID_FORTRESS,ID_WITCHWOOD_FOREST};
+        String[] names={"Stronghold","Village","Desert Pyramid","Jungle Temple","Witch Hut","Mineshaft","Nether Fortress","Witchwood Forest"};
+        for(int i=0;i<ids.length;i++) list.add(new StructureTargetInfo(ids[i],names[i],i==7?StructureTargetInfo.CAT_AM2:StructureTargetInfo.CAT_VANILLA,i==6?-1:0,true,i*2+1));
+        return list;
+    }
+    public static List<StructureTargetInfo> discoverCatalog(World world) {
+        LinkedHashMap<String,StructureTargetInfo> entries=new LinkedHashMap<String,StructureTargetInfo>();
+        for(StructureTargetInfo info:getBuiltinCatalog()) entries.put(info.id,info);
+        if(world!=null && !world.isRemote) {
+            for(MapGenStructure gen:collectMapGenStructures(world)) {
+                String name;
+                try {name=gen.func_143025_a();}catch(RuntimeException e){continue;}catch(LinkageError e){continue;}
+                if(validId(name) && !"Temple".equals(name) && !entries.containsKey(name))
+                    entries.put(name,new StructureTargetInfo(name,name,StructureTargetInfo.CAT_MODDED,world.provider.dimensionId,true,name.hashCode()));
+            }
+            for(String name:loadedStructureData(world).keySet()) {
+                if(validId(name) && !"Temple".equals(name) && !entries.containsKey(name))
+                    entries.put(name,new StructureTargetInfo(name,name,StructureTargetInfo.CAT_MODDED,world.provider.dimensionId,true,name.hashCode()));
+            }
+            AstralModStructures.addCatalog(world,entries);
+            for(String id:AstralLandmarks.get(world).types()) if(!entries.containsKey(id))
+                entries.put(id,new StructureTargetInfo(id,StructureTargetInfo.prettify(id),StructureTargetInfo.CAT_MODDED,world.provider.dimensionId,true,id.hashCode()));
+        }
+        List<StructureTargetInfo> result=new ArrayList<StructureTargetInfo>();
+        for(StructureTargetInfo info:entries.values()) { if(result.size()==MAX_CATALOG) break; result.add(info); }
+        return result;
+    }
+    public static boolean validId(String id) {
+        return id!=null && id.length()>0 && id.length()<=128 && id.matches("[A-Za-z0-9_:. /-]+");
+    }
+    public static List<StructureTargetInfo> filterCatalog(List<StructureTargetInfo> catalog,String category,String query) {
+        String q=StructureTargetInfo.normalizeQuery(query), compact=StructureTargetInfo.compactQuery(q);
+        List<StructureTargetInfo> result=new ArrayList<StructureTargetInfo>();
+        for(StructureTargetInfo info:catalog) if((category==null || StructureTargetInfo.CAT_ALL.equals(category) || category.equals(info.category)) && info.matchesQuery(q,compact)) result.add(info);
+        return result;
+    }
+    static Map<String,MapGenStructureData> loadedStructureData(World world) {
+        Map<String,MapGenStructureData> result=new LinkedHashMap<String,MapGenStructureData>();
+        if(world.perWorldStorage==null) return result;
+        try {
+            for(Field f:net.minecraft.world.storage.MapStorage.class.getDeclaredFields()) if(Map.class.isAssignableFrom(f.getType()) && !Modifier.isStatic(f.getModifiers())) {
+                f.setAccessible(true);
+                Object value=f.get(world.perWorldStorage);
+                if(value instanceof Map) for(Object raw:((Map<?,?>)value).entrySet()) {
+                    Map.Entry<?,?> entry=(Map.Entry<?,?>)raw;
+                    if(entry.getKey() instanceof String && entry.getValue() instanceof MapGenStructureData)
+                        result.put((String)entry.getKey(),(MapGenStructureData)entry.getValue());
+                }
+            }
+        } catch(ReflectiveOperationException e) { am2.LogHelper.warn("Astral Compass: structure storage unavailable: %s",e.toString()); }
+        return result;
+    }
+    static boolean matchesTempleBiome(World world,int x,int z,String id) {
+        BiomeGenBase b=world.getWorldChunkManager().getBiomeGenAt(x,z);
+        if(b==null) return false;
+        if(ID_DESERT_PYRAMID.equals(id)) return b==BiomeGenBase.desert || b==BiomeGenBase.desertHills;
+        if(ID_JUNGLE_TEMPLE.equals(id)) return b==BiomeGenBase.jungle || b==BiomeGenBase.jungleHills;
+        return !ID_WITCH_HUT.equals(id) || b==BiomeGenBase.swampland;
+    }
+    public static final class Search {
+        public final World world;
+        public final StructureTargetInfo target;
+        private final int x,z;
+        private Iterator<String> savedKeys;
+        private NBTTagCompound saved;
+        private Iterator<AstralLandmarks.Point> points;
+        private VanillaStructureProbe probe;
+        private Iterator<AstralLandmarks.Point> foreign;
+        private int stage,rx,rz,dx=0,dz=-1,iterations;
+        private double bestDistance=Double.POSITIVE_INFINITY;
+        private SearchResult best;
+        public boolean done;
+        public Search(World world,EntityPlayer player,StructureTargetInfo target) {
+            this.world=world;this.target=target;x=(int)Math.floor(player.posX);z=(int)Math.floor(player.posZ);
+        }
+        public SearchResult result() { return best; }
+        private void consider(int bx,int by,int bz,boolean hasY) {
+            double dist=squaredDistance(x,z,bx,bz);
+            if(dist<bestDistance) { bestDistance=dist; best=new SearchResult(target.id,target.rawName,world.provider.dimensionId,bx,by,bz,hasY); }
+        }
+        public static double squaredDistance(int x,int z,int bx,int bz) {
+            double a=(double)bx-x,b=(double)bz-z;return a*a+b*b;
+        }
+        /** At most budget samples, with a cooperative wall-clock deadline between samples. */
+        public void step(int budget,long deadline) {
+            while(!done && budget-->0 && System.nanoTime()<deadline) {
+                if(stage==0) {
+                    String base=target.id.startsWith("Temple:")?"Temple":target.id;
+                    WorldSavedData data=world.perWorldStorage==null || base.indexOf(':')>=0 || base.indexOf('/')>=0 || base.contains("..")?null:world.perWorldStorage.loadData(MapGenStructureData.class,base);
+                    if(data instanceof MapGenStructureData) {
+                        saved=((MapGenStructureData)data).func_143041_a();
+                        savedKeys=new ArrayList<String>(saved.func_150296_c()).iterator();
+                    }
+                    points=AstralLandmarks.get(world).points(target.id).iterator();
+                    stage=1;
+                } else if(stage==1) {
+                    if(savedKeys!=null && savedKeys.hasNext()) {
+                        NBTBase raw=saved.getTag(savedKeys.next());
+                        if(!(raw instanceof NBTTagCompound)) continue;
+                        NBTTagCompound entry=(NBTTagCompound)raw;
+                        if(!entry.hasKey("ChunkX",99) || !entry.hasKey("ChunkZ",99) || entry.hasKey("Valid") && !entry.getBoolean("Valid")) continue;
+                        int cx=(entry.getInteger("ChunkX")<<4)+8,cz=(entry.getInteger("ChunkZ")<<4)+8;
+                        if(target.id.startsWith("Temple:") && !matchesTempleBiome(world,cx,cz,target.id)) continue;
+                        int[] bb=entry.getIntArray("BB");
+                        if(bb.length==6) consider((int)(((long)bb[0]+bb[3])/2),bb[1],(int)(((long)bb[2]+bb[5])/2),true);
+                        else consider(cx,64,cz,false);
+                    } else stage=2;
+                } else if(stage==2) {
+                    if(points.hasNext()) { AstralLandmarks.Point p=points.next();consider(p.x,p.y,p.z,true); }
+                    else { stage=3; }
+                } else if(stage==3) {
+                    if(foreign==null)foreign=AstralModStructures.known(world,target,x,z);
+                    if(foreign.hasNext()){AstralLandmarks.Point p=foreign.next();if(p!=null)consider(p.x,p.y,p.z,true);continue;}
+                    SearchResult mod=AstralModStructures.locateKnown(world,target,x,z);
+                    if(mod!=null) consider(mod.x,mod.y,mod.z,mod.hasY);
+                    if(world.getWorldInfo().isMapFeaturesEnabled() && ID_STRONGHOLD.equals(target.id)) try {
+                        for(ChunkPosition p:VanillaStructureProbe.strongholds(world)) consider(p.chunkPosX,p.chunkPosY,p.chunkPosZ,false);
+                    } catch(ReflectiveOperationException e) { am2.LogHelper.warn("Astral Compass: stronghold prediction unavailable: %s",e.toString()); }
+                    probe=world.getWorldInfo().isMapFeaturesEnabled()?VanillaStructureProbe.create(world,target.id):null;
+                    if(probe==null && !ID_WITCHWOOD_FOREST.equals(target.id)) done=true;
+                    stage=4;
+                } else {
+                    boolean biome=ID_WITCHWOOD_FOREST.equals(target.id);
+                    int step=biome?32:16,limit=biome?128:220;
+                    int bx=biome?x+rx*step:((x>>4)+rx)*16+8;
+                    int bz=biome?z+rz*step:((z>>4)+rz)*16+8;
+                    if(biome) {
+                        if(BiomeWitchwoodForest.instance!=null && world.getWorldChunkManager().getBiomeGenAt(bx,bz)==BiomeWitchwoodForest.instance) consider(bx,64,bz,false);
+                    } else if(probe.test(bx>>4,bz>>4) && matchesTempleBiome(world,bx,bz,target.id)) consider(bx,64,bz,false);
+                    if(rx==rz || rx<0 && rx==-rz || rx>0 && rx==1-rz) { int t=dx;dx=-dz;dz=t; }
+                    rx+=dx;rz+=dz;
+                    int ring=Math.max(Math.abs(rx),Math.abs(rz));
+                    if(++iterations>=(2*limit+1)*(2*limit+1) || best!=null && ring*step>Math.sqrt(bestDistance)+step*2) done=true;
+                }
+            }
+        }
+    }
+	static List<MapGenStructure> collectMapGenStructures(World world) {
 		List<MapGenStructure> found = new ArrayList<MapGenStructure>();
 		Set<Object> visited = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
 		Queue<Object> queue = new ArrayDeque<Object>();
@@ -362,6 +196,7 @@ public final class AstralStructureLocator {
 			Class<?> cls = obj.getClass();
 			while (cls != null && cls != Object.class) {
 				for (Field f : cls.getDeclaredFields()) {
+					if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
 					Class<?> type = f.getType();
 					try {
 						if (MapGenStructure.class.isAssignableFrom(type)) {
@@ -376,6 +211,10 @@ public final class AstralStructureLocator {
 							if (val != null && !visited.contains(val)) {
 								queue.add(val);
 							}
+						} else if (Iterable.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type)) {
+                                f.setAccessible(true);Object val=f.get(obj);
+                                Iterable<?> values=val instanceof Map?((Map<?,?>)val).values():val instanceof Iterable?(Iterable<?>)val:null;
+                                if(values!=null){int count=0;for(Object entry:values){if(++count>256)break;if(entry instanceof MapGenStructure && !found.contains(entry))found.add((MapGenStructure)entry);}}
 						}
 					} catch (Throwable ignored) {
 					}
@@ -386,57 +225,4 @@ public final class AstralStructureLocator {
 		return found;
 	}
 
-	@SuppressWarnings("unchecked")
-	private static Set<String> collectRegisteredStructureIONames() {
-		Set<String> names = new LinkedHashSet<String>();
-		try {
-			for (Field f : MapGenStructureIO.class.getDeclaredFields()) {
-				if (Map.class.isAssignableFrom(f.getType())) {
-					f.setAccessible(true);
-					Object val = f.get(null);
-					if (val instanceof Map<?, ?>) {
-						for (Object key : ((Map<?, ?>) val).keySet()) {
-							if (key instanceof String) {
-								names.add((String) key);
-							}
-						}
-						if (!names.isEmpty()) break;
-					}
-				}
-			}
-		} catch (Throwable ignored) {
-		}
-		return names;
-	}
-
-	private static Method findCanSpawnMethod(Class<?> cls) {
-		Class<?> cur = cls;
-		while (cur != null && cur != Object.class) {
-			for (Method m : cur.getDeclaredMethods()) {
-				Class<?>[] params = m.getParameterTypes();
-				if (params.length == 2 && params[0] == int.class && params[1] == int.class && m.getReturnType() == boolean.class) {
-					if ("canSpawnStructureAtCoords".equals(m.getName()) || "func_75047_a".equals(m.getName())) {
-						m.setAccessible(true);
-						return m;
-					}
-				}
-			}
-			cur = cur.getSuperclass();
-		}
-		return null;
-	}
-
-	private static Field findTypedField(Class<?> cls, Class<?> stopAt, Class<?> targetType) {
-		Class<?> cur = cls;
-		while (cur != null && cur != Object.class) {
-			for (Field f : cur.getDeclaredFields()) {
-				if (f.getType() == targetType) {
-					return f;
-				}
-			}
-			if (cur == stopAt) break;
-			cur = cur.getSuperclass();
-		}
-		return null;
-	}
 }

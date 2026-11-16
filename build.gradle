@@ -3,7 +3,7 @@ plugins {
     id 'com.gtnewhorizons.retrofuturagradle' version '1.4.9'
 }
 group = 'am2'
-version = '1.6.11-LE-CR41'
+version = '1.6.11-LE-CR43'
 base { archivesName = 'AM2.5-LTS' }
 java { toolchain { languageVersion = JavaLanguageVersion.of(8) } }
 minecraft {
@@ -65,3 +65,5 @@ tasks.named('processResources') {
     inputs.property('mcversion', '1.7.10')
     filesMatching('mcmod.info') { expand(version: project.version, mcversion: '1.7.10') }
 }
+
+tasks.named("test") { if(project.hasProperty("astralPackMods")) systemProperty "astral.pack.mods", project.property("astralPackMods") }

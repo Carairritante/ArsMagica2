@@ -22,6 +22,12 @@ public class BytecodeTransformers implements IClassTransformer{
 	
 	@Override
 	public byte[] transform(String name, String transformedName, byte[] bytes){
+		if ("mglucas0123.utils.GenericDungeon".equals(transformedName)
+            || "electroblob.wizardry.WizardryWorldGenerator".equals(transformedName)
+            || "thaumcraft.common.lib.world.WorldGenMound".equals(transformedName)
+            || "thaumcraft.common.lib.world.WorldGenEldritchRing".equals(transformedName)
+            || "thaumcraft.common.lib.world.WorldGenHilltopStones".equals(transformedName))
+            return AstralStructureTransformer.transform(transformedName,bytes);
 		boolean is_obfuscated = !CustomLoadingPlugin.isDevEnvironment;
 		
 		if (transformedName.equals("am2.armor.ItemMageHood") && (CustomLoadingPlugin.foundThaumcraft || checkIsThaumcraftFilePresent())){

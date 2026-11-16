@@ -902,3 +902,7 @@ am2.astral_compass.hud.coords=X: %s   Z: %s
 am2.astral_compass.hud.dimension=Viaje para Dim %s
 am2.nei.ritual.handler=Rituais do AM2
 am2.nei.ritual.astral_divination.req=Marcar no Lápis | Nível 50 | 20k Mana
+
+am2.astral_compass.searching=Consultando as correntes astrais...
+am2.astral_compass.err_dimension=Procure esta estrutura na dimensão %s.
+am2.astral_compass.err_resources_changed=Seu nível mágico ou sua mana mudou durante a busca. Nenhuma mana foi gasta.
