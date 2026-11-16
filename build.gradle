@@ -37,7 +37,7 @@ tasks.register('verifyMaintenanceJar') {
     description = 'Check the maintenance hooks in the reobfuscated Java 8 mod.'
     dependsOn tasks.named('reobfJar'), tasks.named('verificationClasses')
     doLast {
-        ['VerifyLightningJar', 'VerifySolarLunarTierJar', 'VerifySilverPointsJar', 'VerifyRitualArchitectJar', 'VerifyItemFrameWatcherJar', 'VerifyServerBoundaryJar', 'VerifyOtherworldAE2Jar', 'VerifyTrueSoulboundJar'].each { verifier ->
+        ['VerifyLightningJar', 'VerifySolarLunarTierJar', 'VerifySilverPointsJar', 'VerifyRitualArchitectJar', 'VerifyItemFrameWatcherJar', 'VerifyServerBoundaryJar', 'VerifyOtherworldAE2Jar', 'VerifyTrueSoulboundJar', 'VerifyAnimationInheritanceJar'].each { verifier ->
             javaexec {
                 classpath = sourceSets.verification.runtimeClasspath
                 mainClass = verifier
@@ -67,3 +67,7 @@ tasks.named('processResources') {
 }
 
 tasks.named("test") { if(project.hasProperty("astralPackMods")) systemProperty "astral.pack.mods", project.property("astralPackMods") }
+
+// Preserve mappings inherited through the compile-only AnimationAPI stub.
+// It remains excluded from the distributed JAR.
+tasks.named('reobfJar') { referenceClasspath.from(sourceSets.api.output) }
