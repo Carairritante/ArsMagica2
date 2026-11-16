@@ -900,3 +900,5 @@ am2.astral_compass.hud.arrived=Você chegou! (<24 blocos)
 am2.astral_compass.hud.distance=Distância: %s blocos
 am2.astral_compass.hud.coords=X: %s   Z: %s
 am2.astral_compass.hud.dimension=Viaje para Dim %s
+am2.nei.ritual.handler=Rituais do AM2
+am2.nei.ritual.astral_divination.req=Marcar no Lápis | Nível 50 | 20k Mana
