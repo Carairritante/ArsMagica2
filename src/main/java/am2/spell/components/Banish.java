@@ -80,6 +80,7 @@ public class Banish implements ISpellComponent {
                 else
                     particle.AddParticleController(new ParticleOrbitPoint(particle, x, y, z, 1, false).SetOrbitSpeed(0.1f).SetTargetDistance(rand.nextDouble() + 0.5));
                 particle.setMaxAge(25 + rand.nextInt(10));
+                particle.setRGBColorF(0.32f, 0.03f, 0.54f);
                 if (colorModifier > -1){
                     particle.setRGBColorF(((colorModifier >> 16) & 0xFF) / 255.0f, ((colorModifier >> 8) & 0xFF) / 255.0f, (colorModifier & 0xFF) / 255.0f);
                 }

@@ -65,6 +65,7 @@ public class ItemsCommonProxy{
 
 	public static Item wizardChalk;
 	public static ItemRitualArchitect ritualArchitect;
+	public static ItemAstralCompass astralCompass;
 
 	public static Item boundCatalystHelmet;
 	public static Item boundCatalystArmor;
@@ -264,6 +265,7 @@ public class ItemsCommonProxy{
 		archmageBoots = (new AMArmor(ArmorMaterial.DIAMOND, ArsMagicaArmorMaterial.ARCHMAGE, ArmorHelper.getArmorRenderIndex("archmage"), 3)).setUnlocalizedAndTextureName("arsmagica2:boots_archmage").setCreativeTab(itemTab).setMaxDamage(0);
 		wizardChalk = new ItemChalk().setUnlocalizedAndTextureName("arsmagica2:wizardChalk").setCreativeTab(itemTab);
 		ritualArchitect = (ItemRitualArchitect)new ItemRitualArchitect().setUnlocalizedAndTextureName("arsmagica2:ritualArchitect").setCreativeTab(itemTab);
+		astralCompass = (ItemAstralCompass)new ItemAstralCompass().setUnlocalizedAndTextureName("arsmagica2:astral_compass").setCreativeTab(itemTab);
 		lesserFocus = (ItemFocusLesser)new ItemFocusLesser().setUnlocalizedAndTextureName("arsmagica2:lesserfocus").setCreativeTab(itemTab);
 		standardFocus = (ItemFocusStandard)new ItemFocusStandard().setUnlocalizedAndTextureName("arsmagica2:standardfocus").setCreativeTab(itemTab);
 		greaterFocus = (ItemFocusGreater)new ItemFocusGreater().setUnlocalizedAndTextureName("arsmagica2:greaterfocus").setCreativeTab(itemTab);
@@ -527,6 +529,7 @@ public class ItemsCommonProxy{
 		registerItem(casparazoid, "casparazoid");
 		registerItem(inscriptionUpgrade, "inscriptionUpgrade");
 		registerItem(ritualArchitect, "ritualArchitect");
+		registerItem(astralCompass, "astralCompass");
 
 		//registerItem(boundBow, "boundBow");
 

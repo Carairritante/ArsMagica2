@@ -103,6 +103,7 @@ public class BlocksCommonProxy{
 	public static BlockSpellReplicator spellReplicator;
 	public static BlockRainRockrose rainRockrose;
 	public static BlockStormSawtooth stormSawtooth;
+	public static BlockArcaneStriker arcaneStriker;
 	public static BlockImbuedMoonflower imbuedMoonflower;
 
 	//--------------------------------------------------------------
@@ -262,6 +263,7 @@ public class BlocksCommonProxy{
 		spellSealedDoor = (BlockSpellSealedDoor)new BlockSpellSealedDoor().setBlockName("arsmagica2:spell_sealed_door");
 		entropicEnervator = (BlockEntropicEnervator)new BlockEntropicEnervator().setBlockName("arsmagica2:entropic_enervator").setCreativeTab(blockTab);
 		spellReplicator = (BlockSpellReplicator)new BlockSpellReplicator().setBlockName("arsmagica2:spellReplicator").setCreativeTab(blockTab);
+		arcaneStriker = (BlockArcaneStriker)new BlockArcaneStriker().setBlockName("arsmagica2:arcane_striker").setCreativeTab(blockTab);
 
 		rainRockrose = (BlockRainRockrose) new BlockRainRockrose().setUnlocalizedNameAndID("arsmagica2:rainRockrose");
 		stormSawtooth = (BlockStormSawtooth) new BlockStormSawtooth().setUnlocalizedNameAndID("arsmagica2:stormSawtooth");
@@ -409,6 +411,18 @@ public class BlocksCommonProxy{
 				Character.valueOf('I'), "ingotIron",
 				Character.valueOf('V'), "dustVinteum",
 				Character.valueOf('S'), Blocks.stonebrick
+		}));
+
+		GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(arcaneStriker), new Object[]{
+				"IBI",
+				"VCV",
+				"SNS",
+				Character.valueOf('I'), "ingotIron",
+				Character.valueOf('B'), Blocks.iron_block,
+				Character.valueOf('V'), "dustVinteum",
+				Character.valueOf('C'), "gemChimerite",
+				Character.valueOf('S'), Blocks.stonebrick,
+				Character.valueOf('N'), "gemBlueTopaz"
 		}));
 
 		GameRegistry.addRecipe(new ShapedOreRecipe(new ItemStack(manaBattery), new Object[]{
@@ -826,6 +840,7 @@ public class BlocksCommonProxy{
 		registerBlock(spellSealedDoor, "spellSealedDoor");
 		registerBlock(entropicEnervator, "entropicEvervator");
 		registerBlock(spellReplicator, "spellReplicator");
+		registerBlock(arcaneStriker, "arcaneStriker");
 
 		registerBlock(rainRockrose, "rainRockrose");
 		registerBlock(stormSawtooth, "stormSawtooth");
@@ -924,6 +939,7 @@ public class BlocksCommonProxy{
 		GameRegistry.registerTileEntity(TileEntityEntropicEnervator.class, "TileEntityEntropicEnervator");
 		GameRegistry.registerTileEntity(TileEntitySpellReplicator.class, "TileEntitySpellReplicator");
 		GameRegistry.registerTileEntity(TileEntityInfusedStem.class, "TileEntityInfusedStem");
+		GameRegistry.registerTileEntity(TileEntityArcaneStriker.class, "TileEntityArcaneStriker");
 	}
 
 	public void registerRenderInformation(){

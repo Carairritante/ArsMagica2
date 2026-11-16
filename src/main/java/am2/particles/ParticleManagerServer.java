@@ -233,4 +233,7 @@ public class ParticleManagerServer{
 	public ParticleController createDefaultParticleController(int type, Object effect, AMVector3 location, float modifier, int meta){
 		return null;
 	}
+
+	public void updateAnimeBeam(World world, EntityLivingBase caster, am2.api.spell.enums.Affinity affinity, double endX, double endY, double endZ, int customColor, int useCount){
+	}
 }

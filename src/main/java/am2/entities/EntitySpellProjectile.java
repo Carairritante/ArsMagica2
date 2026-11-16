@@ -512,7 +512,7 @@ public class EntitySpellProjectile extends Entity{
 				break;
 			case ENDER:
 				setIcon("pulse");
-				setColor(0x550055);
+				setColor(0x3A0460);
 				break;
 			case FIRE:
 				setIcon("explosion_2");

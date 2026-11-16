@@ -80,6 +80,9 @@ public abstract class CompendiumEntry implements Comparable<CompendiumEntry>{
 	public final String getDescription(String subItemID){
 		for (CompendiumEntry entry : subItems){
 			if (entry.getID().equals(subItemID)){
+				if ("true_soulbound".equals(subItemID) || "true_soulbound_seal".equals(subItemID) || "astral_divination".equals(subItemID) || description == null || description.isEmpty()){
+					return entry.getDescription();
+				}
 				return description + " " + ArcaneCompendium.KEYWORD_NEWLINE + " " + ArcaneCompendium.KEYWORD_NEWLINE + " " + entry.getDescription();
 			}
 		}

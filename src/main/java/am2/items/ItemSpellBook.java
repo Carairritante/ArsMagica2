@@ -7,6 +7,7 @@ import am2.enchantments.AMEnchantmentHelper;
 import am2.enchantments.AMEnchantments;
 import am2.guis.ArsMagicaGuiIdList;
 import am2.playerextensions.SkillData;
+import am2.soulbound.TrueSoulboundHelper;
 import am2.spell.SkillManager;
 import am2.spell.SkillTreeManager;
 import am2.texture.ResourceManager;
@@ -184,6 +185,12 @@ public class ItemSpellBook extends ArsMagicaItem{
 
 	@Override
 	public ItemStack onItemRightClick(ItemStack bookstack, World world, EntityPlayer entityplayer){
+		if (!TrueSoulboundHelper.isOwnerOrUnbound(bookstack, entityplayer)){
+			if (world != null && !world.isRemote){
+				TrueSoulboundHelper.punishThief(entityplayer, world);
+			}
+			return bookstack;
+		}
 		if (entityplayer.isSneaking()){
 			FMLNetworkHandler.openGui(entityplayer, AMCore.instance, ArsMagicaGuiIdList.GUI_SPELL_BOOK, world, (int)entityplayer.posX, (int)entityplayer.posY, (int)entityplayer.posZ);
 			return bookstack;
@@ -232,6 +239,9 @@ public class ItemSpellBook extends ArsMagicaItem{
 
 	@Override
 	public void onPlayerStoppedUsing(ItemStack itemstack, World world, EntityPlayer entityplayer, int i){
+		if (!TrueSoulboundHelper.isOwnerOrUnbound(itemstack, entityplayer)){
+			return;
+		}
 		if (entityplayer.isSneaking()){
 			FMLNetworkHandler.openGui(entityplayer, AMCore.instance, ArsMagicaGuiIdList.GUI_SPELL_BOOK, world, (int)entityplayer.posX, (int)entityplayer.posY, (int)entityplayer.posZ);
 		}else{
@@ -403,6 +413,9 @@ public class ItemSpellBook extends ArsMagicaItem{
 
 	@Override
 	public void onUsingTick(ItemStack stack, EntityPlayer player, int count){
+		if (!TrueSoulboundHelper.isOwnerOrUnbound(stack, player)){
+			return;
+		}
 		ItemStack scrollStack = GetActiveItemStack(stack);
 		if (scrollStack != null){
 			ItemsCommonProxy.spell.onUsingTick(scrollStack, player, count);

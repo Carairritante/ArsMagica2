@@ -93,7 +93,7 @@ public class AstralDistortion implements ISpellComponent, IRitualInteraction{
 				particle.addRandomOffset(5, 4, 5);
 				particle.AddParticleController(new ParticleFloatUpward(particle, 0.2f, 0, 1, false));
 				particle.setMaxAge(25 + rand.nextInt(10));
-				particle.setRGBColorF(0.7f, 0.2f, 0.9f);
+				particle.setRGBColorF(0.32f, 0.04f, 0.54f);
 				if (colorModifier > -1){
 					particle.setRGBColorF(((colorModifier >> 16) & 0xFF) / 255.0f, ((colorModifier >> 8) & 0xFF) / 255.0f, (colorModifier & 0xFF) / 255.0f);
 				}

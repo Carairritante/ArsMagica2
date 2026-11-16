@@ -13,6 +13,7 @@ import am2.items.ItemsCommonProxy;
 import am2.particles.AMParticle;
 import am2.particles.ParticleExpandingCollapsingRingAtPoint;
 import am2.playerextensions.ExtendedProperties;
+import am2.soulbound.TrueSoulboundRitual;
 import am2.utility.DimensionUtilities;
 import am2.utility.EntityUtilities;
 import am2.utility.KeystoneUtilities;
@@ -35,11 +36,19 @@ public class Recall implements ISpellComponent, IRitualInteraction{
 	public boolean applyEffectBlock(ItemStack stack, World world, int blockx,
 									int blocky, int blockz, int blockFace, double impactX,
 									double impactY, double impactZ, EntityLivingBase caster){
-		return false;
+		return TrueSoulboundRitual.tryExecute(world, blockx, blocky, blockz, caster);
 	}
 
 	@Override
 	public boolean applyEffectEntity(ItemStack stack, World world, EntityLivingBase caster, Entity target){
+		if (target != null){
+			int tx = (int)Math.floor(target.posX);
+			int ty = (int)Math.floor(target.posY);
+			int tz = (int)Math.floor(target.posZ);
+			if (TrueSoulboundRitual.resolveRitualCenter(world, tx, ty, tz) != null){
+				return TrueSoulboundRitual.tryExecute(world, tx, ty, tz, caster);
+			}
+		}
 
 		if (!(target instanceof EntityLivingBase)){
 			return false;

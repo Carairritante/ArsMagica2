@@ -17,6 +17,7 @@ import am2.playerextensions.AffinityData;
 import am2.playerextensions.ExtendedProperties;
 import am2.playerextensions.SkillData;
 import am2.power.PowerNodeRegistry;
+import am2.soulbound.TrueSoulboundHelper;
 import am2.spell.SpellUtils;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.network.FMLNetworkEvent.ServerCustomPacketEvent;
@@ -145,6 +146,12 @@ public class AMPacketProcessorServer{
 				break;
 			case AMPacketIDs.AFFINITY_ACTIVATE:
 				handleAffinityActivate(remaining, player);
+				break;
+			case AMPacketIDs.ARCANE_STRIKER_ACTION:
+				handleArcaneStrikerAction(remaining, player);
+				break;
+			case AMPacketIDs.ASTRAL_COMPASS_ACTION:
+				handleAstralCompassAction(remaining, player);
 				break;
 			}
 		}catch (Throwable t){
@@ -339,6 +346,7 @@ public class AMPacketProcessorServer{
 
 		ItemStack stack = player.inventory.getStackInSlot(inventorySlot);
 		if (stack == null || !(stack.getItem() instanceof ItemSpellBook)) return;
+		if (!TrueSoulboundHelper.isOwnerOrUnbound(stack, player)) return;
 
 		int newIndex = 0;
 
@@ -429,7 +437,7 @@ public class AMPacketProcessorServer{
 		int index = rdr.getInt();
 
 		ItemStack stack = player.getCurrentEquippedItem();
-		if (stack != null){
+		if (stack != null && TrueSoulboundHelper.isOwnerOrUnbound(stack, player)){
 			if (stack.getItem() == ItemsCommonProxy.spell){
 				SpellUtils.instance.setShapeGroup(stack, newShapeGroupOrdinal);
 			}else if (stack.getItem() == ItemsCommonProxy.spellBook || stack.getItem() == ItemsCommonProxy.arcaneSpellbook){
@@ -459,6 +467,47 @@ public class AMPacketProcessorServer{
 		}*/
 
 		//TODO
+	}
+
+	private void handleArcaneStrikerAction(byte[] data, EntityPlayerMP player){
+		if (player == null || player.worldObj == null) return;
+		AMDataReader rdr = new AMDataReader(data, false);
+		int x = rdr.getInt();
+		int y = rdr.getInt();
+		int z = rdr.getInt();
+		int action = rdr.getInt();
+		int param = rdr.getInt();
+
+		if (player.getDistanceSq(x + 0.5, y + 0.5, z + 0.5) > 64.0) return;
+		TileEntity te = player.worldObj.getTileEntity(x, y, z);
+		if (!(te instanceof TileEntityArcaneStriker)) return;
+		TileEntityArcaneStriker striker = (TileEntityArcaneStriker) te;
+		switch (action){
+		case 1:
+			striker.setConfiguredDurationSec(param);
+			break;
+		case 2:
+			striker.setBypassIframes(param != 0);
+			break;
+		case 3:
+			striker.startTest(player);
+			break;
+		case 4:
+			striker.stopTestEarly();
+			break;
+		case 5:
+			striker.resetRecord();
+			break;
+		}
+	}
+
+	private void handleAstralCompassAction(byte[] data, EntityPlayerMP player){
+		if (player == null) return;
+		AMDataReader rdr = new AMDataReader(data, false);
+		int heldSlot = rdr.getInt();
+		int action = rdr.getInt();
+		String targetId = rdr.getString();
+		am2.items.ItemAstralCompass.handleServerAction(player, heldSlot, action, targetId);
 	}
 
 	public WorldServer[] getWorldServers(){

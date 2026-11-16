@@ -1705,8 +1705,11 @@ public class AMEventHandler{
 		}
 	}
 
-	@SubscribeEvent
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
 	public void onEntityJoinWorld(EntityJoinWorldEvent event){
+		if (am2.spell.components.SpellDropConsolidator.onEntityJoinWorld(event)){
+			return;
+		}
 		if (event.entity instanceof EntityLivingBase && ((EntityLivingBase)event.entity).isPotionActive(BuffList.temporalAnchor.id)){
 			((EntityLivingBase)event.entity).removePotionEffect(BuffList.temporalAnchor.id);
 		}

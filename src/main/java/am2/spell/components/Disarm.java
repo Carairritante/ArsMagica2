@@ -11,6 +11,7 @@ import am2.items.SpellBase;
 import am2.particles.AMParticle;
 import am2.particles.ParticleFadeOut;
 import am2.particles.ParticleMoveOnHeading;
+import am2.soulbound.TrueSoulboundHelper;
 import net.minecraft.block.Block;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
@@ -50,6 +51,8 @@ public class Disarm implements ISpellComponent{
 			return false;
 
 		if (target instanceof EntityPlayer && ((EntityPlayer)target).getHeldItem() != null && !target.worldObj.isRemote){
+			if (TrueSoulboundHelper.isTrueSoulbound(((EntityPlayer)target).getHeldItem()))
+				return false;
 			if (EnchantmentHelper.getEnchantmentLevel(AMEnchantments.soulbound.effectId, ((EntityPlayer)target).getHeldItem()) > 0)
 				return true;
 			if (((EntityPlayer)target).getHeldItem().getItem() instanceof SpellBase)
@@ -58,6 +61,8 @@ public class Disarm implements ISpellComponent{
 			return true;
 		}else if (target instanceof EntityMob && ((EntityMob)target).getHeldItem() != null){
 
+			if (TrueSoulboundHelper.isTrueSoulbound(((EntityMob)target).getHeldItem()))
+				return false;
 			if (EnchantmentHelper.getEnchantmentLevel(AMEnchantments.soulbound.effectId, ((EntityMob)target).getHeldItem()) > 0)
 				return true;
 

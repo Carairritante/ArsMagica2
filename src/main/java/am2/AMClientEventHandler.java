@@ -258,6 +258,7 @@ public class AMClientEventHandler{
 		am2.client.vfx.OrbitalStormVFX.renderAll(event.partialTicks);
 		am2.client.vfx.CastingCircleVFX.renderAll(event.partialTicks);
 		am2.client.vfx.CastingAtmosphereVFX.renderAll(event.partialTicks);
+		am2.client.vfx.AnimeBeamVFX.renderAll(event.partialTicks);
 	}
 
 	@SubscribeEvent
@@ -268,6 +269,7 @@ public class AMClientEventHandler{
 			am2.client.vfx.ManaShieldVFX.clearAll();
 			am2.client.vfx.CastingCircleVFX.clearAll();
 			am2.client.vfx.CastingAtmosphereVFX.reset();
+			am2.client.vfx.AnimeBeamVFX.clearAll();
 		}
 	}
 

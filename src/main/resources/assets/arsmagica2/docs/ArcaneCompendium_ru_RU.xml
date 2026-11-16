@@ -1665,6 +1665,7 @@
 		</subitem>
 		<relatedEntries>inscriptionTable</relatedEntries>
 	</item>
+    <item id="astralCompass" unlocked="true"><name>Astral Structure Compass</name><desc>An ancient divination instrument forged through the #5Astral Divination Ritual#0 to track the planar echoes of distant structures across the world. !d Only mages of #9Magic Level 50#0 or higher may wield its true power, and each structural lock consumes #920,000 Mana#0 (no mana is spent if no structure is located within range). Forge it by casting #5Mark#0 over a #5Lapis Lazuli Block#0 ringed by chalk and candles. !p Right-click to open the searchable parchment interface covering #9Vanilla#0, #9Ars Magica 2#0, and #9modded structures#0 alike, then follow the live arcane compass overlay to your target.</desc><relatedEntries>astral_divination_ritual,wizardChalk,warding_candle,ritualArchitect</relatedEntries></item>
   </items>
   <structures>
     <structure id="obelisk_structure">
@@ -1774,6 +1775,20 @@
       <name>Ритуалы</name>
       <desc>Ритуалы создаются с помощью Мела Волшебника и Свечей-оберегов. Правильно расставив их, можно творить по-настоящему сильную магию. !d Для успешного проведения ритуала обычно требуется бросить на землю дополнительные предметы. Их можно бросить в любое место в радиусе действия Мела Волшебника. !d После того как ритуал будет подготовлен, а предметы брошены, необходимо произнести соответствующее заклинание, чтобы закончить его. Реагенты зависят от заклинания, и порядок их применения имеет значение. Например, когда вы бросаете Руны, чтобы вызвать Врата с помощью ритуала, порядок Рун заложится в врата, для доступа к которым нужен "Рунический дешифратор" с той же комбинацией. !d Заклинание должно быть направлено точно на центральный блок ритуала (иногда это может быть и существо), на той же высоте, что Мел и Свечи. !d Если заклинание не срабатывает, убедитесь, что вы находитесь в центре круга мела, что раскладка правильная и что у вас есть правильные реагенты для нужного вам ритуала.</desc>
       <relatedEntries>wizardChalk,warding_candle</relatedEntries>
+            <subitem id="astral_divination">
+        <name>Ritual of Astral Divination</name>
+        <desc>#5Chronicles of the Astral Rose:#0 !l Unbound explorers seeking hidden strongholds, temples, or Witchwood groves devised a celestial survey instrument — the #9Astral Structure Compass#0. Channeling the cosmos demands strict discipline: only spellcasters at #5Magic Level 50#0 or above can awaken the needle, expending #920,000 Mana#0 per structural resonance lock. !d To bind compass bronze to starlight, weave #5Ender Essence#0, #5Arcane Essence#0, and #9Moonstone#0 around a #5Lapis Lazuli Block#0 crowned by four cardinal candles, then seal the projection with #5Mark#0. !p #9Structure &amp; Execution:#0 !l - Draw the 5x5 astral rose ring with #5Wizard's Chalk#0 (use the #9Arcane Architect's Chalk#0 to preview the pattern). !l - Place #54 Warding Candles#0 at the four cardinal points (North, South, East, West). !l - Place #51 Lapis Lazuli Block#0 at the center. !l - Throw inside the circle: #91x Compass#0, #91x Ender Essence#0, #91x Arcane Essence#0, and #91x Moonstone#0. !l - Cast a spell containing #5Mark#0 directly onto the central Lapis Lazuli Block. !p #9Requirements &amp; Operation:#0 !l - Requires #4Magic Level 50#0 and consumes #420,000 Mana#0 per successful search (failed searches do not spend mana). !l - Searches all discovered dimensions structures including #5Stronghold#0, #5Witchwood Forest#0, Desert/Jungle/Witch temples, Nether Fortresses, and modded structures without generating unvisited chunks. !l - Hold the compass while active to follow the live #9HUD#0 bearing arrow and block distance.</desc>
+        <relatedEntries>wizardChalk,warding_candle,ritualArchitect,astralCompass</relatedEntries>
+        <ritualName>astralDivination</ritualName>
+        <ritualController>Mark</ritualController>
+      </subitem>
+      <subitem id="true_soulbound">
+        <name>Ритуал Вечной Связи</name>
+        <desc>#5Хроники Вечного Круга:#0 !l В древних Войнах Конклава архимаги поняли, что их главная уязвимость — разлука с их #9Книгами заклинаний#0 и реликвиями. Обычные чары #5Привязки души#0 спасали предмет лишь при смерти, но не защищали от #4Разоружения#0, кражи, сундуков или Бездны. !d Сплетя #5Аркановую эссенцию#0, #5Эссенцию Эндера#0 и #5Очищенную пыль винтеума#0 над ядром из #9Химерита#0 и скрепив печать заклинанием #5Возврат#0, мастера создали #5Вечную Связь#0. !p #9Структура и проведение:#0 !l - Начертите кольцо 5x5 #5Мелом волшебника#0, поставьте #54 Свечи-оберега#0 по сторонам света и #51 Химеритовый блок#0 в центре. !l - Бросьте в центр: #91x Аркановую эссенцию#0, #91x Эссенцию Эндера#0, #91x Очищенную пыль винтеума#0 и #91x Нестакающийся предмет#0, затем примените #5Возврат#0 на центральный блок. !p #9Законы Вечной Связи:#0 !l - #5Защита от кражи:#0 Мгновенно возвращается владельцу и карает вора магическим уроном, #4Слабостью II#0, #4Замедлением II#0 и #4Слепотой#0. !l - #5Блокировка сундуков и бессмертие:#0 Не может быть помещён в сундуки или воронки, неуязвим к огню, лаве, взрывам и Бездне. !l - #5Снятие печати:#0 Только владелец может снять связь нажатием #2Shift + Q#0 дважды за 5с (#2/am2unbind#0) или уничтожить предмет командой #4/am2destroy#0.</desc>
+        <relatedEntries>wizardChalk,warding_candle,ritualArchitect,spell_book</relatedEntries>
+        <ritualName>trueSoulbound</ritualName>
+        <ritualController>Recall</ritualController>
+      </subitem>
       <subitem id="purification">
         <name>Ритуал очищения (Обелиск)</name>
         <desc>Ритуал очищения используется для преобразования Обелиска в Небесную Призму - источник светлого эфириума.</desc>
@@ -1984,7 +1999,21 @@
         <ritualName>ringedCross</ritualName>
         <ritualController>Transplace</ritualController>
       </subitem>
-      <relatedEntries>wizardChalk</relatedEntries>
+      <relatedEntries>wizardChalk,warding_candle,ritualArchitect,true_soulbound_ritual</relatedEntries>
+    </ritual>
+    <ritual id="true_soulbound_ritual" unlocked="true">
+      <name>Ритуал Вечной Связи</name>
+      <desc>#5Хроники Вечного Круга:#0 !l В древних Войнах Конклава архимаги поняли, что их главная уязвимость — разлука с их #9Книгами заклинаний#0 и реликвиями. Обычные чары #5Привязки души#0 спасали предмет лишь при смерти, но не защищали от #4Разоружения#0, кражи, сундуков или Бездны. !d Сплетя #5Аркановую эссенцию#0, #5Эссенцию Эндера#0 и #5Очищенную пыль винтеума#0 над ядром из #9Химерита#0 и скрепив печать заклинанием #5Возврат#0, мастера создали #5Вечную Связь#0. !p #9Структура и проведение:#0 !l - Начертите кольцо 5x5 #5Мелом волшебника#0, поставьте #54 Свечи-оберега#0 по сторонам света и #51 Химеритовый блок#0 в центре. !l - Бросьте в центр: #91x Аркановую эссенцию#0, #91x Эссенцию Эндера#0, #91x Очищенную пыль винтеума#0 и #91x Нестакающийся предмет#0, затем примените #5Возврат#0 на центральный блок. !p #9Законы Вечной Связи:#0 !l - #5Защита от кражи:#0 Мгновенно возвращается владельцу и карает вора магическим уроном, #4Слабостью II#0, #4Замедлением II#0 и #4Слепотой#0. !l - #5Блокировка сундуков и бессмертие:#0 Не может быть помещён в сундуки или воронки, неуязвим к огню, лаве, взрывам и Бездне. !l - #5Снятие печати:#0 Только владелец может снять связь нажатием #2Shift + Q#0 дважды за 5с (#2/am2unbind#0) или уничтожить предмет командой #4/am2destroy#0.</desc>
+      <relatedEntries>wizardChalk,warding_candle,ritualArchitect,spell_book</relatedEntries>
+      <ritualName>trueSoulbound</ritualName>
+      <ritualController>Recall</ritualController>
+    </ritual>
+    <ritual id="astral_divination_ritual" unlocked="true">
+      <name>Ritual of Astral Divination</name>
+      <desc>#5Chronicles of the Astral Rose:#0 !l Unbound explorers seeking hidden strongholds, temples, or Witchwood groves devised a celestial survey instrument — the #9Astral Structure Compass#0. Channeling the cosmos demands strict discipline: only spellcasters at #5Magic Level 50#0 or above can awaken the needle, expending #920,000 Mana#0 per structural resonance lock. !d To bind compass bronze to starlight, weave #5Ender Essence#0, #5Arcane Essence#0, and #9Moonstone#0 around a #5Lapis Lazuli Block#0 crowned by four cardinal candles, then seal the projection with #5Mark#0. !p #9Structure &amp; Execution:#0 !l - Draw the 5x5 astral rose ring with #5Wizard's Chalk#0 (use the #9Arcane Architect's Chalk#0 to preview the pattern). !l - Place #54 Warding Candles#0 at the four cardinal points (North, South, East, West). !l - Place #51 Lapis Lazuli Block#0 at the center. !l - Throw inside the circle: #91x Compass#0, #91x Ender Essence#0, #91x Arcane Essence#0, and #91x Moonstone#0. !l - Cast a spell containing #5Mark#0 directly onto the central Lapis Lazuli Block. !p #9Requirements &amp; Operation:#0 !l - Requires #4Magic Level 50#0 and consumes #420,000 Mana#0 per successful search (failed searches do not spend mana). !l - Searches all discovered dimensions structures including #5Stronghold#0, #5Witchwood Forest#0, Desert/Jungle/Witch temples, Nether Fortresses, and modded structures without generating unvisited chunks. !l - Hold the compass while active to follow the live #9HUD#0 bearing arrow and block distance.</desc>
+      <relatedEntries>wizardChalk,warding_candle,ritualArchitect,astralCompass</relatedEntries>
+      <ritualName>astralDivination</ritualName>
+      <ritualController>Mark</ritualController>
     </ritual>
   </structures>
   <mobs>
@@ -2964,6 +2993,7 @@
 		<desc>Вам удалось подобрать спавнер монстров, но, похоже, он больше не может никого порождать. Вам следует поискать другое применение этому устройству или найти способ снова активировать его. !d Возможно, #5тёмный эфириум#0 и #5Наполненная кристальная филактерия#0 смогут заставить его снова работать...</desc>
 		<relatedEntries>otherworldly_aura,blackaurem_structure,crystal_phylactery</relatedEntries>
 	</block>
+    <block id="arcane_striker" unlocked="true"><name>Arcane Striker</name><desc>An arcane park-style strength tester built to measure spell and weapon burst damage. Right-click the #5Arcane Striker#0 to configure the test duration up to #960 seconds#0, toggle whether attacks #5bypass invulnerability frames (i-frames)#0, and summon a holographic training dummy in front of the machine. !d Strike the dummy with spells, melee weapons, or projectiles while the test runs. The rising arcane gauge reflects your current damage against the stored record and rings the top bell whenever a new peak is achieved. !p Both the machine panel and the dummy nameplate track live and stored #9Total Damage#0, #9DPS#0, #9Peak Hit#0, and the all-time #5Record#0 holder.</desc><relatedEntries>mana_battery</relatedEntries></block>
   </blocks>
   <mechanics>
     <mechanic id="affinity">

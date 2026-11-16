@@ -13,6 +13,7 @@ import am2.items.ItemsCommonProxy;
 import am2.particles.*;
 import am2.spell.SpellHelper;
 import am2.spell.SpellUtils;
+import am2.spell.components.SpellDropConsolidator;
 import am2.spell.modifiers.Colour;
 import net.minecraft.block.Block;
 import net.minecraft.entity.Entity;
@@ -50,30 +51,95 @@ public class AoE implements ISpellShape{
 				appliedToAtLeastOneEntity = true;
 		}
 
+		SpellCastResult result = null;
 		if (side == 0 || side == 1){ //top/bottom
-			if (world.isRemote && showParticles)
-				spawnAoEParticles(stack, caster, world, x + 0.5f, y + ((side == 1) ? 0.5f : (target != null ? target.getEyeHeight() : -2.0f)), z + 0.5f, (int)radius);
 			int gravityMagnitude = SpellUtils.instance.countModifiers(SpellModifiers.GRAVITY, stack, 0);
-			return applyStageHorizontal(stack, caster, world, (int)Math.floor(x), (int)Math.ceil(y), (int)Math.floor(z), side, (int)Math.floor(radius), gravityMagnitude, giveXP);
+			SpellDropConsolidator.beginBatch(world, Math.floor(x) + 0.5D, Math.ceil(y) + 0.5D, Math.floor(z) + 0.5D, false);
+			try {
+				result = applyStageHorizontal(stack, caster, world, (int)Math.floor(x), (int)Math.ceil(y), (int)Math.floor(z), side, (int)Math.floor(radius), gravityMagnitude, giveXP);
+			} finally {
+				SpellDropConsolidator.endBatch(world);
+			}
 		}else if (side == 2 || side == 3){ // +/- x
-			//if (side == 3) z--;
-			if (world.isRemote && showParticles)
-				spawnAoEParticles(stack, caster, world, x, y, (side == 2) ? z - 0.5f : z + 1.5f, (int)radius);
-			return applyStageVerticalZ(stack, caster, world, (int)Math.floor(x), (int)Math.ceil(y), (int)Math.floor(z), side, (int)Math.floor(radius), giveXP);
+			SpellDropConsolidator.beginBatch(world, Math.floor(x) + 0.5D, Math.ceil(y) + 0.5D, Math.floor(z) + 0.5D, false);
+			try {
+				result = applyStageVerticalZ(stack, caster, world, (int)Math.floor(x), (int)Math.ceil(y), (int)Math.floor(z), side, (int)Math.floor(radius), giveXP);
+			} finally {
+				SpellDropConsolidator.endBatch(world);
+			}
 		}else if (side == 4 || side == 5){ // +/- z
-			//if (side == 5) x--;
-			if (world.isRemote && showParticles)
-				spawnAoEParticles(stack, caster, world, x, y, (side == 5) ? z - 0.5f : z + 1.5f, (int)radius);
-			return applyStageVerticalX(stack, caster, world, (int)Math.floor(x), (int)Math.ceil(y), (int)Math.floor(z), side, (int)Math.floor(radius), giveXP);
+			SpellDropConsolidator.beginBatch(world, Math.floor(x) + 0.5D, Math.ceil(y) + 0.5D, Math.floor(z) + 0.5D, false);
+			try {
+				result = applyStageVerticalX(stack, caster, world, (int)Math.floor(x), (int)Math.ceil(y), (int)Math.floor(z), side, (int)Math.floor(radius), giveXP);
+			} finally {
+				SpellDropConsolidator.endBatch(world);
+			}
 		}
 
-		if (appliedToAtLeastOneEntity){
-			if (world.isRemote && showParticles)
-				spawnAoEParticles(stack, caster, world, x, y + 1, z, (int)radius);
-			return SpellCastResult.SUCCESS;
+		if (result == null && appliedToAtLeastOneEntity){
+			result = SpellCastResult.SUCCESS;
+		}
+
+		if (result != null){
+			if (!world.isRemote && result == SpellCastResult.SUCCESS && useCount == 0){
+				sendAoEShockwaveVisual(stack, caster, target, world, x, y, z, side, (float)radius);
+			}
+			return result;
 		}
 
 		return SpellCastResult.EFFECT_FAILED;
+	}
+
+	private static void sendAoEShockwaveVisual(ItemStack stack, EntityLivingBase caster, EntityLivingBase target, World world, double x, double y, double z, int side, float radius){
+		double vx = x;
+		double vy = y;
+		double vz = z;
+		int visualSide = side;
+		boolean exactBlockCoords = (x == Math.floor(x) && y == Math.floor(y) && z == Math.floor(z));
+		if (side == 1){
+			vx = exactBlockCoords ? x + 0.5D : x;
+			vy = exactBlockCoords ? y + 1.03D : y + 0.03D;
+			vz = exactBlockCoords ? z + 0.5D : z;
+		}else if (side == 0){
+			if (exactBlockCoords && (target == null || target == caster) && !world.isAirBlock((int)x, (int)y, (int)z)){
+				vx = x + 0.5D;
+				vy = y - 0.03D;
+				vz = z + 0.5D;
+				visualSide = 0;
+			}else if (target != null && target != caster){
+				vx = target.posX;
+				vy = (target.boundingBox != null ? target.boundingBox.minY : target.posY) + 0.04D;
+				vz = target.posZ;
+				visualSide = 1;
+			}else{
+				vx = exactBlockCoords ? x + 0.5D : x;
+				vy = y + 0.04D;
+				vz = exactBlockCoords ? z + 0.5D : z;
+				visualSide = 1;
+			}
+		}else if (side == 2){
+			vx = exactBlockCoords ? x + 0.5D : x;
+			vy = exactBlockCoords ? y + 0.5D : y;
+			vz = z - 0.03D;
+		}else if (side == 3){
+			vx = exactBlockCoords ? x + 0.5D : x;
+			vy = exactBlockCoords ? y + 0.5D : y;
+			vz = exactBlockCoords ? z + 1.03D : z + 0.03D;
+		}else if (side == 4){
+			vx = x - 0.03D;
+			vy = exactBlockCoords ? y + 0.5D : y;
+			vz = exactBlockCoords ? z + 0.5D : z;
+		}else if (side == 5){
+			vx = exactBlockCoords ? x + 1.03D : x + 0.03D;
+			vy = exactBlockCoords ? y + 0.5D : y;
+			vz = exactBlockCoords ? z + 0.5D : z;
+		}else{
+			vx = exactBlockCoords ? x + 0.5D : x;
+			vy = y + 0.04D;
+			vz = exactBlockCoords ? z + 0.5D : z;
+			visualSide = 1;
+		}
+		am2.network.AMNetHandler.INSTANCE.sendAoEShockwaveToClients(vx, vy, vz, visualSide, Math.max(0.75f, radius), world, stack);
 	}
 
 	private void spawnAoEParticles(ItemStack stack, EntityLivingBase caster, World world, double x, double y, double z, int radius){
@@ -92,20 +158,15 @@ public class AoE implements ISpellShape{
 			}
 		}
 
-		for (int i = 0; i < 360; i += AMCore.config.FullGFX() ? 20 : AMCore.config.LowGFX() ? 40 : 60){
+		for (int i = 0; i < 360; i += AMCore.config.FullGFX() ? 45 : AMCore.config.LowGFX() ? 60 : 90){
 			AMParticle effect = (AMParticle)AMCore.instance.proxy.particleManager.spawn(world, pfxName, x, y + 1.5f, z);
 			if (effect != null){
-				effect.setIgnoreMaxAge(true);
+				effect.setIgnoreMaxAge(false);
+				effect.setMaxAge(8);
 				effect.AddParticleController(new ParticleMoveOnHeading(effect, i, 0, speed, 1, false));
 				effect.noClip = false;
 				effect.setRGBColorI(color);
-				effect.AddParticleController(new ParticleFadeOut(effect, 1, false).setFadeSpeed(0.05f).setKillParticleOnFinish(true));
-				effect.AddParticleController(
-						new ParticleLeaveParticleTrail(effect, pfxName, false, 5, 1, false)
-								.addControllerToParticleList(new ParticleFadeOut(effect, 1, false).setFadeSpeed(0.1f).setKillParticleOnFinish(true))
-								.setParticleRGB_I(color)
-								.addRandomOffset(0.2f, 0.2f, 0.2f)
-				);
+				effect.AddParticleController(new ParticleFadeOut(effect, 1, false).setFadeSpeed(0.14f).setKillParticleOnFinish(true));
 			}
 		}
 	}
@@ -125,7 +186,7 @@ public class AoE implements ISpellShape{
 					}
 				}
 				if (block == Blocks.air) continue;
-				SpellCastResult result = SpellHelper.instance.applyStageToGround(stack, caster, world, x + i, searchY, z + j, face, x + i, searchY, z + i, 0, giveXP);
+				SpellCastResult result = SpellHelper.instance.applyStageToGround(stack, caster, world, x + i, searchY, z + j, face, x + i, searchY, z + j, 0, giveXP);
 				if (result != SpellCastResult.SUCCESS)
 					return result;
 			}

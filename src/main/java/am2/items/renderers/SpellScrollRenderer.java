@@ -16,7 +16,10 @@ import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderBlocks;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderItem;
+import net.minecraft.client.renderer.entity.RenderManager;
+import net.minecraft.client.renderer.entity.RenderPlayer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -86,11 +89,22 @@ public class SpellScrollRenderer implements IItemRenderer{
 		if (item.getItem() instanceof ItemSpellBook){
 			renderSpellBook(type, item, scrollStack, affinity, data);
 		}else if (scrollStack != null){
-			renderEffect(affinity, true, data);
+			boolean isBeamSpell = false;
+			try {
+				if (SpellUtils.instance.numStages(scrollStack) > 0 && SpellUtils.instance.getShapeForStage(scrollStack, 0) instanceof am2.spell.shapes.Beam){
+					isBeamSpell = true;
+				}
+			} catch (Throwable ignored) {
+			}
+			renderEffectInternal(affinity, true, isBeamSpell, data);
 		}
 	}
 
 	public void renderEffect(Affinity affinity, boolean includeArm, Object... data){
+		renderEffectInternal(affinity, includeArm, false, data);
+	}
+
+	private void renderEffectInternal(Affinity affinity, boolean includeArm, boolean isBeamSpell, Object... data){
 
 		if (!setupIcons){
 			setupAffinityIcons();
@@ -108,36 +122,91 @@ public class SpellScrollRenderer implements IItemRenderer{
 
 		float scale = 3f;
 		if (entity == mc.thePlayer && Minecraft.getMinecraft().gameSettings.thirdPersonView == 0){
+			EntityPlayer localPlayer = (EntityPlayer)entity;
+			boolean isUsing = localPlayer.getItemInUseCount() > 0;
 
-			GL11.glPushMatrix();
+			if (isBeamSpell){
+				// Undo ForgeHooksClient (-0.5,-0.5,-0.5), optional EnumAction.block, and ItemRenderer 0.4x scale
+				// so the 1st-person bare arm renders in the exact vanilla empty-hand bottom-right screen pose.
+				GL11.glPushMatrix();
+				GL11.glTranslatef(0.5f, 0.5f, 0.5f);
+				if (isUsing && localPlayer.getHeldItem() != null && localPlayer.getHeldItem().getItemUseAction() == EnumAction.block){
+					GL11.glRotatef(-60.0f, 0.0f, 1.0f, 0.0f);
+					GL11.glRotatef(80.0f, 1.0f, 0.0f, 0.0f);
+					GL11.glRotatef(-30.0f, 0.0f, 1.0f, 0.0f);
+					GL11.glTranslatef(0.5f, -0.2f, 0.0f);
+				}
+				GL11.glScalef(2.5f, 2.5f, 2.5f);
+				GL11.glTranslatef(0.05657f, -0.08f, 0.05657f);
 
-			if (((EntityPlayer)entity).getItemInUseCount() > 0){
-				GL11.glRotatef(120, 1, 0, 1);
-				GL11.glRotatef(-10, 0, 1, 0);
-				GL11.glTranslatef(2f, 0f, 0.8f);
+				if (!isUsing){
+					GL11.glPushMatrix();
+					GL11.glTranslatef(0.10f, 0.14f, -0.35f);
+					GL11.glScalef(0.28f, 0.28f, 0.28f);
+					GL11.glRotatef(-45.0f, 0.0f, 1.0f, 0.0f);
+					RenderByAffinity(affinity);
+					GL11.glPopMatrix();
+				}
+
+				if (includeArm){
+					GL11.glPushMatrix();
+					if (isUsing){
+						GL11.glTranslatef(-0.02f, 0.03f, -0.04f);
+					}
+					GL11.glTranslatef(-1.0f, 3.6f, 3.5f);
+					GL11.glRotatef(120.0f, 0.0f, 0.0f, 1.0f);
+					GL11.glRotatef(200.0f, 1.0f, 0.0f, 0.0f);
+					GL11.glRotatef(-135.0f, 0.0f, 1.0f, 0.0f);
+					GL11.glTranslatef(5.6f, 0.0f, 0.0f);
+
+					boolean wasBlend = GL11.glIsEnabled(GL11.GL_BLEND);
+					GL11.glDisable(GL11.GL_BLEND);
+					GL11.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+					Minecraft.getMinecraft().renderEngine.bindTexture(mc.thePlayer.getLocationSkin());
+					Render playerRender = RenderManager.instance.getEntityRenderObject(mc.thePlayer);
+					if (playerRender instanceof RenderPlayer){
+						((RenderPlayer)playerRender).renderFirstPersonArm(mc.thePlayer);
+					}else{
+						renderFirstPersonArm(mc.thePlayer);
+					}
+					if (wasBlend){
+						GL11.glEnable(GL11.GL_BLEND);
+					}
+					GL11.glPopMatrix();
+				}
+
+				GL11.glPopMatrix();
 			}else{
-				GL11.glTranslatef(3f, -1.2f, -2.5f);
-				GL11.glRotatef(120, 1, 0, 1);
-				GL11.glRotatef(-20, 0, 1, 0);
-			}
-
-			GL11.glScalef(scale, scale, scale);
-			RenderByAffinity(affinity);
-
-			GL11.glPopMatrix();
-
-			if (includeArm){
 				GL11.glPushMatrix();
 
-				if (((EntityPlayer)entity).getItemInUseCount() > 0){
-					GL11.glRotatef(-120, 0, 1, 0);
-					GL11.glTranslatef(-0.85f, 0.25f, -2.3f);
+				if (isUsing){
+					GL11.glRotatef(120, 1, 0, 1);
+					GL11.glRotatef(-10, 0, 1, 0);
+					GL11.glTranslatef(2f, 0f, 0.8f);
+				}else{
+					GL11.glTranslatef(3f, -1.2f, -2.5f);
+					GL11.glRotatef(120, 1, 0, 1);
+					GL11.glRotatef(-20, 0, 1, 0);
 				}
+
 				GL11.glScalef(scale, scale, scale);
-				GL11.glTranslatef(0f, 0.6f, 1.1f);
-				Minecraft.getMinecraft().renderEngine.bindTexture(mc.thePlayer.getLocationSkin());
-				renderFirstPersonArm(mc.thePlayer);
+				RenderByAffinity(affinity);
+
 				GL11.glPopMatrix();
+
+				if (includeArm){
+					GL11.glPushMatrix();
+
+					if (isUsing){
+						GL11.glRotatef(-120, 0, 1, 0);
+						GL11.glTranslatef(-0.85f, 0.25f, -2.3f);
+					}
+					GL11.glScalef(scale, scale, scale);
+					GL11.glTranslatef(0f, 0.6f, 1.1f);
+					Minecraft.getMinecraft().renderEngine.bindTexture(mc.thePlayer.getLocationSkin());
+					renderFirstPersonArm(mc.thePlayer);
+					GL11.glPopMatrix();
+				}
 			}
 
 		}else{

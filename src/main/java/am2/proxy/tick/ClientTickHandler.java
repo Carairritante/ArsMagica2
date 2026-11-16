@@ -351,6 +351,7 @@ public class ClientTickHandler{
 				spawnPowerPathVisuals();
 			}
 			am2.client.vfx.CastingAtmosphereVFX.onClientTick(Minecraft.getMinecraft());
+			am2.client.vfx.AnimeBeamVFX.onClientTick(Minecraft.getMinecraft());
 		}
 
 		if (Minecraft.getMinecraft().thePlayer != null){

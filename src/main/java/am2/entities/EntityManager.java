@@ -56,6 +56,8 @@ public class EntityManager implements IEntityManager{
 	public String AirSledID = "AirSled";
 	public String FlickerID = "Flicker";
 	public String ShadowHelperID = "ShadowHelper";
+	public String TrueSoulboundItemID = "TrueSoulboundItem";
+	public String ArcaneTargetDummyID = "ArcaneTargetDummy";
 
 	public String NatureGuardianMobID = "BossNatureGuardian";
 	public String ArcaneGuardianMobID = "BossArcaneGuardian";
@@ -133,6 +135,8 @@ public class EntityManager implements IEntityManager{
 		EntityRegistry.registerModEntity(EntityLightningGuardian.class, LightningGuardianMobID, 80, AMCore.instance, updateDistance, updateFrequency, updateVelocity);
 		EntityRegistry.registerModEntity(EntityEnderGuardian.class, EnderGuardianMobID, 79, AMCore.instance, updateDistance, updateFrequency, updateVelocity);
 		EntityRegistry.registerModEntity(EntityShadowHelper.class, ShadowHelperID, 78, AMCore.instance, updateDistance, updateFrequency, updateVelocity);
+		EntityRegistry.registerModEntity(EntityTrueSoulboundItem.class, TrueSoulboundItemID, 77, AMCore.instance, updateDistance, updateFrequency, updateVelocity);
+		EntityRegistry.registerModEntity(EntityArcaneTargetDummy.class, ArcaneTargetDummyID, 76, AMCore.instance, updateDistance, updateFrequency, updateVelocity);
 	}
 
 	@SideOnly(Side.CLIENT)
@@ -189,6 +193,7 @@ public class EntityManager implements IEntityManager{
 		RenderingRegistry.registerEntityRenderingHandler(EntityEnderGuardian.class, new RenderEnderGuardian());
 
 		RenderingRegistry.registerEntityRenderingHandler(EntityShadowHelper.class, new RenderShadowHelper());
+		RenderingRegistry.registerEntityRenderingHandler(EntityArcaneTargetDummy.class, new RenderArcaneTargetDummy());
 	}
 
 	public void initializeSpawns(){

@@ -3,7 +3,7 @@ plugins {
     id 'com.gtnewhorizons.retrofuturagradle' version '1.4.9'
 }
 group = 'am2'
-version = '1.6.11-LE-CR40'
+version = '1.6.11-LE-CR41'
 base { archivesName = 'AM2.5-LTS' }
 java { toolchain { languageVersion = JavaLanguageVersion.of(8) } }
 minecraft {
@@ -16,7 +16,14 @@ repositories {
     maven { url = uri('https://nexus.gtnewhorizons.com/repository/public/') }
     maven { url = uri('https://maven.cleanroommc.com') }
 }
-dependencies { implementation fileTree(dir: 'libs', include: ['*.jar']) }
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    compileOnly('com.github.GTNewHorizons:Applied-Energistics-2-Unofficial:rv3-beta-1093-GTNH:dev') { transitive = false }
+    compileOnly('com.github.GTNewHorizons:GTNHLib:0.11.54:dev') { transitive = false }
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation('com.github.GTNewHorizons:Applied-Energistics-2-Unofficial:rv3-beta-1093-GTNH:dev') { transitive = false }
+    testImplementation('com.github.GTNewHorizons:GTNHLib:0.11.54:dev') { transitive = false }
+}
 
 sourceSets {
     verification { java.srcDir 'tools/verification' }
@@ -30,7 +37,7 @@ tasks.register('verifyMaintenanceJar') {
     description = 'Check the maintenance hooks in the reobfuscated Java 8 mod.'
     dependsOn tasks.named('reobfJar'), tasks.named('verificationClasses')
     doLast {
-        ['VerifyLightningJar', 'VerifySolarLunarTierJar', 'VerifySilverPointsJar', 'VerifyRitualArchitectJar', 'VerifyItemFrameWatcherJar', 'VerifyServerBoundaryJar'].each { verifier ->
+        ['VerifyLightningJar', 'VerifySolarLunarTierJar', 'VerifySilverPointsJar', 'VerifyRitualArchitectJar', 'VerifyItemFrameWatcherJar', 'VerifyServerBoundaryJar', 'VerifyOtherworldAE2Jar', 'VerifyTrueSoulboundJar'].each { verifier ->
             javaexec {
                 classpath = sourceSets.verification.runtimeClasspath
                 mainClass = verifier

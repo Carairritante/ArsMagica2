@@ -14,7 +14,10 @@ import am2.spell.components.LightningStrikeRateLimiter;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.world.World;
+
+import java.util.List;
 
 import static am2.spell.SpellHelper.lingeringSpellList;
 import static am2.spell.SpellHelper.lingeringSpellZoneList;
@@ -38,7 +41,7 @@ public class Zone implements ISpellShape{
 		LightningStrikeRateLimiter.configureZone(stack, zone);
 		zone.setGravity(gravity);
 		zone.SetCasterAndStack(caster, SpellUtils.instance.popStackStage(stack));
-		zone.setPosition(x, y, z);
+		placeAboveSolidGround(world, zone, x, y, z);
 		world.spawnEntityInWorld(zone);
 		// lingering zone compat
 		int persistenceModifiers = SpellUtils.instance.getModifiedInt_Add(0, stack, caster, target, world, 0, SpellModifiers.LINGERING);
@@ -48,6 +51,36 @@ public class Zone implements ISpellShape{
 			lingeringSpellZoneList.add(stack);
 		}
 		return SpellCastResult.SUCCESS;
+	}
+
+	/**
+	 * Shapes such as Projectile, Touch, and Beam pass raw integer blockY of the impacted ground block,
+	 * which spawns Zone inside the block before client Entity.setPositionAndRotation2 pushes it up.
+	 * Snap above solid collision bounds (and center integer block coords) on spawn so server and client match at tick 0.
+	 */
+	private static void placeAboveSolidGround(World world, EntitySpellEffect zone, double x, double y, double z){
+		if (x == Math.floor(x) && z == Math.floor(z)){
+			x += 0.5D;
+			z += 0.5D;
+		}
+		zone.setPosition(x, y, z);
+		List<?> colliding = world.getCollidingBoundingBoxes(zone, zone.boundingBox.contract(0.03125D, 0.0D, 0.03125D));
+		if (!colliding.isEmpty()){
+			double maxY = zone.boundingBox.minY;
+			for (int i = 0; i < colliding.size(); i++){
+				Object obj = colliding.get(i);
+				if (obj instanceof AxisAlignedBB){
+					AxisAlignedBB bb = (AxisAlignedBB)obj;
+					if (bb.maxY > maxY){
+						maxY = bb.maxY;
+					}
+				}
+			}
+			if (maxY > zone.boundingBox.minY){
+				y += maxY - zone.boundingBox.minY;
+				zone.setPosition(x, y, z);
+			}
+		}
 	}
 
 	@Override

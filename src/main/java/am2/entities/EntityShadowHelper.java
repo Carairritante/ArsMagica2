@@ -33,6 +33,7 @@ public class EntityShadowHelper extends EntityLiving{
 
 	private TileEntityCraftingAltar altarTarget = null;
 	private String lastDWString = "";
+	private ItemStack carriedItem = null;
 
 	@SideOnly(Side.CLIENT)
 	private ShadowSkinHelper skinHelper;
@@ -50,6 +51,10 @@ public class EntityShadowHelper extends EntityLiving{
 	@Override
 	public void onDeath(DamageSource par1DamageSource){
 		super.onDeath(par1DamageSource);
+		if (!worldObj.isRemote && carriedItem != null){
+			this.entityDropItem(carriedItem.copy(), 0.0f);
+			carriedItem = null;
+		}
 		if (worldObj.isRemote){
 			spawnParticles();
 			worldObj.playSound(posX, posY, posZ, "arsmagica2:misc.craftingaltar.create_spell", 1.0f, 1.0f, true);
@@ -133,6 +138,14 @@ public class EntityShadowHelper extends EntityLiving{
 
 	public void setHeldItem(ItemStack item){
 		this.dataWatcher.updateObject(DW_HELD_ITEM, item);
+	}
+
+	public ItemStack getCarriedItem(){
+		return this.carriedItem;
+	}
+
+	public void setCarriedItem(ItemStack item){
+		this.carriedItem = item;
 	}
 
 	public void setMimicUser(String userName){

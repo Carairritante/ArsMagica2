@@ -114,9 +114,12 @@ public class ClientProxy extends CommonProxy{
 		((net.minecraft.client.resources.IReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(SpellPartSearch.INSTANCE);
 		MinecraftForge.EVENT_BUS.post(new RegisterSkillTreeIcons(SpellIconManager.instance));
 		MinecraftForge.EVENT_BUS.register(new AMClientEventHandler());
+
+		MinecraftForge.EVENT_BUS.register(new am2.soulbound.TrueSoulboundClientHandler());
 		MinecraftForge.EVENT_BUS.register(new am2.armor.ArmorClientEventHandler());
 		FMLCommonHandler.instance().bus().register(new am2.armor.ArmorClientEventHandler());
 		MinecraftForge.EVENT_BUS.register(new RitualArchitectRenderer());
+		MinecraftForge.EVENT_BUS.register(new am2.compass.client.AstralCompassHudRenderer());
 		((ParticleManagerClient)particleManager).registerEventHandlers();
 
 		FMLCommonHandler.instance().bus().register(new AMKeyBindings());
@@ -158,6 +161,7 @@ public class ClientProxy extends CommonProxy{
 
 		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.spell, SpellScrollRenderer.instance);
 		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.spellBook, SpellScrollRenderer.instance);
+		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.astralCompass, new am2.items.renderers.AstralCompassRenderer());
 
 		MinecraftForgeClient.registerItemRenderer(Item.getItemFromBlock(BlocksCommonProxy.caster), CustomItemRenderer.instance);
 
@@ -224,6 +228,20 @@ public class ClientProxy extends CommonProxy{
 	public void openRitualArchitect(EntityPlayer player){
 		if (player.worldObj.isRemote){
 			Minecraft.getMinecraft().displayGuiScreen(new GuiRitualArchitect(player));
+		}
+	}
+
+	@Override
+	public void openArcaneStrikerGui(EntityPlayer player, am2.blocks.tileentities.TileEntityArcaneStriker tile){
+		if (player != null && player.worldObj != null && player.worldObj.isRemote && tile != null){
+			Minecraft.getMinecraft().displayGuiScreen(new am2.guis.GuiArcaneStriker(player, tile));
+		}
+	}
+
+	@Override
+	public void openAstralCompassGui(EntityPlayer player){
+		if (player != null && player.worldObj != null && player.worldObj.isRemote){
+			Minecraft.getMinecraft().displayGuiScreen(new am2.guis.GuiAstralCompass(player));
 		}
 	}
 

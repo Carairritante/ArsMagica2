@@ -11,6 +11,8 @@ import am2.items.ItemRitualArchitect;
 import am2.items.ItemsCommonProxy;
 import am2.playerextensions.ExtendedProperties;
 import am2.playerextensions.SkillData;
+import am2.soulbound.TrueSoulboundRitual;
+import am2.compass.AstralCompassRitual;
 import am2.spell.SkillManager;
 import am2.spell.SkillTreeManager;
 import am2.api.SkillTreeEntry;
@@ -55,13 +57,19 @@ public final class RitualArchitect {
         public final PlaygroundRitualCompat.Descriptor compat;
         public final Block centerBlock;
         public final boolean dynamicReagents;
+        private final IRitualInteraction customInteraction;
 
         private Entry(int index, String id, String controller, Block centerBlock, boolean dynamic) {
+            this(index, id, controller, centerBlock, dynamic, null);
+        }
+
+        private Entry(int index, String id, String controller, Block centerBlock, boolean dynamic, IRitualInteraction customInteraction) {
             this.index = index;
             this.id = this.compendiumId = id;
             this.controller = controller;
             this.centerBlock = centerBlock;
             this.dynamicReagents = dynamic;
+            this.customInteraction = customInteraction;
             this.playground = false;
             this.compat = null;
             this.noteKey = "";
@@ -70,6 +78,7 @@ public final class RitualArchitect {
         }
 
         public IRitualInteraction interaction() {
+            if (customInteraction != null) return customInteraction;
             if (compat != null) return compat.interaction;
             Object skill = SkillManager.instance.getSkill(controller);
             return skill instanceof IRitualInteraction ? (IRitualInteraction)skill : null;
@@ -85,6 +94,7 @@ public final class RitualArchitect {
             this.noteKey = descriptor.noteKey;
             this.centerBlock = descriptor.centerBlock;
             this.dynamicReagents = false;
+            this.customInteraction = null;
             this.playground = true;
             this.compat = descriptor;
         }
@@ -151,6 +161,8 @@ public final class RitualArchitect {
             add(list, "extend_wither", "Wither", null, false);
             add(list, "spawner_extraction_lifetap", "LifeTap", Blocks.mob_spawner, false);
             add(list, "spawner_extraction_rift", "Rift", Blocks.mob_spawner, false);
+            list.add(new Entry(list.size(), "true_soulbound", "Recall", null, false, TrueSoulboundRitual.INSTANCE));
+            list.add(new Entry(list.size(), "astral_divination", "Mark", Blocks.lapis_block, false, AstralCompassRitual.INSTANCE));
             for (PlaygroundRitualCompat.Descriptor descriptor : PlaygroundRitualCompat.descriptors())
                 list.add(new Entry(list.size(), descriptor));
             catalog = Collections.unmodifiableList(list);
@@ -174,7 +186,7 @@ public final class RitualArchitect {
 
     public static boolean canUse(EntityPlayer player, Entry entry) {
         if (player == null || entry == null || entry.interaction() == null) return false;
-        if (player.capabilities.isCreativeMode || !AMCore.config.stagedCompendium()) return true;
+        if ("true_soulbound".equals(entry.id) || "astral_divination".equals(entry.id) || player.capabilities.isCreativeMode || !AMCore.config.stagedCompendium()) return true;
         Long view = catalogViews.get(player);
         ItemStack held = player.getHeldItem();
         if (view != null && held != null && held.getItem() instanceof ItemRitualArchitect
@@ -412,7 +424,11 @@ public final class RitualArchitect {
             status.extraItems += remaining;
         }
         if (entry.id.equals("recall_to_gateway")) status.extraItems += Math.max(0, status.reagents.get(0).present - 3);
-        status.reagentsReady = !entry.dynamicReagents && status.extraItems == 0;
+        if (entry.id.equals("true_soulbound")) {
+            status.reagentsReady = status.extraItems == 1;
+        } else {
+            status.reagentsReady = !entry.dynamicReagents && status.extraItems == 0;
+        }
         for (Reagent reagent : status.reagents) status.reagentsReady &= reagent.present >= reagent.required;
         if (entry.playground) {
             if (entry.compat.filledPhylactery) for (Reagent reagent : status.reagents)

@@ -59,6 +59,8 @@ public class TechneBlockRenderHandler implements ISimpleBlockRenderingHandler{
 			TileEntityRendererDispatcher.instance.renderTileEntityAt(BlocksClientProxy.candleInventoryRenderer, 0, 0, 0, 0);
 		}else if (block == BlocksCommonProxy.otherworldAura){
 			TileEntityRendererDispatcher.instance.renderTileEntityAt(BlocksClientProxy.otherworldAuraInventoryRenderer, 0, 0, 0, 0);
+		}else if (block == BlocksCommonProxy.arcaneStriker){
+			TileEntityRendererDispatcher.instance.renderTileEntityAt(BlocksClientProxy.arcaneStrikerInventoryRenderer, 0, 0, 0, 0);
 		}
 	}
 

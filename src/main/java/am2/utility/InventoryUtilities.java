@@ -385,8 +385,10 @@ public class InventoryUtilities{
 		if (a.getItem() != b.getItem())
 			return false;
 
-		if (allowAnyMeta && !(a.getItemDamage() == b.getItemDamage() || a.getItemDamage() == AMCore.ANY_META || b.getItemDamage() == AMCore.ANY_META)){
-			return false;
+		if (allowAnyMeta){
+			if (!(a.getItemDamage() == b.getItemDamage() || a.getItemDamage() == AMCore.ANY_META || b.getItemDamage() == AMCore.ANY_META)){
+				return false;
+			}
 		}else if (matchMeta && a.getItemDamage() != b.getItemDamage()){
 			return false;
 		}

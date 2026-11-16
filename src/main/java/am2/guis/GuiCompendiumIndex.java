@@ -231,10 +231,13 @@ public class GuiCompendiumIndex extends GuiScreen implements GuiYesNoCallback{
 				this.currentParentEntryName = ((GuiButtonCompendiumLink)buttonClicked).getEntryID();
 				this.currentParentEntry = ArcaneCompendium.instance.getEntry(currentParentEntryName);
 				this.activeCategoryID = this.activeCategoryID + ":" + this.currentParentEntryName;
+				this.page = 0;
+				this.prevPage.visible = false;
 
 				currentParentEntry.setIsNew(false);
 
 				switchCategoryAndPage();
+				this.nextPage.visible = this.page < getNumPages();
 			}else{
 				CompendiumEntry entry = ArcaneCompendium.instance.getEntry(((GuiButtonCompendiumLink)buttonClicked).getEntryID());
 				if (entry != null){
@@ -270,16 +273,11 @@ public class GuiCompendiumIndex extends GuiScreen implements GuiYesNoCallback{
 	private void switchCategoryAndPage(){
 		if (currentParentEntry != null){
 			lines = GuiArcaneCompendium.splitStringToLines(fontRendererObj, currentParentEntry.getDescription(), lineWidth, maxLines);
-			int numPages = currentParentEntry.hasSubItems() ? lines.size() : lines.size() - 1;
+			int textMaxPage = Math.max(0, lines.size() - 1);
 
 			Integer existingPages = pagingData.get(activeCategoryID);
-			if (existingPages == null || existingPages < numPages){
-				pagingData.put(activeCategoryID, numPages);
-				page = 0;
-				prevPage.visible = false;
-				if (numPages > 1){
-					nextPage.visible = true;
-				}
+			if (existingPages == null || existingPages < textMaxPage){
+				pagingData.put(activeCategoryID, textMaxPage);
 			}
 		}
 
@@ -420,11 +418,11 @@ public class GuiCompendiumIndex extends GuiScreen implements GuiYesNoCallback{
 			this.buttonList.add(link);
 
 			if (subItem.hasSubItems()){
-				idCount = initSubItemButtonsForEntry(subItem, idCount, category);
+				idCount = initSubItemButtonsForEntry(subItem, idCount, category + ":" + entry.getID());
 			}
 		}
 
-		this.pagingData.put(category, numPages);
+		this.pagingData.put(category + ":" + entry.getID(), numPages);
 
 		return idCount;
 	}

@@ -18,6 +18,8 @@ public class RitualShapeHelper{
 	public MultiblockStructureDefinition corruption;
 	public MultiblockStructureDefinition purification;
 	public MultiblockStructureDefinition worldFusion;
+	public MultiblockStructureDefinition trueSoulbound;
+	public MultiblockStructureDefinition astralDivination;
 
 	public static final RitualShapeHelper instance = new RitualShapeHelper();
 
@@ -108,6 +110,8 @@ public class RitualShapeHelper{
 		initCorruption();
 		initPurification();
 		initWorldFusion();
+		initTrueSoulbound();
+		initAstralDivination();
 	}
 
 	private void initWorldFusion(){
@@ -312,6 +316,66 @@ public class RitualShapeHelper{
 		purification.addAllowedBlock(-2, 0, -2, BlocksCommonProxy.candle);
 		purification.addAllowedBlock(2, 0, 2, BlocksCommonProxy.candle);
 		purification.addAllowedBlock(2, 0, -2, BlocksCommonProxy.candle);
+	}
+
+	private void initTrueSoulbound(){
+		trueSoulbound = new MultiblockStructureDefinition("trueSoulbound");
+
+		trueSoulbound.addAllowedBlock(-1, 0, -1, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(-1, 0, 1, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(1, 0, -1, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(1, 0, 1, BlocksCommonProxy.wizardChalk);
+
+		trueSoulbound.addAllowedBlock(-2, 0, 0, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(2, 0, 0, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(0, 0, -2, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(0, 0, 2, BlocksCommonProxy.wizardChalk);
+
+		trueSoulbound.addAllowedBlock(-2, 0, -1, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(-2, 0, 1, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(2, 0, -1, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(2, 0, 1, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(-1, 0, -2, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(1, 0, -2, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(-1, 0, 2, BlocksCommonProxy.wizardChalk);
+		trueSoulbound.addAllowedBlock(1, 0, 2, BlocksCommonProxy.wizardChalk);
+
+		trueSoulbound.addAllowedBlock(-2, 0, -2, BlocksCommonProxy.candle);
+		trueSoulbound.addAllowedBlock(-2, 0, 2, BlocksCommonProxy.candle);
+		trueSoulbound.addAllowedBlock(2, 0, -2, BlocksCommonProxy.candle);
+		trueSoulbound.addAllowedBlock(2, 0, 2, BlocksCommonProxy.candle);
+	}
+
+	private void initAstralDivination(){
+		astralDivination = new MultiblockStructureDefinition("astralDivination");
+
+		// Inner cardinal compass cross
+		astralDivination.addAllowedBlock(1, 0, 0, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(-1, 0, 0, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(0, 0, 1, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(0, 0, -1, BlocksCommonProxy.wizardChalk);
+
+		// Diagonal compass rose frame
+		astralDivination.addAllowedBlock(-1, 0, -1, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(-1, 0, 1, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(1, 0, -1, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(1, 0, 1, BlocksCommonProxy.wizardChalk);
+
+		// Outer ring arcs
+		astralDivination.addAllowedBlock(-2, 0, -1, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(-2, 0, 1, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(2, 0, -1, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(2, 0, 1, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(-1, 0, -2, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(1, 0, -2, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(-1, 0, 2, BlocksCommonProxy.wizardChalk);
+		astralDivination.addAllowedBlock(1, 0, 2, BlocksCommonProxy.wizardChalk);
+
+		// Cardinal candles (N/S/E/W)
+		astralDivination.addAllowedBlock(2, 0, 0, BlocksCommonProxy.candle);
+		astralDivination.addAllowedBlock(-2, 0, 0, BlocksCommonProxy.candle);
+		astralDivination.addAllowedBlock(0, 0, 2, BlocksCommonProxy.candle);
+		astralDivination.addAllowedBlock(0, 0, -2, BlocksCommonProxy.candle);
 	}
 
 	private class EntityItemComparator implements Comparator<EntityItem>{

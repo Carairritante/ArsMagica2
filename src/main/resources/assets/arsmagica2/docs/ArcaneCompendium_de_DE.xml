@@ -1310,6 +1310,7 @@
 		</subitem>
 		<relatedEntries>inscriptionTable</relatedEntries>
 	</item>
+    <item id="astralCompass" unlocked="true"><name>Astral Structure Compass</name><desc>An ancient divination instrument forged through the #5Astral Divination Ritual#0 to track the planar echoes of distant structures across the world. !d Only mages of #9Magic Level 50#0 or higher may wield its true power, and each structural lock consumes #920,000 Mana#0 (no mana is spent if no structure is located within range). Forge it by casting #5Mark#0 over a #5Lapis Lazuli Block#0 ringed by chalk and candles. !p Right-click to open the searchable parchment interface covering #9Vanilla#0, #9Ars Magica 2#0, and #9modded structures#0 alike, then follow the live arcane compass overlay to your target.</desc><relatedEntries>astral_divination_ritual,wizardChalk,warding_candle,ritualArchitect</relatedEntries></item>
   </items>
   <structures>
     <structure id="obelisk_structure">
@@ -1407,6 +1408,20 @@
       <name>Rituals</name>
       <desc>Rituals are created using Wizard's Chalk and Warding Candles.  Arranging them in the correct pattern can enable you to do some truly powerful magic.  !d Rituals will usually require additional items to be thrown on the ground in order for the ritual to succeed.  These items can be thrown anywhere on the ground inside the radius of the Wizard's Chalk.  !d Once you have your ritual laid out, and your items thrown in, you will need to cast the proper spell in order to kick everything off.  The reagents will depend on the spell being cast,and order does matter.  For example, when throwing down runes to recall to a gateway using a ritual, the order of the runes will become the keystone combination. !d  The spell must target the exact center block of the ritual, on the same y-level as the chalk and candles.  This is usually a block placed in the center, or an entity standing in the middle.  !d  If it doesn't work, make sure you are in the middle of the chalk, that the layout is correct, and that you have the correct reagents for the correct ritual!</desc>
       <relatedEntries>wizardChalk,warding_candle</relatedEntries>
+            <subitem id="astral_divination">
+        <name>Ritual of Astral Divination</name>
+        <desc>#5Chronicles of the Astral Rose:#0 !l Unbound explorers seeking hidden strongholds, temples, or Witchwood groves devised a celestial survey instrument — the #9Astral Structure Compass#0. Channeling the cosmos demands strict discipline: only spellcasters at #5Magic Level 50#0 or above can awaken the needle, expending #920,000 Mana#0 per structural resonance lock. !d To bind compass bronze to starlight, weave #5Ender Essence#0, #5Arcane Essence#0, and #9Moonstone#0 around a #5Lapis Lazuli Block#0 crowned by four cardinal candles, then seal the projection with #5Mark#0. !p #9Structure &amp; Execution:#0 !l - Draw the 5x5 astral rose ring with #5Wizard's Chalk#0 (use the #9Arcane Architect's Chalk#0 to preview the pattern). !l - Place #54 Warding Candles#0 at the four cardinal points (North, South, East, West). !l - Place #51 Lapis Lazuli Block#0 at the center. !l - Throw inside the circle: #91x Compass#0, #91x Ender Essence#0, #91x Arcane Essence#0, and #91x Moonstone#0. !l - Cast a spell containing #5Mark#0 directly onto the central Lapis Lazuli Block. !p #9Requirements &amp; Operation:#0 !l - Requires #4Magic Level 50#0 and consumes #420,000 Mana#0 per successful search (failed searches do not spend mana). !l - Searches all discovered dimensions structures including #5Stronghold#0, #5Witchwood Forest#0, Desert/Jungle/Witch temples, Nether Fortresses, and modded structures without generating unvisited chunks. !l - Hold the compass while active to follow the live #9HUD#0 bearing arrow and block distance.</desc>
+        <relatedEntries>wizardChalk,warding_candle,ritualArchitect,astralCompass</relatedEntries>
+        <ritualName>astralDivination</ritualName>
+        <ritualController>Mark</ritualController>
+      </subitem>
+      <subitem id="true_soulbound">
+        <name>Ritual des Ewigen Bundes</name>
+        <desc>#5Chroniken des Ewigen Zirkels:#0 !l Während der alten Kriege des Konklaves erkannten Erzmagier, dass ihre größte Schwäche die Trennung von ihren #9Zauberbüchern#0 und Relikten war. Gewöhnliche #5Seelengebunden#0-Verzauberungen schützten nur beim Tod, nicht aber gegen #4Entwaffnen#0, Diebstahl, Truhen oder die Leere. !d Durch die Verbindung von #5Arkaner Essenz#0, #5Ender-Essenz#0 und #5Gereinigtem Vinteumstaub#0 über einem #9Chimeritblock#0 und das Siegeln mit #5Rückruf#0 entstand der #5Ewige Bund#0. !p #9Aufbau &amp; Ausführung:#0 !l - Zeichne den 5x5-Runenring mit #5Zaubererkreide#0. !l - Platziere #54 Schutzkerzen#0 an den Himmelsrichtungen und #51 Chimeritblock#0 in der Mitte. !l - Wirf #91x Arkane Essenz#0, #91x Ender-Essenz#0, #91x Gereinigter Vinteumstaub#0 und #91x nicht stapelbares Relikt#0 (z.B. Zauberbuch) auf die Mitte und wirke #5Rückruf#0 darauf. !p #9Gesetze des Ewigen Bundes:#0 !l - #5Diebstahlschutz:#0 Kehrt sofort zum Besitzer zurück und bestraft Diebe mit Magieschaden, #4Schwäche II#0, #4Langsamkeit II#0 und #4Blindheit#0. !l - #5Truhensperre &amp; Unsterblichkeit:#0 Kann in keine fremde Truhe gelegt werden und überlebt Feuer, Lava, Explosionen, Tod und die Leere. !l - #5Lösen:#0 Nur der Besitzer kann den Bund mit #2Shift + Q#0 (zweimal in 5s) oder #2/am2unbind#0 lösen bzw. mit #4/am2destroy#0 zerstören.</desc>
+        <relatedEntries>wizardChalk,warding_candle,ritualArchitect,spell_book</relatedEntries>
+        <ritualName>trueSoulbound</ritualName>
+        <ritualController>Recall</ritualController>
+      </subitem>
       <subitem id="purification">
         <name>Ritual of Purification</name>
         <desc>The ritual of Purification is used to purify an obelisk into a celestial prism.</desc>
@@ -1603,7 +1618,21 @@
         <ritualName>ringedCross</ritualName>
         <ritualController>Transplace</ritualController>
       </subitem>
-      <relatedEntries>wizardChalk</relatedEntries>
+      <relatedEntries>wizardChalk,warding_candle,ritualArchitect,true_soulbound_ritual</relatedEntries>
+    </ritual>
+    <ritual id="true_soulbound_ritual" unlocked="true">
+      <name>Ritual des Ewigen Bundes</name>
+      <desc>#5Chroniken des Ewigen Zirkels:#0 !l Während der alten Kriege des Konklaves erkannten Erzmagier, dass ihre größte Schwäche die Trennung von ihren #9Zauberbüchern#0 und Relikten war. Gewöhnliche #5Seelengebunden#0-Verzauberungen schützten nur beim Tod, nicht aber gegen #4Entwaffnen#0, Diebstahl, Truhen oder die Leere. !d Durch die Verbindung von #5Arkaner Essenz#0, #5Ender-Essenz#0 und #5Gereinigtem Vinteumstaub#0 über einem #9Chimeritblock#0 und das Siegeln mit #5Rückruf#0 entstand der #5Ewige Bund#0. !p #9Aufbau &amp; Ausführung:#0 !l - Zeichne den 5x5-Runenring mit #5Zaubererkreide#0. !l - Platziere #54 Schutzkerzen#0 an den Himmelsrichtungen und #51 Chimeritblock#0 in der Mitte. !l - Wirf #91x Arkane Essenz#0, #91x Ender-Essenz#0, #91x Gereinigter Vinteumstaub#0 und #91x nicht stapelbares Relikt#0 (z.B. Zauberbuch) auf die Mitte und wirke #5Rückruf#0 darauf. !p #9Gesetze des Ewigen Bundes:#0 !l - #5Diebstahlschutz:#0 Kehrt sofort zum Besitzer zurück und bestraft Diebe mit Magieschaden, #4Schwäche II#0, #4Langsamkeit II#0 und #4Blindheit#0. !l - #5Truhensperre &amp; Unsterblichkeit:#0 Kann in keine fremde Truhe gelegt werden und überlebt Feuer, Lava, Explosionen, Tod und die Leere. !l - #5Lösen:#0 Nur der Besitzer kann den Bund mit #2Shift + Q#0 (zweimal in 5s) oder #2/am2unbind#0 lösen bzw. mit #4/am2destroy#0 zerstören.</desc>
+      <relatedEntries>wizardChalk,warding_candle,ritualArchitect,spell_book</relatedEntries>
+      <ritualName>trueSoulbound</ritualName>
+      <ritualController>Recall</ritualController>
+    </ritual>
+    <ritual id="astral_divination_ritual" unlocked="true">
+      <name>Ritual of Astral Divination</name>
+      <desc>#5Chronicles of the Astral Rose:#0 !l Unbound explorers seeking hidden strongholds, temples, or Witchwood groves devised a celestial survey instrument — the #9Astral Structure Compass#0. Channeling the cosmos demands strict discipline: only spellcasters at #5Magic Level 50#0 or above can awaken the needle, expending #920,000 Mana#0 per structural resonance lock. !d To bind compass bronze to starlight, weave #5Ender Essence#0, #5Arcane Essence#0, and #9Moonstone#0 around a #5Lapis Lazuli Block#0 crowned by four cardinal candles, then seal the projection with #5Mark#0. !p #9Structure &amp; Execution:#0 !l - Draw the 5x5 astral rose ring with #5Wizard's Chalk#0 (use the #9Arcane Architect's Chalk#0 to preview the pattern). !l - Place #54 Warding Candles#0 at the four cardinal points (North, South, East, West). !l - Place #51 Lapis Lazuli Block#0 at the center. !l - Throw inside the circle: #91x Compass#0, #91x Ender Essence#0, #91x Arcane Essence#0, and #91x Moonstone#0. !l - Cast a spell containing #5Mark#0 directly onto the central Lapis Lazuli Block. !p #9Requirements &amp; Operation:#0 !l - Requires #4Magic Level 50#0 and consumes #420,000 Mana#0 per successful search (failed searches do not spend mana). !l - Searches all discovered dimensions structures including #5Stronghold#0, #5Witchwood Forest#0, Desert/Jungle/Witch temples, Nether Fortresses, and modded structures without generating unvisited chunks. !l - Hold the compass while active to follow the live #9HUD#0 bearing arrow and block distance.</desc>
+      <relatedEntries>wizardChalk,warding_candle,ritualArchitect,astralCompass</relatedEntries>
+      <ritualName>astralDivination</ritualName>
+      <ritualController>Mark</ritualController>
     </ritual>
   </structures>
   <mobs>
@@ -2488,6 +2517,7 @@
 		<desc>You've managed to pick up a monster spawner, but it seems to not be able to spawn anything anymore.  You should look into other applications for this device, or find a way to re-activate it. !d Perhaps #5Dark Etherium#0 and a #5Filled Crystal Phylactery#0 could make it function again...</desc>
 		<relatedEntries>otherworldly_aura,blackaurem_structure,crystal_phylactery</relatedEntries>
 	</block>
+    <block id="arcane_striker" unlocked="true"><name>Arcane Striker</name><desc>An arcane park-style strength tester built to measure spell and weapon burst damage. Right-click the #5Arcane Striker#0 to configure the test duration up to #960 seconds#0, toggle whether attacks #5bypass invulnerability frames (i-frames)#0, and summon a holographic training dummy in front of the machine. !d Strike the dummy with spells, melee weapons, or projectiles while the test runs. The rising arcane gauge reflects your current damage against the stored record and rings the top bell whenever a new peak is achieved. !p Both the machine panel and the dummy nameplate track live and stored #9Total Damage#0, #9DPS#0, #9Peak Hit#0, and the all-time #5Record#0 holder.</desc><relatedEntries>mana_battery</relatedEntries></block>
   </blocks>
   <mechanics>
     <mechanic id="affinity">

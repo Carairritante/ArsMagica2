@@ -74,7 +74,7 @@ public enum Affinity{
 			new int[]{2, 5}), //Adjacent Affinities: Water, Air
 
 	ENDER(10,
-			0x3f043d,
+			0x360558,
 			9, //life is direct opposite
 			new int[]{8, 6, 2, 5}, //Major Opposites: nature, lightning, water, air
 			new int[]{1, 7}, //Minor Opposites: Arcane, Ice

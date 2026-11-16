@@ -18,6 +18,7 @@ import am2.spell.components.FireRain;
 import am2.spell.components.LightningDamage;
 import am2.spell.components.LightningStrike;
 import am2.spell.components.Storm;
+import am2.spell.shapes.Beam;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
@@ -116,7 +117,7 @@ public class CastingCircleVFX {
 		affinityTextureCache.put(Affinity.ICE, new AffinityTextures("ice", new float[]{0.0f, 0.83f, 1.0f}, new float[]{0.78f, 0.97f, 1.0f}));
 		affinityTextureCache.put(Affinity.NATURE, new AffinityTextures("nature", new float[]{0.0f, 0.90f, 0.24f}, new float[]{0.78f, 1.0f, 0.82f}));
 		affinityTextureCache.put(Affinity.LIFE, new AffinityTextures("life", new float[]{1.0f, 0.82f, 0.0f}, new float[]{1.0f, 0.97f, 0.70f}));
-		affinityTextureCache.put(Affinity.ENDER, new AffinityTextures("ender", new float[]{0.67f, 0.0f, 1.0f}, new float[]{0.94f, 0.70f, 1.0f}));
+		affinityTextureCache.put(Affinity.ENDER, new AffinityTextures("ender", new float[]{0.32f, 0.02f, 0.56f}, new float[]{0.48f, 0.06f, 0.74f}));
 	}
 
 	// =========================================================================
@@ -251,7 +252,9 @@ public class CastingCircleVFX {
                     state.spell = spell;
                     state.lunar = getLunarCount(spell); state.solar = getSolarCount(spell);
                     state.affinity = safeAffinity(spell);
-                    if (state.lunar >= 3 || state.solar >= 3)
+                    // Keep Beam spells on the compact normal ground circle to prevent huge Super Tier rings from cluttering 1st/3rd person view.
+                    // Only trigger Super Tiers for the specific Silver / apocalypse spells (never on arbitrary affinity + 3 Lunar/Solar spells).
+                    if (!Beam.isBeamSpell(spell))
                         state.tier = determineSuperTierType(spell, state.lunar, state.solar);
                 }
             } catch (RuntimeException invalidSpell) {
@@ -512,34 +515,15 @@ public class CastingCircleVFX {
 
 
 	private static SuperTierType determineSuperTierType(ItemStack stack, int lunarCount, int solarCount) {
-		// 1. Explicit Component Precision Check
-		// Fire: FireDamage (15), FireRain (66), Ignition (24)
-		boolean hasFire = hasAnyComponent(stack, 15, 66, 24);
-		// Ice: FrostDamage (20), Freeze (19), Blizzard (63)
-		boolean hasIce = hasAnyComponent(stack, 20, 19, 63);
-		// Starfall: FallingStar (65), MagicDamage (35), AstralDistortion (3)
-		boolean hasStar = hasAnyComponent(stack, 65, 35, 3);
-		// Lightning: LightningDamage (34), Storm (52), LightningStrike (100)
-		boolean hasLightning = hasAnyComponent(stack, 34, 52, 100);
-
-		if (hasIce) return SuperTierType.BLIZZARD;
-		if (hasFire) return SuperTierType.FIRESTORM;
-		if (hasStar) return SuperTierType.STARFALL;
-		if (hasAnyComponent(stack, 52)) return SuperTierType.STORM_LIGHTNING;
-		if (hasLightning) return (lunarCount >= 3) ? SuperTierType.LUNAR_LIGHTNING : SuperTierType.STORM_LIGHTNING;
-
-		// 2. Affinity Resolution
-		Affinity affinity = safeAffinity(stack);
-		if (affinity == Affinity.ICE) return SuperTierType.BLIZZARD;
-		if (affinity == Affinity.FIRE) return SuperTierType.FIRESTORM;
-		if (affinity == Affinity.ARCANE || affinity == Affinity.ENDER) return SuperTierType.STARFALL;
-		if (affinity == Affinity.LIGHTNING || affinity == Affinity.AIR) {
-			return (lunarCount >= 3) ? SuperTierType.LUNAR_LIGHTNING : SuperTierType.STORM_LIGHTNING;
-		}
-
-		// 3. Fallback: Solar -> Firestorm, Lunar -> Lunar Lightning
-		if (solarCount >= 3) return SuperTierType.FIRESTORM;
-		return SuperTierType.LUNAR_LIGHTNING;
+		// Strict Silver / apocalypse spell matching only (never trigger Super Tiers from generic affinity or 3x Lunar/Solar fallback):
+		// Blizzard (63), FireRain (66), FallingStar (65), Storm (52) + LightningDamage (34),
+		// and LightningStrike (100) + 3x Lunar (Fallen Down).
+		if (hasAnyComponent(stack, 63)) return SuperTierType.BLIZZARD;
+		if (hasAnyComponent(stack, 66)) return SuperTierType.FIRESTORM;
+		if (hasAnyComponent(stack, 65)) return SuperTierType.STARFALL;
+		if (hasAnyComponent(stack, 52) && hasAnyComponent(stack, 34)) return SuperTierType.STORM_LIGHTNING;
+		if (hasAnyComponent(stack, 100) && lunarCount >= 3) return SuperTierType.LUNAR_LIGHTNING;
+		return null;
 	}
 
 	// =========================================================================

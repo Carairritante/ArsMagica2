@@ -14,11 +14,13 @@ import am2.entities.EntitySpellEffect;
 import net.minecraft.util.AxisAlignedBB;
 import java.util.List;
 import am2.particles.ParticleOrbitPoint;
+import am2.spell.shapes.Beam;
 import am2.utility.DummyEntityPlayer;
 import cpw.mods.fml.common.eventhandler.Event.Result;
 import net.minecraft.block.*;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
@@ -179,31 +181,48 @@ public class Grow implements ISpellComponent{
 			}
 		}
 
-		if (primary != null){
-			int oldTier = primary.getGrowTier();
-			primary.addMerged(1);
-			int newTier = primary.getGrowTier();
+		boolean fromBeam = false;
+		int beamStartTick = Integer.MIN_VALUE;
+		if (caster instanceof EntityPlayer){
+			EntityPlayer playerCaster = (EntityPlayer)caster;
+			if (Beam.isBeamSpell(playerCaster.getHeldItem()) && (playerCaster.getItemInUseCount() > 0 || playerCaster.isEating())){
+				fromBeam = true;
+				if (playerCaster.getItemInUseCount() > 0){
+					beamStartTick = playerCaster.ticksExisted - playerCaster.getItemInUseDuration();
+				}
+			}
+		}
+		boolean fromZone = caster instanceof DummyEntityPlayer;
+		long worldTick = world.getTotalWorldTime();
 
-			// Smoothly gravitate the mandala center towards the average center of all merged blocks!
-			double count = primary.getMergeCount();
-			primary.posX = (primary.posX * (count - 1.0) + (x + 0.5)) / count;
-			primary.posZ = (primary.posZ * (count - 1.0) + (z + 0.5)) / count;
-			primary.posY = Math.max(primary.posY, groundY);
-			primary.setPosition(primary.posX, primary.posY, primary.posZ);
+		if (primary != null){
+			if (primary.canAcceptGrowMerge(worldTick, beamStartTick, fromBeam, fromZone)){
+				int oldTier = primary.getGrowTier();
+				primary.addMerged(1);
+				int newTier = primary.getGrowTier();
+
+				// Smoothly gravitate the mandala center towards the average center of all merged blocks!
+				double count = primary.getMergeCount();
+				primary.posX = (primary.posX * (count - 1.0) + (x + 0.5)) / count;
+				primary.posZ = (primary.posZ * (count - 1.0) + (z + 0.5)) / count;
+				primary.posY = Math.max(primary.posY, groundY);
+				primary.setPosition(primary.posX, primary.posY, primary.posZ);
+
+				// Sound feedback on tier progression (subtle nature harmonic surge)
+				if (newTier > oldTier){
+					float pitch = newTier >= 4 ? 0.70f : (newTier >= 3 ? 0.85f : 1.05f);
+					world.playSound(primary.posX, primary.posY, primary.posZ, "arsmagica2:spell.cast.nature", 1.2f, pitch, false);
+				}
+			}
 
 			// Refresh lifetime so sustained zone / multi-block casts stay active and fade out cleanly
 			primary.setTicksToExist(Math.max(primary.getTicksToExist(), primary.ticksExisted + 30));
-
-			// Sound feedback on tier progression (subtle nature harmonic surge)
-			if (newTier > oldTier){
-				float pitch = newTier >= 4 ? 0.70f : (newTier >= 3 ? 0.85f : 1.05f);
-				world.playSound(primary.posX, primary.posY, primary.posZ, "arsmagica2:spell.cast.nature", 1.2f, pitch, false);
-			}
 		}else{
 			// Spawn the initial botanical magic circle
 			EntitySpellEffect mandala = new EntitySpellEffect(world);
 			mandala.setPosition(x + 0.5, groundY, z + 0.5);
 			mandala.setGrowMandala(3.0f, colorModifier);
+			mandala.initGrowBurstMetadata(worldTick, beamStartTick, fromBeam || fromZone);
 			world.spawnEntityInWorld(mandala);
 		}
 

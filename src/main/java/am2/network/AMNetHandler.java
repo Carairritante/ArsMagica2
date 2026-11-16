@@ -232,6 +232,17 @@ public class AMNetHandler{
 		sendPacketToAllClientsNear(world.provider.dimensionId, cx, cy, cz, 240, AMPacketIDs.ORBITAL_STORM_STRIKE, writer.generate());
 	}
 
+	public void sendAoEShockwaveToClients(double x, double y, double z, int side, float radius, World world, ItemStack spellStack){
+		if (world == null || world.isRemote) return;
+		AMDataWriter writer = new AMDataWriter().add(x).add(y).add(z).add((byte) side).add(radius);
+		if (spellStack != null)
+			writer.add(true).add(spellStack);
+		else
+			writer.add(false);
+		double range = Math.max(96.0D, radius * 2.5D);
+		sendPacketToAllClientsNear(world.provider.dimensionId, x, y, z, range, AMPacketIDs.AOE_SHOCKWAVE, writer.generate());
+	}
+
 	public void sendStarImpactToClients(double x, double y, double z, World world, ItemStack spellStack){
 		sendStarImpactToClients(x, y, z, world, spellStack, 1);
 	}
@@ -366,5 +377,17 @@ public class AMNetHandler{
 
 	public void sendAffinityActivate(){
 		sendPacketToServer(AMPacketIDs.AFFINITY_ACTIVATE, new byte[0]);
+	}
+
+	public void sendArcaneStrikerAction(int x, int y, int z, int action, int param){
+		AMDataWriter writer = new AMDataWriter().add(x).add(y).add(z).add(action).add(param);
+		sendPacketToServer(AMPacketIDs.ARCANE_STRIKER_ACTION, writer.generate());
+	}
+
+	public void sendDummyDamagePopup(int dimension, double x, double y, double z, float damage, String damageType){
+		AMDataWriter writer = new AMDataWriter()
+				.add(x).add(y).add(z).add(damage)
+				.add(damageType == null ? "generic" : damageType);
+		sendPacketToAllClientsNear(dimension, x, y, z, 48.0, AMPacketIDs.DUMMY_DAMAGE_POPUP, writer.generate());
 	}
 }

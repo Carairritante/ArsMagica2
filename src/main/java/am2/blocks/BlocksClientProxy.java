@@ -28,6 +28,7 @@ public class BlocksClientProxy extends BlocksCommonProxy{
 	public static TileEntitySpatialVortex spatialVortexInventoryRenderer;
 	public static TileEntityFlickerHabitat elementalAttunerInventoryRenderer;
 	public static TileEntityOtherworldAura otherworldAuraInventoryRenderer;
+	public static TileEntityArcaneStriker arcaneStrikerInventoryRenderer;
 
 	public BlocksClientProxy(){
 		blockRenderID = RenderingRegistry.getNextAvailableRenderId();
@@ -54,6 +55,7 @@ public class BlocksClientProxy extends BlocksCommonProxy{
 		candleInventoryRenderer = new TileEntityCandle();
 		elementalAttunerInventoryRenderer = new TileEntityFlickerHabitat();
 		otherworldAuraInventoryRenderer = new TileEntityOtherworldAura();
+		arcaneStrikerInventoryRenderer = new TileEntityArcaneStriker();
 	}
 
 	@Override
@@ -79,5 +81,6 @@ public class BlocksClientProxy extends BlocksCommonProxy{
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityCandle.class, new CandleRenderer());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityFlickerHabitat.class, new FlickerHabitatRenderer());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityOtherworldAura.class, new RenderOtherworldAura());
+		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityArcaneStriker.class, new am2.blocks.renderers.ArcaneStrikerRenderer());
 	}
 }

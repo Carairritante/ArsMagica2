@@ -63,4 +63,8 @@ public class AMPacketIDs{
 	public static final byte MANA_SHIELD_HIT = 73;
 	public static final byte LIGHTNING_IMPACT = 74;
 	public static final byte ORBITAL_STORM_STRIKE = 75;
+	public static final byte AOE_SHOCKWAVE = 76;
+	public static final byte ARCANE_STRIKER_ACTION = 77;
+	public static final byte DUMMY_DAMAGE_POPUP = 78;
+	public static final byte ASTRAL_COMPASS_ACTION = 79;
 }

@@ -605,4 +605,12 @@ public class ParticleManagerClient extends ParticleManagerServer{
 			return new ParticleMoveOnHeading(effect, ent.rotationYaw + 90, ent.rotationPitch, 0.05f, 1, false);
 		}
 	}
+
+	@Override
+	public void updateAnimeBeam(World world, EntityLivingBase caster, am2.api.spell.enums.Affinity affinity, double endX, double endY, double endZ, int customColor, int useCount){
+		if (AMCore.config.NoGFX()){
+			return;
+		}
+		am2.client.vfx.AnimeBeamVFX.updateCasterBeam(world, caster, affinity, endX, endY, endZ, customColor, useCount);
+	}
 }

@@ -9,8 +9,10 @@ import am2.api.spell.enums.Affinity;
 import am2.api.spell.enums.SpellCastResult;
 import am2.api.spell.enums.SpellModifiers;
 import am2.blocks.BlocksCommonProxy;
+import am2.entities.EntitySpellEffect;
+import am2.items.ItemSpellBook;
+import am2.items.ItemSpellStaff;
 import am2.items.ItemsCommonProxy;
-import am2.particles.AMBeam;
 import am2.particles.AMParticle;
 import am2.particles.AMParticleIcons;
 import am2.particles.ParticleMoveOnHeading;
@@ -22,19 +24,17 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.boss.EntityDragonPart;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 
-import java.util.HashMap;
+import java.util.List;
 
 public class Beam implements ISpellShape{
 
-	private final HashMap beams;
-
 	public Beam(){
-		beams = new HashMap();
 	}
 
 	@Override
@@ -83,10 +83,6 @@ public class Beam implements ISpellShape{
 		}
 
 		if (world.isRemote && beamHitVec != null){
-			AMBeam beam = (AMBeam)beams.get(caster.getEntityId());
-			double startX = caster.posX;
-			double startY = caster.posY + caster.getEyeHeight() - 0.2f;
-			double startZ = caster.posZ;
 			Affinity affinity = SpellUtils.instance.mainAffinityFor(stack);
 
 			int color = -1;
@@ -101,24 +97,7 @@ public class Beam implements ISpellShape{
 				}
 			}
 
-			if (beam != null){
-				if (beam.isDead || beam.getDistanceSqToEntity(caster) > 4){
-					beams.remove(caster.getEntityId());
-				}else{
-					beam.setBeamLocationAndTarget(startX, startY, startZ, beamHitVec.xCoord, beamHitVec.yCoord, beamHitVec.zCoord);
-				}
-			}else{
-				if (affinity == Affinity.LIGHTNING){
-					AMCore.instance.proxy.particleManager.BoltFromEntityToPoint(world, caster, beamHitVec.xCoord, beamHitVec.yCoord, beamHitVec.zCoord, 1, color == -1 ? affinity.color : color);
-				}else{
-					beam = (AMBeam)AMCore.instance.proxy.particleManager.BeamFromEntityToPoint(world, caster, beamHitVec.xCoord, beamHitVec.yCoord, beamHitVec.zCoord, color == -1 ? affinity.color : color);
-					if (beam != null){
-						if (AMCore.instance.proxy.getProxyUtils().isLocalPlayerInFirstPerson())
-							beam.setFirstPersonPlayerCast();
-						beams.put(caster.getEntityId(), beam);
-					}
-				}
-			}
+			AMCore.instance.proxy.particleManager.updateAnimeBeam(world, caster, affinity, beamHitVec.xCoord, beamHitVec.yCoord, beamHitVec.zCoord, color, useCount);
 			for (int i = 0; i < AMCore.config.getGFXLevel() + 1; ++i){
 				AMParticle particle = (AMParticle)AMCore.proxy.particleManager.spawn(world, AMParticleIcons.instance.getParticleForAffinity(affinity), beamHitVec.xCoord, beamHitVec.yCoord, beamHitVec.zCoord);
 				if (particle != null){
@@ -134,10 +113,64 @@ public class Beam implements ISpellShape{
 
 		if (result != null && spellVec != null && shouldApplyEffect){
 			ItemStack newItemStack = SpellUtils.instance.popStackStage(stack);
+			if (refreshExistingBeamZone(newItemStack, caster, target, world, spellVec.xCoord, spellVec.yCoord, spellVec.zCoord)){
+				return SpellCastResult.SUCCESS_REDUCE_MANA;
+			}
 			return SpellHelper.instance.applyStackStage(newItemStack, caster, target, spellVec.xCoord, spellVec.yCoord, spellVec.zCoord, mop != null ? mop.sideHit : 0, world, true, giveXP, 0);
 		}else{
 			return SpellCastResult.SUCCESS_REDUCE_MANA;
 		}
+	}
+
+	/** Refreshes an already-active Zone under a channeled Beam instead of stacking duplicate Zones every 10 ticks. */
+	private boolean refreshExistingBeamZone(ItemStack nextStageStack, EntityLivingBase caster, EntityLivingBase target, World world, double x, double y, double z){
+		if (nextStageStack == null || caster == null || world == null) return false;
+		if (SpellUtils.instance.numStages(nextStageStack) == 0) return false;
+		ISpellShape nextShape = SpellUtils.instance.getShapeForStage(nextStageStack, 0);
+		if (!(nextShape instanceof Zone)) return false;
+
+		int radius = SpellUtils.instance.getModifiedInt_Add(2, nextStageStack, caster, target, world, 0, SpellModifiers.RADIUS);
+		double searchR = Math.max(3.5D, radius + 1.5D);
+		@SuppressWarnings("unchecked")
+		List<EntitySpellEffect> nearby = world.getEntitiesWithinAABB(
+				EntitySpellEffect.class,
+				AxisAlignedBB.getBoundingBox(x - searchR, y - 4.0D, z - searchR, x + searchR, y + 4.0D, z + searchR));
+		int casterId = caster.getEntityId();
+		for (EntitySpellEffect effect : nearby){
+			if (!effect.isDead && effect.isZone() && (world.isRemote || effect.getCasterEntityID() == casterId)){
+				if (!world.isRemote){
+					int duration = SpellUtils.instance.getModifiedInt_Mul(100, nextStageStack, caster, target, world, 0, SpellModifiers.DURATION);
+					effect.setTicksToExist(Math.max(effect.getTicksToExist(), effect.ticksExisted + Math.max(20, duration)));
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Returns true when the held spell or scroll begins with the Beam shape at stage 0. */
+	public static boolean isBeamSpell(ItemStack stack){
+		if (stack == null) return false;
+		try{
+			ItemStack spell = stack;
+			if (stack.getItem() instanceof ItemSpellBook){
+				spell = ((ItemSpellBook)stack.getItem()).GetActiveItemStack(stack);
+			}else if (stack.getItem() instanceof ItemSpellStaff){
+				if (stack.hasTagCompound() && stack.stackTagCompound.hasKey("spell_to_cast", 10)){
+					spell = ItemStack.loadItemStackFromNBT(stack.stackTagCompound.getCompoundTag("spell_to_cast"));
+				}else{
+					return false;
+				}
+			}
+			if (spell == null || !(spell.getItem() instanceof ItemSpellBase)) return false;
+			ItemStack classic = SpellUtils.instance.constructSpellStack(spell);
+			ItemStack check = classic != null ? classic : spell;
+			if (SpellUtils.instance.numStages(check) > 0){
+				return SpellUtils.instance.getShapeForStage(check, 0) instanceof Beam;
+			}
+		}catch (Throwable ignored){
+		}
+		return false;
 	}
 
 	@Override

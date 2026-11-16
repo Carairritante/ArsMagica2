@@ -80,7 +80,7 @@ public class SpellHelper{
 
 			if (canApplyToBlock(stack, caster, world, blockX, blockY, blockZ)){
 				if (component.applyEffectBlock(stack, world, blockX, blockY, blockZ, blockFace, impactX, impactY, impactZ, caster)){
-					if (world.isRemote){
+					if (world.isRemote && !(stageShape instanceof am2.spell.shapes.AoE)){
 						int color = -1;
 						if (SpellUtils.instance.modifierIsPresent(SpellModifiers.COLOR, stack, 0)){
 							ISpellModifier[] mods = SpellUtils.instance.getModifiersForStage(stack, 0);
@@ -134,7 +134,7 @@ public class SpellHelper{
 			if (canApplyToEntity(stack, caster, world, target)){
 				if (component.applyEffectEntity(stack, world, caster, target)){
 					appliedOneComponent = true;
-					if (world.isRemote){
+					if (world.isRemote && !(stageShape instanceof am2.spell.shapes.AoE)){
 						int color = -1;
 						if (SpellUtils.instance.modifierIsPresent(SpellModifiers.COLOR, stack, 0)){
 							ISpellModifier[] mods = SpellUtils.instance.getModifiersForStage(stack, 0);

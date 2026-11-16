@@ -1,5 +1,8 @@
 package am2.entities.renderers;
 
+import am2.AMCore;
+import am2.api.spell.enums.Affinity;
+import am2.client.vfx.BlockbenchZoneModel;
 import am2.entities.EntitySpellEffect;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -9,8 +12,14 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 @SideOnly(Side.CLIENT)
 public class RenderSpellEffect extends Render {
@@ -73,6 +82,212 @@ public class RenderSpellEffect extends Render {
 			renderExplosionImpact(effect, x, y, z, partialTicks);
 		} else if (effect.isLightningImpact()) {
 			renderLightningImpact(effect, x, y, z, partialTicks);
+		} else if (effect.isZone()) {
+			renderZone(effect, x, y, z, partialTicks);
+		} else if (effect.isAoEShockwave()) {
+			renderAoEShockwave(effect, x, y, z, partialTicks);
+		}
+	}
+
+	private static final double ZONE_CLUSTER_MIN_DIST_XZ = 3.0D;
+	private static final double ZONE_CLUSTER_RADIUS_FRAC = 0.90D;
+	private static final double ZONE_CLUSTER_DIST_Y = 2.5D;
+	private static final double ZONE_SEARCH_RANGE_XZ = 32.0D;
+	private static final double ZONE_SEARCH_RANGE_Y = 8.0D;
+	private static final int MAX_ZONE_SPIKE_TIERS = 8;
+
+	private void renderZone(EntitySpellEffect effect, double x, double y, double z, float partialTicks) {
+		if (AMCore.config.NoGFX() || effect.isDead || effect.worldObj == null) {
+			return;
+		}
+
+		List<EntitySpellEffect> cluster = collectZoneCluster(effect);
+		EntitySpellEffect renderOwner = selectZoneClusterOwner(cluster);
+		if (renderOwner != effect) {
+			return; // Defer rendering to the deterministic cluster owner
+		}
+
+		if (cluster.size() > 1) {
+			Collections.sort(cluster, new Comparator<EntitySpellEffect>() {
+				@Override
+				public int compare(EntitySpellEffect a, EntitySpellEffect b) {
+					return Integer.compare(a.getEntityId(), b.getEntityId());
+				}
+			});
+		}
+
+		BlockbenchZoneModel model = BlockbenchZoneModel.get();
+		if (model == null) {
+			return;
+		}
+
+		float maxRadius = 2.0f;
+		float bestAlpha = 0.0f;
+		for (int i = 0; i < cluster.size(); i++) {
+			EntitySpellEffect member = cluster.get(i);
+			float r = member.getRadius();
+			if (r > maxRadius) {
+				maxRadius = r;
+			}
+			float a = computeZoneFade(member, partialTicks);
+			if (a > bestAlpha) {
+				bestAlpha = a;
+			}
+		}
+		if (bestAlpha <= 0.01f) {
+			return;
+		}
+
+		int tierCount = Math.min(MAX_ZONE_SPIKE_TIERS, cluster.size());
+		int[] tierColors = new int[tierCount];
+		float[] tierPopY = new float[tierCount];
+		for (int i = 0; i < tierCount; i++) {
+			EntitySpellEffect member = cluster.get(i);
+			tierColors[i] = resolveZoneColorRgb(member);
+			float age = member.ticksExisted + partialTicks;
+			float intro = Math.min(1.0f, age / 7.0f);
+			float fade = computeZoneFade(member, partialTicks);
+			tierPopY[i] = (float) Math.sin(intro * Math.PI * 0.5) * (0.25f + 0.75f * fade);
+		}
+
+		EntitySpellEffect latestMember = cluster.get(cluster.size() - 1);
+		int ringColor = resolveZoneColorRgb(latestMember);
+		float ringRot = ((effect.worldObj.getTotalWorldTime() + partialTicks) * 1.15f) % 360.0f;
+		boolean lowGfx = AMCore.config.LowGFX();
+
+		float prevBrightX = OpenGlHelper.lastBrightnessX;
+		float prevBrightY = OpenGlHelper.lastBrightnessY;
+		GL11.glPushMatrix();
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_POLYGON_BIT);
+
+		GL11.glDisable(GL11.GL_LIGHTING);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+		GL11.glDepthMask(false);
+		RenderHelper.disableStandardItemLighting();
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0f, 240.0f);
+		GL11.glEnable(GL11.GL_BLEND);
+
+		GL11.glTranslated(x, y + 0.025D, z);
+		model.render(maxRadius, ringRot, tierCount, tierColors, tierPopY, bestAlpha * 0.92f, ringColor, lowGfx);
+
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
+		GL11.glPopAttrib();
+		GL11.glPopMatrix();
+	}
+
+	private static List<EntitySpellEffect> collectZoneCluster(EntitySpellEffect seed) {
+		double searchXZ = Math.max(ZONE_SEARCH_RANGE_XZ, seed.getRadius() * 2.0D);
+		AxisAlignedBB searchBox = AxisAlignedBB.getBoundingBox(
+				seed.posX - searchXZ, seed.posY - ZONE_SEARCH_RANGE_Y, seed.posZ - searchXZ,
+				seed.posX + searchXZ, seed.posY + ZONE_SEARCH_RANGE_Y, seed.posZ + searchXZ
+		);
+		List<?> raw = seed.worldObj.getEntitiesWithinAABB(EntitySpellEffect.class, searchBox);
+		List<EntitySpellEffect> candidates = new ArrayList<EntitySpellEffect>(raw.size());
+		for (int i = 0; i < raw.size(); i++) {
+			Object obj = raw.get(i);
+			if (!(obj instanceof EntitySpellEffect)) {
+				continue;
+			}
+			EntitySpellEffect other = (EntitySpellEffect) obj;
+			if (!other.isDead && other.isZone() && other != seed) {
+				candidates.add(other);
+			}
+		}
+
+		List<EntitySpellEffect> cluster = new ArrayList<EntitySpellEffect>(8);
+		cluster.add(seed);
+		if (candidates.isEmpty()) {
+			return cluster;
+		}
+
+		boolean[] visited = new boolean[candidates.size()];
+		for (int q = 0; q < cluster.size(); q++) {
+			EntitySpellEffect cur = cluster.get(q);
+			for (int i = 0; i < candidates.size(); i++) {
+				if (visited[i]) {
+					continue;
+				}
+				EntitySpellEffect cand = candidates.get(i);
+				if (zonesShouldMerge(cur, cand)) {
+					visited[i] = true;
+					cluster.add(cand);
+				}
+			}
+		}
+		return cluster;
+	}
+
+	private static boolean zonesShouldMerge(EntitySpellEffect a, EntitySpellEffect b) {
+		double dy = Math.abs(a.posY - b.posY);
+		if (dy > ZONE_CLUSTER_DIST_Y) {
+			return false;
+		}
+		double maxRadius = Math.max(a.getRadius(), b.getRadius());
+		double thresholdXZ = Math.max(ZONE_CLUSTER_MIN_DIST_XZ, maxRadius * ZONE_CLUSTER_RADIUS_FRAC);
+		double dx = a.posX - b.posX;
+		double dz = a.posZ - b.posZ;
+		return (dx * dx + dz * dz) <= (thresholdXZ * thresholdXZ);
+	}
+
+	private static EntitySpellEffect selectZoneClusterOwner(List<EntitySpellEffect> cluster) {
+		EntitySpellEffect owner = cluster.get(0);
+		float bestRadius = owner.getRadius();
+		int bestId = owner.getEntityId();
+		for (int i = 1; i < cluster.size(); i++) {
+			EntitySpellEffect cand = cluster.get(i);
+			float r = cand.getRadius();
+			int id = cand.getEntityId();
+			if (r > bestRadius + 0.01f || (Math.abs(r - bestRadius) <= 0.01f && id < bestId)) {
+				owner = cand;
+				bestRadius = r;
+				bestId = id;
+			}
+		}
+		return owner;
+	}
+
+	private static float computeZoneFade(EntitySpellEffect zone, float partialTicks) {
+		float age = zone.ticksExisted + partialTicks;
+		int maxTicks = 100;
+		try {
+			int dwTicks = zone.getTicksToExist();
+			if (dwTicks > 0) {
+				maxTicks = dwTicks;
+			}
+		} catch (Throwable ignored) {
+		}
+		float intro = Math.min(1.0f, age / 7.0f);
+		intro = (float) Math.sin(intro * Math.PI * 0.5);
+		float remaining = maxTicks - age;
+		float outro = 1.0f;
+		if (remaining < 14.0f) {
+			outro = Math.max(0.0f, remaining / 14.0f);
+		}
+		return intro * outro;
+	}
+
+	private static int resolveZoneColorRgb(EntitySpellEffect zone) {
+		int explicit = zone.getSpellColor();
+		if (explicit != -1) {
+			return explicit;
+		}
+		Affinity aff = zone.getZoneAffinity();
+		if (aff == null) {
+			return 0x80D0FF;
+		}
+		switch (aff) {
+			case ARCANE:    return 0xD633FF;
+			case WATER:     return 0x2277FF;
+			case FIRE:      return 0xFF4518;
+			case EARTH:     return 0xFF8C1A;
+			case AIR:       return 0x6BEAFF;
+			case LIGHTNING: return 0xFFEE22;
+			case ICE:       return 0x22DDFF;
+			case NATURE:    return 0x22E855;
+			case LIFE:      return 0xFFD42A;
+			case ENDER:     return 0x3D066B;
+			case NONE:
+			default:        return 0x80D0FF;
 		}
 	}
 
@@ -1424,6 +1639,68 @@ public class RenderSpellEffect extends Render {
 				GL11.glPopMatrix();
 			}
 		}
+
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
+		GL11.glPopAttrib();
+		GL11.glPopMatrix();
+	}
+
+	private void renderAoEShockwave(EntitySpellEffect effect, double x, double y, double z, float partialTicks) {
+		am2.client.vfx.BlockbenchAoEModel model = am2.client.vfx.BlockbenchAoEModel.get();
+		if (model == null) {
+			return;
+		}
+		float age = effect.ticksExisted + partialTicks;
+		int maxTicks = effect.getTicksToExist();
+		if (maxTicks <= 0) {
+			maxTicks = 14;
+		}
+		float progress = Math.min(1.0f, age / (float) maxTicks);
+		float radius = effect.getRadius();
+		if (radius < 0.5f) {
+			radius = 1.0f;
+		}
+		int colorRgb = resolveZoneColorRgb(effect);
+		boolean lowGfx = AMCore.config.LowGFX();
+		int side = effect.getAoESide();
+		float yawVar = ((effect.getEntityId() * 53) % 360);
+
+		float prevBrightX = OpenGlHelper.lastBrightnessX;
+		float prevBrightY = OpenGlHelper.lastBrightnessY;
+		GL11.glPushMatrix();
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_POLYGON_BIT);
+
+		GL11.glDisable(GL11.GL_LIGHTING);
+		GL11.glDisable(GL11.GL_CULL_FACE);
+		GL11.glDepthMask(false);
+		RenderHelper.disableStandardItemLighting();
+		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0f, 240.0f);
+		GL11.glEnable(GL11.GL_BLEND);
+
+		GL11.glTranslated(x, y, z);
+		switch (side) {
+			case 0:
+				GL11.glRotatef(180.0f, 1.0f, 0.0f, 0.0f);
+				break;
+			case 2:
+				GL11.glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
+				break;
+			case 3:
+				GL11.glRotatef(90.0f, 1.0f, 0.0f, 0.0f);
+				break;
+			case 4:
+				GL11.glRotatef(90.0f, 0.0f, 0.0f, 1.0f);
+				break;
+			case 5:
+				GL11.glRotatef(-90.0f, 0.0f, 0.0f, 1.0f);
+				break;
+			case 1:
+			default:
+				break;
+		}
+		GL11.glRotatef(yawVar, 0.0f, 1.0f, 0.0f);
+
+		model.render(radius, progress, colorRgb, lowGfx);
 
 		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
 		GL11.glPopAttrib();

@@ -100,6 +100,10 @@ public class CommonProxy{
 
 		MinecraftForge.EVENT_BUS.register(new AMEventHandler());
 		FMLCommonHandler.instance().bus().register(new AMEventHandler());
+
+		am2.soulbound.TrueSoulboundHandler trueSoulboundHandler = new am2.soulbound.TrueSoulboundHandler();
+		MinecraftForge.EVENT_BUS.register(trueSoulboundHandler);
+		FMLCommonHandler.instance().bus().register(trueSoulboundHandler);
 		MinecraftForge.EVENT_BUS.register(PowerNodeCache.instance);
 		MinecraftForge.EVENT_BUS.register(new AffinityHelper());
 		MinecraftForge.EVENT_BUS.register(new SpellUnlockManager());
@@ -205,6 +209,10 @@ public class CommonProxy{
 
 	/** Client forwards the ordinary block-use packet before intercepting the local activation. */
 	public boolean forwardRitualArchitectClick(EntityPlayer player, int x, int y, int z, int side, float hitX, float hitY, float hitZ) { return false; }
+
+	public void openArcaneStrikerGui(EntityPlayer player, am2.blocks.tileentities.TileEntityArcaneStriker tile) {}
+
+	public void openAstralCompassGui(EntityPlayer player) {}
 
 	public void addQueuedRetrogen(int dimensionID, ChunkCoordIntPair pair){
 		ArrayList<ChunkCoordIntPair> chunks;

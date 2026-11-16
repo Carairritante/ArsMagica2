@@ -1,5 +1,6 @@
 package am2.entities.ai;
 
+import am2.soulbound.TrueSoulboundHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.item.EntityItem;
@@ -16,6 +17,7 @@ public class EntityAITargetNearbyInanimateSmeltable extends EntityAITargetNearby
 	protected boolean isSuitableTarget(Entity target){
 		if (super.isSuitableTarget(target)){
 			if (target instanceof EntityItem){
+				if (TrueSoulboundHelper.isTrueSoulbound(((EntityItem)target).getEntityItem())) return false;
 				if (((EntityItem)target).getEntityItem().stackSize > 1) return false;
 				ItemStack smelted = FurnaceRecipes.smelting().getSmeltingResult(((EntityItem)target).getEntityItem());
 				return smelted != null;

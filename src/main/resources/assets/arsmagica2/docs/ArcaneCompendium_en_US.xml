@@ -424,8 +424,9 @@
     </component>
     <component id="Recall">
       <name>Recall</name>
-      <desc>You can tune your teleportation magic to home in on a mark you have left, transporting you or your target back to its location.</desc>
+      <desc>You can tune your teleportation magic to home in on a mark you have left, transporting you or your target back to its location. !d Used as a catalyst over a runic ring centered on a #5Chimerite Block#0, it also seals the #5Ritual of the Eternal Bond#0.</desc>
       <modifiedBy></modifiedBy>
+      <relatedEntries>rituals_overview,true_soulbound_ritual</relatedEntries>
     </component>
     <component id="EnderIntervention">
       <name>Ender Intervention</name>
@@ -1423,8 +1424,8 @@
     </item>
     <item id="spell_book">
       <name>Spell Book</name>
-      <desc>The spell book is a useful item to have, allowing mages to organize their spells and save space at the same time.  The spell book, when equipped, can be scrolled through either by pressing x/z (default), or by sneaking and rolling the mouse wheel.  Spell books can be dyed a variety of different colors.  They can also be #5enchanted#0 with some useful powers.</desc>
-      <relatedEntries></relatedEntries>
+      <desc>The spell book is a useful item to have, allowing mages to organize their spells and save space at the same time.  The spell book, when equipped, can be scrolled through either by pressing x/z (default), or by sneaking and rolling the mouse wheel.  Spell books can be dyed a variety of different colors.  They can also be #5enchanted#0 with some useful powers, or consecrated via the #5Ritual of the Eternal Bond#0 for absolute protection against theft and destruction.</desc>
+      <relatedEntries>true_soulbound_ritual</relatedEntries>
     </item>
     <item id="magic_broom">
       <name>Magic Broom</name>
@@ -1441,7 +1442,7 @@
     <item id="arcane_spellbook">
       <name>Arcane Spellbook</name>
       <desc>Imbued with unknowable enchantments by ancient mages, the arcane spell book #9increases the effectiveness of all spells cast from it#0.  Damage is increased, and mana cost is lowered.  Things like duration and radius are not modified.</desc>
-      <relatedEntries></relatedEntries>
+      <relatedEntries>true_soulbound_ritual</relatedEntries>
     </item>
     <item id="winter_arm">
       <name>Winter's Grasp</name>
@@ -1613,7 +1614,7 @@
     <item id="wizardChalk">
       <name>Wizard's Chalk</name>
       <desc>Wizard's Chalk is used to create #9Rituals#0 by drawing the correct shapes on the ground.</desc>
-      <relatedEntries>corruption,purification,hourglass,rituals_overview</relatedEntries>
+      <relatedEntries>corruption,purification,hourglass,rituals_overview,true_soulbound_ritual</relatedEntries>
     </item>
     <item id="etheriumExtractor">
       <name>Etherium Extractor</name>
@@ -1666,6 +1667,7 @@
 		<relatedEntries>inscriptionTable</relatedEntries>
 	</item>
     <item id="ritualArchitect" unlocked="true"><name>Arcane Architect's Chalk</name><desc>A reusable guide to native spell rituals. Right-click in the air to choose a discovered ritual; right-click the top of the ground to set its center. For a ritual with a central block, click that block itself or mark the place where it belongs. Use the menu to rotate the plan or clear the center.!dKeep the tool in your hotbar to see the projection while placing materials: blue marks missing pieces, green marks correct pieces and red marks blocked positions. The display lists missing materials, ground reagents and the normal activation instructions. Reagents must stay inside the indicated area; special runes for Recall must still match the destination and their normal order.!dIn survival, place the ordinary chalk, candles and blocks yourself. The guide does not wear out or consume mana. In creative, the Build button places the structure in a clear, supported space. Ingredients and spell activation are still performed normally. The guide never grants a completed ritual or unlocks undiscovered knowledge.!dThe crafting recipe uses one Nether Star, one new Wizard's Chalk, one Sunstone, one Moonstone, two Arcane Essences, two Arcane Ash and one Blank Rune. The material list and preview describe preparation; they do not guarantee that every condition of the ritual has been met.</desc></item>
+    <item id="astralCompass" unlocked="true"><name>Astral Structure Compass</name><desc>An ancient divination instrument forged through the #5Astral Divination Ritual#0 to track the planar echoes of distant structures across the world. !d Only mages of #9Magic Level 50#0 or higher may wield its true power, and each structural lock consumes #920,000 Mana#0 (no mana is spent if no structure is located within range). Forge it by casting #5Mark#0 over a #5Lapis Lazuli Block#0 ringed by chalk and candles. !p Right-click to open the searchable parchment interface covering #9Vanilla#0, #9Ars Magica 2#0, and #9modded structures#0 alike, then follow the live arcane compass overlay to your target.</desc><relatedEntries>astral_divination_ritual,wizardChalk,warding_candle,ritualArchitect</relatedEntries></item>
   </items>
   <structures>
     <structure id="obelisk_structure">
@@ -1775,6 +1777,20 @@
       <name>Rituals</name>
       <desc>Rituals are created using Wizard's Chalk and Warding Candles.  Arranging them in the correct pattern can enable you to do some truly powerful magic.  !d Rituals will usually require additional items to be thrown on the ground in order for the ritual to succeed.  These items can be thrown anywhere on the ground inside the radius of the Wizard's Chalk.  !d Once you have your ritual laid out, and your items thrown in, you will need to cast the proper spell in order to kick everything off.  The reagents will depend on the spell being cast,and order does matter.  For example, when throwing down runes to recall to a gateway using a ritual, the order of the runes will become the keystone combination. !d  The spell must target the exact center block of the ritual, on the same y-level as the chalk and candles.  This is usually a block placed in the center, or an entity standing in the middle.  !d  If it doesn't work, make sure you are in the middle of the chalk, that the layout is correct, and that you have the correct reagents for the correct ritual!</desc>
       <relatedEntries>wizardChalk,warding_candle</relatedEntries>
+            <subitem id="astral_divination">
+        <name>Ritual of Astral Divination</name>
+        <desc>#5Chronicles of the Astral Rose:#0 !l Unbound explorers seeking hidden strongholds, temples, or Witchwood groves devised a celestial survey instrument — the #9Astral Structure Compass#0. Channeling the cosmos demands strict discipline: only spellcasters at #5Magic Level 50#0 or above can awaken the needle, expending #920,000 Mana#0 per structural resonance lock. !d To bind compass bronze to starlight, weave #5Ender Essence#0, #5Arcane Essence#0, and #9Moonstone#0 around a #5Lapis Lazuli Block#0 crowned by four cardinal candles, then seal the projection with #5Mark#0. !p #9Structure &amp; Execution:#0 !l - Draw the 5x5 astral rose ring with #5Wizard's Chalk#0 (use the #9Arcane Architect's Chalk#0 to preview the pattern). !l - Place #54 Warding Candles#0 at the four cardinal points (North, South, East, West). !l - Place #51 Lapis Lazuli Block#0 at the center. !l - Throw inside the circle: #91x Compass#0, #91x Ender Essence#0, #91x Arcane Essence#0, and #91x Moonstone#0. !l - Cast a spell containing #5Mark#0 directly onto the central Lapis Lazuli Block. !p #9Requirements &amp; Operation:#0 !l - Requires #4Magic Level 50#0 and consumes #420,000 Mana#0 per successful search (failed searches do not spend mana). !l - Searches all discovered dimensions structures including #5Stronghold#0, #5Witchwood Forest#0, Desert/Jungle/Witch temples, Nether Fortresses, and modded structures without generating unvisited chunks. !l - Hold the compass while active to follow the live #9HUD#0 bearing arrow and block distance.</desc>
+        <relatedEntries>wizardChalk,warding_candle,ritualArchitect,astralCompass</relatedEntries>
+        <ritualName>astralDivination</ritualName>
+        <ritualController>Mark</ritualController>
+      </subitem>
+      <subitem id="true_soulbound">
+        <name>Ritual of the Eternal Bond</name>
+        <desc>#5Chronicles of the Eternal Circle:#0 !l During the ancient Wars of the Conclave, archmages learned the hard way that their greatest vulnerability was not their flesh, but physical separation from their #9Spell Books#0 and relics. Ordinary #5Soulbound#0 enchantments only anchored an object at the moment of death, leaving a mage defenseless against #4Disarm#0 spells, dimensional pickpockets, Void chasms, or raiders who locked a stolen tome inside chests and arcane storage networks. !d Refusing to let the power conquered over a lifetime of study be stolen or erased from existence, the masters wove #5Arcane Essence#0 (absolute magical law), #5Ender Essence#0 (spatial omnipresence), and #5Purified Vinteum Dust#0 over a core of #9Chimerite#0 — a living mineral capable of mirroring the caster's very soul — and sealed the covenant with #5Recall#0. Thus was born the #5Eternal Bond#0. !p #9Structure &amp; Execution:#0 !l - Draw the 5x5 runic ring with #5Wizard's Chalk#0 (use the #9Arcane Architect's Chalk#0 to project the layout). !l - Place #54 Warding Candles#0 at the cardinal points of the ring. !l - Place #51 Chimerite Block#0 at the exact center. !l - Throw onto the central block: #91x Arcane Essence#0, #91x Ender Essence#0, #91x Purified Vinteum Dust#0, and #91x Non-Stackable Item#0 (such as your #5Spell Book#0, staff, weapon, or armor). !l - Cast a spell containing #5Recall#0 directly at the central Chimerite Block. !p #9Laws of the Eternal Bond:#0 !l - #5Anti-Theft &amp; Retribution:#0 If any other player or creature tries to pick up, steal, or disarm the relic, it rejects the thief, immediately returns to the owner's hand/inventory, and punishes the thief with magic damage, #4Weakness II#0, #4Slowness II#0, and #4Blindness#0. !l - #5Container Lock:#0 The bound item can never be placed or piped into chests, hoppers, barrels, terminals, or third-party inventories. !l - #5Absolute Immortality:#0 Immune to fire, lava, cacti, explosions, despawning, and the #4Void#0 itself (from which it ascends back to its owner). Persists across death, dimensions, and in the #9Soul Vault#0 if the owner is offline. !l - #5Voluntary Release:#0 Only the true owner can unbind the seal by pressing #2Shift + Q#0 twice within 5s (or #2/am2unbind#0), or permanently destroy the item with #4/am2destroy#0 twice within 10s.</desc>
+        <relatedEntries>wizardChalk,warding_candle,ritualArchitect,spell_book</relatedEntries>
+        <ritualName>trueSoulbound</ritualName>
+        <ritualController>Recall</ritualController>
+      </subitem>
       <subitem id="purification">
         <name>Ritual of Purification</name>
         <desc>The ritual of Purification is used to purify an obelisk into a celestial prism.</desc>
@@ -1985,7 +2001,21 @@
         <ritualName>ringedCross</ritualName>
         <ritualController>Transplace</ritualController>
       </subitem>
-      <relatedEntries>wizardChalk</relatedEntries>
+      <relatedEntries>wizardChalk,warding_candle,ritualArchitect,true_soulbound_ritual</relatedEntries>
+    </ritual>
+    <ritual id="true_soulbound_ritual" unlocked="true">
+      <name>Ritual of the Eternal Bond</name>
+      <desc>#5Chronicles of the Eternal Circle:#0 !l During the ancient Wars of the Conclave, archmages learned the hard way that their greatest vulnerability was not their flesh, but physical separation from their #9Spell Books#0 and relics. Ordinary #5Soulbound#0 enchantments only anchored an object at the moment of death, leaving a mage defenseless against #4Disarm#0 spells, dimensional pickpockets, Void chasms, or raiders who locked a stolen tome inside chests and arcane storage networks. !d Refusing to let the power conquered over a lifetime of study be stolen or erased from existence, the masters wove #5Arcane Essence#0 (absolute magical law), #5Ender Essence#0 (spatial omnipresence), and #5Purified Vinteum Dust#0 over a core of #9Chimerite#0 — a living mineral capable of mirroring the caster's very soul — and sealed the covenant with #5Recall#0. Thus was born the #5Eternal Bond#0. !p #9Structure &amp; Execution:#0 !l - Draw the 5x5 runic ring with #5Wizard's Chalk#0 (use the #9Arcane Architect's Chalk#0 to project the layout). !l - Place #54 Warding Candles#0 at the cardinal points of the ring. !l - Place #51 Chimerite Block#0 at the exact center. !l - Throw onto the central block: #91x Arcane Essence#0, #91x Ender Essence#0, #91x Purified Vinteum Dust#0, and #91x Non-Stackable Item#0 (such as your #5Spell Book#0, staff, weapon, or armor). !l - Cast a spell containing #5Recall#0 directly at the central Chimerite Block. !p #9Laws of the Eternal Bond:#0 !l - #5Anti-Theft &amp; Retribution:#0 If any other player or creature tries to pick up, steal, or disarm the relic, it rejects the thief, immediately returns to the owner's hand/inventory, and punishes the thief with magic damage, #4Weakness II#0, #4Slowness II#0, and #4Blindness#0. !l - #5Container Lock:#0 The bound item can never be placed or piped into chests, hoppers, barrels, terminals, or third-party inventories. !l - #5Absolute Immortality:#0 Immune to fire, lava, cacti, explosions, despawning, and the #4Void#0 itself (from which it ascends back to its owner). Persists across death, dimensions, and in the #9Soul Vault#0 if the owner is offline. !l - #5Voluntary Release:#0 Only the true owner can unbind the seal by pressing #2Shift + Q#0 twice within 5s (or #2/am2unbind#0), or permanently destroy the item with #4/am2destroy#0 twice within 10s.</desc>
+      <relatedEntries>wizardChalk,warding_candle,ritualArchitect,spell_book</relatedEntries>
+      <ritualName>trueSoulbound</ritualName>
+      <ritualController>Recall</ritualController>
+    </ritual>
+    <ritual id="astral_divination_ritual" unlocked="true">
+      <name>Ritual of Astral Divination</name>
+      <desc>#5Chronicles of the Astral Rose:#0 !l Unbound explorers seeking hidden strongholds, temples, or Witchwood groves devised a celestial survey instrument — the #9Astral Structure Compass#0. Channeling the cosmos demands strict discipline: only spellcasters at #5Magic Level 50#0 or above can awaken the needle, expending #920,000 Mana#0 per structural resonance lock. !d To bind compass bronze to starlight, weave #5Ender Essence#0, #5Arcane Essence#0, and #9Moonstone#0 around a #5Lapis Lazuli Block#0 crowned by four cardinal candles, then seal the projection with #5Mark#0. !p #9Structure &amp; Execution:#0 !l - Draw the 5x5 astral rose ring with #5Wizard's Chalk#0 (use the #9Arcane Architect's Chalk#0 to preview the pattern). !l - Place #54 Warding Candles#0 at the four cardinal points (North, South, East, West). !l - Place #51 Lapis Lazuli Block#0 at the center. !l - Throw inside the circle: #91x Compass#0, #91x Ender Essence#0, #91x Arcane Essence#0, and #91x Moonstone#0. !l - Cast a spell containing #5Mark#0 directly onto the central Lapis Lazuli Block. !p #9Requirements &amp; Operation:#0 !l - Requires #4Magic Level 50#0 and consumes #420,000 Mana#0 per successful search (failed searches do not spend mana). !l - Searches all discovered dimensions structures including #5Stronghold#0, #5Witchwood Forest#0, Desert/Jungle/Witch temples, Nether Fortresses, and modded structures without generating unvisited chunks. !l - Hold the compass while active to follow the live #9HUD#0 bearing arrow and block distance.</desc>
+      <relatedEntries>wizardChalk,warding_candle,ritualArchitect,astralCompass</relatedEntries>
+      <ritualName>astralDivination</ritualName>
+      <ritualController>Mark</ritualController>
     </ritual>
   </structures>
   <mobs>
@@ -2965,6 +2995,7 @@
 		<desc>You've managed to pick up a monster spawner, but it seems to not be able to spawn anything anymore.  You should look into other applications for this device, or find a way to re-activate it. !d Perhaps #5Dark Etherium#0 and a #5Filled Crystal Phylactery#0 could make it function again...</desc>
 		<relatedEntries>otherworldly_aura,blackaurem_structure,crystal_phylactery</relatedEntries>
 	</block>
+    <block id="arcane_striker" unlocked="true"><name>Arcane Striker</name><desc>An arcane park-style strength tester built to measure spell and weapon burst damage. Right-click the #5Arcane Striker#0 to configure the test duration up to #960 seconds#0, toggle whether attacks #5bypass invulnerability frames (i-frames)#0, and summon a holographic training dummy in front of the machine. !d Strike the dummy with spells, melee weapons, or projectiles while the test runs. The rising arcane gauge reflects your current damage against the stored record and rings the top bell whenever a new peak is achieved. !p Both the machine panel and the dummy nameplate track live and stored #9Total Damage#0, #9DPS#0, #9Peak Hit#0, and the all-time #5Record#0 holder.</desc><relatedEntries>mana_battery</relatedEntries></block>
   </blocks>
   <mechanics>
     <mechanic id="affinity">
@@ -3113,8 +3144,13 @@
       </subitem>
       <subitem id="soulbound">
         <name>Soulbound</name>
-        <desc>Ever get tired of losing your gear on death?  You can fix that now.  The soulbound enchant can be applied to just about any item that accepts enchantments, and will cause that item to remain in your inventory on death.  You will respawn with the item in the same slot in your inventory it was when you died.  Soulbound has a max enchantment level of 1.</desc>
-        <relatedEntries></relatedEntries>
+        <desc>Ever get tired of losing your gear on death?  You can fix that now.  The soulbound enchant can be applied to just about any item that accepts enchantments, and will cause that item to remain in your inventory on death.  You will respawn with the item in the same slot in your inventory it was when you died.  Soulbound has a max enchantment level of 1. !d For supreme protection that also prevents #4Disarm#0, theft by other players, storage in chests, and destruction in fire, lava, explosions, or the Void, see the #5Ritual of the Eternal Bond#0.</desc>
+        <relatedEntries>true_soulbound_ritual</relatedEntries>
+      </subitem>
+      <subitem id="true_soulbound_seal">
+        <name>Seal of the Eternal Bond</name>
+        <desc>Unlike the standard #5Soulbound#0 enchantment, the #5Seal of the Eternal Bond#0 takes no enchantment slot and does not require enchantability. Forged through the #9Ritual of the Eternal Bond#0 over a #5Chimerite Block#0, it fuses the essence of any non-stackable relic directly to the mage's soul. !d The sealed item bears the inscription #5“✦ Eternal Bond — Bound to the soul of &lt;Mage&gt; ✦”#0, becomes indestructible against fire, lava, cacti, explosions, and the Void, refuses external chests or networks, and immediately returns to the owner's hand if targeted by #4Disarm#0 or theft, punishing the thief with Blindness, Slowness, and Weakness.</desc>
+        <relatedEntries>true_soulbound_ritual,spell_book</relatedEntries>
       </subitem>
       <relatedEntries></relatedEntries>
     </mechanic>

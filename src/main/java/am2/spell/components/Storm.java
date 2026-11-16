@@ -12,9 +12,14 @@ import am2.particles.ParticleOrbitEntity;
 import am2.spell.SpellUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.effect.EntityLightningBolt;
+import net.minecraft.entity.monster.IMob;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.DamageSource;
 import net.minecraft.world.World;
 
 import java.util.EnumSet;
@@ -25,18 +30,68 @@ public class Storm implements ISpellComponent{
 
 	@Override
 	public boolean applyEffectBlock(ItemStack stack, World world, int blockx, int blocky, int blockz, int blockFace, double impactX, double impactY, double impactZ, EntityLivingBase caster){
-		activateOrbitalStorm(stack, world, caster, impactX, impactY, impactZ, false);
+		if (hasComponentInSpell(stack, LightningDamage.class)){
+			activateOrbitalStorm(stack, world, caster, impactX, impactY, impactZ, false);
+		}else{
+			applyVanillaStormEffect(caster, world);
+		}
 		return true;
 	}
 
 	@Override
 	public boolean applyEffectEntity(ItemStack stack, World world, EntityLivingBase caster, Entity target){
-		double tx = target != null ? target.posX : (caster != null ? caster.posX : 0);
-		double ty = target != null ? target.posY : (caster != null ? caster.posY : 64);
-		double tz = target != null ? target.posZ : (caster != null ? caster.posZ : 0);
-		boolean followCaster = (caster != null && target == caster);
-		activateOrbitalStorm(stack, world, caster, tx, ty, tz, followCaster);
+		if (hasComponentInSpell(stack, LightningDamage.class)){
+			double tx = target != null ? target.posX : (caster != null ? caster.posX : 0);
+			double ty = target != null ? target.posY : (caster != null ? caster.posY : 64);
+			double tz = target != null ? target.posZ : (caster != null ? caster.posZ : 0);
+			boolean followCaster = (caster != null && target == caster);
+			activateOrbitalStorm(stack, world, caster, tx, ty, tz, followCaster);
+		}else{
+			applyVanillaStormEffect(caster, world);
+		}
 		return true;
+	}
+
+	private void applyVanillaStormEffect(EntityLivingBase caster, World world){
+		if (world == null || world.isRemote) return;
+		float rainStrength = world.getRainStrength(1.0f);
+		if (rainStrength > 0.9D){
+			if (caster == null) return;
+			int xzradius = 50;
+			int random = world.rand.nextInt(100);
+			if (random < 20){
+				int randPosX = (int)caster.posX + world.rand.nextInt(xzradius * 2) - xzradius;
+				int randPosZ = (int)caster.posZ + world.rand.nextInt(xzradius * 2) - xzradius;
+				int posY = (int)caster.posY;
+				int maxH = world.getActualHeight();
+
+				while (posY < maxH && !world.canBlockSeeTheSky(randPosX, posY, randPosZ)){
+					posY++;
+				}
+				while (posY > 1 && world.getBlock(randPosX, posY - 1, randPosZ) == Blocks.air){
+					posY--;
+				}
+
+				EntityLightningBolt bolt = new EntityLightningBolt(world, randPosX, posY, randPosZ);
+				world.addWeatherEffect(bolt);
+			}else if (random < 80){
+				@SuppressWarnings("unchecked")
+				List<Entity> entities = world.getEntitiesWithinAABB(IMob.class, caster.boundingBox.expand(xzradius, 10D, xzradius));
+				if (entities.size() <= 0){
+					return;
+				}
+				Entity target = entities.get(world.rand.nextInt(entities.size()));
+				if (target != null && world.canBlockSeeTheSky((int)target.posX, (int)target.posY, (int)target.posZ)){
+					if (caster instanceof EntityPlayer){
+						target.attackEntityFrom(DamageSource.causePlayerDamage((EntityPlayer)caster), 1);
+					}
+					EntityLightningBolt bolt = new EntityLightningBolt(world, target.posX, target.posY, target.posZ);
+					world.addWeatherEffect(bolt);
+				}
+			}
+		}else{
+			world.getWorldInfo().setRaining(true);
+		}
 	}
 
 	private void activateOrbitalStorm(ItemStack stack, World world, EntityLivingBase caster, double x, double y, double z, boolean followCaster){
@@ -46,13 +101,12 @@ public class Storm implements ISpellComponent{
 			world.getWorldInfo().setRaining(true);
 		}
 
-		boolean hasLightningDmg = hasComponentInSpell(stack, LightningDamage.class) || hasComponentInSpell(stack, LightningStrike.class);
 		int dmgMods = countModifiersInSpell(stack, SpellModifiers.DAMAGE);
 
-		float baseDamage = hasLightningDmg ? (12.0f + dmgMods * 3.0f) : (5.0f + dmgMods * 2.0f);
+		float baseDamage = 12.0f + dmgMods * 3.0f;
 		float finalDamage = caster != null ? SpellUtils.instance.modifyDamage(caster, baseDamage) : baseDamage;
 
-		// Up to 15 chunks (15 * 16 = 240 blocks)
+		// Up to 10 chunks (10 * 16 = 160 blocks)
 		float radius = 160.0f;
 
 		int duration = 100;
@@ -75,16 +129,12 @@ public class Storm implements ISpellComponent{
 		}
 
 		if (activeStorm != null){
-			activeStorm.refreshOrbitalStorm(x, y, z, duration, hasLightningDmg, finalDamage, radius, followCaster);
+			activeStorm.refreshOrbitalStorm(x, y, z, duration, true, finalDamage, radius, followCaster);
 		}else{
 			EntitySpellEffect storm = new EntitySpellEffect(world);
 			storm.setPosition(x, y, z);
-			storm.setOrbitalStorm(caster, stack, x, y, z, hasLightningDmg, finalDamage, radius, duration, followCaster);
+			storm.setOrbitalStorm(caster, stack, x, y, z, true, finalDamage, radius, duration, followCaster);
 			world.spawnEntityInWorld(storm);
-
-			// Trigger ground epicentre dragon & lightning impact VFX for all nearby clients
-			int impactMergeCount = hasLightningDmg ? 30 : 15;
-			am2.network.AMNetHandler.INSTANCE.sendLightningImpactToClients(x, y, z, world, stack, impactMergeCount, 12.0);
 		}
 	}
 

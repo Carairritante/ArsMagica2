@@ -3,6 +3,7 @@ package am2.entities.ai;
 import am2.api.math.AMVector3;
 import am2.entities.EntityBroom;
 import am2.playerextensions.ExtendedProperties;
+import am2.soulbound.TrueSoulboundHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.entity.item.EntityItem;
@@ -25,6 +26,8 @@ public class EntityAIPickup extends EntityAIBase{
 			return false;
 
 		if (target == null || target.isDead)
+			return false;
+		if (TrueSoulboundHelper.isTrueSoulbound(((EntityItem)target).getEntityItem()))
 			return false;
 
 		return host.hasRoomInInventoryFor(((EntityItem)target).getEntityItem());

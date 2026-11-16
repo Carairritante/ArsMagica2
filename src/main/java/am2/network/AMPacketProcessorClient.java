@@ -162,6 +162,9 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			case AMPacketIDs.ORBITAL_STORM_STRIKE:
 				handleOrbitalStormStrike(remaining);
 				break;
+			case AMPacketIDs.AOE_SHOCKWAVE:
+				handleAoEShockwave(remaining);
+				break;
 			case AMPacketIDs.HIDDEN_COMPONENT_UNLOCK:
 				Minecraft.getMinecraft().guiAchievement.func_146256_a(ArcaneCompendium.componentUnlock);
 				break;
@@ -188,6 +191,12 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 				break;
 			case AMPacketIDs.OBELISK_DATA:
 				handleObeliskData(remaining);
+				break;
+			case AMPacketIDs.DUMMY_DAMAGE_POPUP:
+				handleDummyDamagePopup(remaining);
+				break;
+			case AMPacketIDs.ASTRAL_COMPASS_ACTION:
+				handleAstralCompassCatalogSync(remaining);
 				break;
 			}
 		}catch (Throwable t){
@@ -539,6 +548,43 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 		}
 	}
 
+	private void handleAoEShockwave(byte[] data){
+		if (AMCore.config.NoGFX()){
+			return;
+		}
+		AMDataReader rdr = new AMDataReader(data, false);
+		double x = rdr.getDouble();
+		double y = rdr.getDouble();
+		double z = rdr.getDouble();
+		int side = rdr.getByte();
+		float radius = rdr.getFloat();
+
+		ItemStack spellStack = null;
+		if (rdr.getBoolean())
+			spellStack = rdr.getItemStack();
+
+		World world = Minecraft.getMinecraft().theWorld;
+		if (world == null){
+			return;
+		}
+		@SuppressWarnings("unchecked")
+		java.util.List<EntitySpellEffect> nearby = world.getEntitiesWithinAABB(
+				EntitySpellEffect.class,
+				net.minecraft.util.AxisAlignedBB.getBoundingBox(x - 1.5D, y - 1.5D, z - 1.5D, x + 1.5D, y + 1.5D, z + 1.5D)
+		);
+		for (int i = 0; i < nearby.size(); i++){
+			EntitySpellEffect existing = nearby.get(i);
+			if (!existing.isDead && existing.isAoEShockwave() && existing.ticksExisted < 5 && existing.getAoESide() == side){
+				return;
+			}
+		}
+
+		EntitySpellEffect impact = new EntitySpellEffect(world);
+		impact.setPosition(x, y, z);
+		impact.setAoEShockwave(spellStack, radius, side);
+		world.spawnEntityInWorld(impact);
+	}
+
 	private void handleSyncWorldName(byte[] data){
 		AMDataReader rdr = new AMDataReader(data, false);
 		String worldName = rdr.getString();
@@ -801,6 +847,53 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 		}
 
 		SpellHelper.instance.applyStackStage(stack, (EntityLivingBase)caster, (EntityLivingBase)target, x, y, z, side, world, false, false, ticksUsed);
+	}
+
+	private void handleDummyDamagePopup(byte[] data){
+		AMDataReader rdr = new AMDataReader(data, false);
+		double x = rdr.getDouble();
+		double y = rdr.getDouble();
+		double z = rdr.getDouble();
+		float damage = rdr.getFloat();
+		String damageType = rdr.getString();
+		World world = Minecraft.getMinecraft().theWorld;
+		if (world == null) return;
+		int count = Math.min(12, Math.max(3, (int) Math.ceil(damage / 8.0f)));
+		for (int i = 0; i < count; i++){
+			double ox = (world.rand.nextDouble() - 0.5) * 0.55;
+			double oy = world.rand.nextDouble() * 0.35;
+			double oz = (world.rand.nextDouble() - 0.5) * 0.55;
+			AMParticle p = (AMParticle) AMCore.proxy.particleManager.spawn(world, "arcane", x + ox, y + oy, z + oz);
+			if (p != null){
+				p.AddParticleController(new ParticleFloatUpward(p, 0.04f, 0.04f, 1, false));
+				p.setIgnoreMaxAge(false);
+				p.setMaxAge(12 + world.rand.nextInt(8));
+				p.setParticleScale(0.18f + Math.min(0.22f, damage * 0.004f));
+				if ("magic".equalsIgnoreCase(damageType) || "indirectMagic".equalsIgnoreCase(damageType)){
+					p.setRGBColorF(0.45f, 0.85f, 1.0f);
+				} else if (damage >= 40.0f){
+					p.setRGBColorF(1.0f, 0.80f, 0.25f);
+				} else {
+					p.setRGBColorF(0.85f, 0.45f, 1.0f);
+				}
+			}
+		}
+	}
+
+	private void handleAstralCompassCatalogSync(byte[] data){
+		AMDataReader rdr = new AMDataReader(data, false);
+		int count = Math.max(0, Math.min(256, rdr.getInt()));
+		java.util.List<am2.compass.StructureTargetInfo> list = new java.util.ArrayList<am2.compass.StructureTargetInfo>(count);
+		for (int i = 0; i < count; i++){
+			String id = rdr.getString();
+			String rawName = rdr.getString();
+			String category = rdr.getString();
+			int prefDim = rdr.getInt();
+			boolean dimRestricted = rdr.getBoolean();
+			int glyph = rdr.getInt();
+			list.add(new am2.compass.StructureTargetInfo(id, rawName, category, prefDim, dimRestricted, glyph));
+		}
+		am2.items.ItemAstralCompass.setClientCatalog(list);
 	}
 
 	public WorldServer[] getWorldServers(){

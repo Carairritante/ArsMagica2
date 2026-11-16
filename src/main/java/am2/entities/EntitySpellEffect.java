@@ -4,6 +4,7 @@ import am2.AMCore;
 import am2.api.math.AMLineSegment;
 import am2.api.math.AMVector3;
 import am2.api.spell.component.interfaces.ISpellModifier;
+import am2.api.spell.enums.Affinity;
 import am2.api.spell.enums.SpellModifiers;
 import am2.buffs.BuffEffectFrostSlowed;
 import am2.damage.DamageSources;
@@ -14,6 +15,7 @@ import am2.network.AMNetHandler;
 import am2.particles.*;
 import am2.spell.SpellHelper;
 import am2.spell.SpellUtils;
+import am2.spell.components.SpellDropConsolidator;
 import am2.spell.modifiers.Colour;
 import am2.utility.DummyEntityPlayer;
 import net.minecraft.block.Block;
@@ -72,6 +74,7 @@ public class EntitySpellEffect extends Entity{
 	public static final int TYPE_LIGHTNING_FUSION = 9;
 	public static final int TYPE_LIGHTNING_IMPACT = 10;
 	public static final int TYPE_ORBITAL_STORM = 11;
+	public static final int TYPE_AOE_SHOCKWAVE = 12;
 
 	private int explicitColor = -1;
 
@@ -141,6 +144,16 @@ public class EntitySpellEffect extends Entity{
 
 	public void setExplicitColor(int color){
 		this.explicitColor = color;
+	}
+
+	public Affinity getZoneAffinity(){
+		if (spellStack == null){
+			spellStack = this.dataWatcher.getWatchableObjectItemStack(WATCHER_STACK);
+		}
+		if (spellStack != null){
+			return SpellUtils.instance.mainAffinityFor(spellStack);
+		}
+		return Affinity.NONE;
 	}
 
 	public int getSpellColor(){
@@ -236,7 +249,7 @@ public class EntitySpellEffect extends Entity{
 			break;
 		}
 
-		if ((!worldObj.isRemote || isStarfallImpact() || isGrowMandala() || isExplosionImpact() || isLightningImpact()) && this.ticksExisted >= this.getTicksToExist()){
+		if ((!worldObj.isRemote || isStarfallImpact() || isGrowMandala() || isExplosionImpact() || isLightningImpact() || isAoEShockwave()) && this.ticksExisted >= this.getTicksToExist()){
 			this.setDead();
 		}
 	}
@@ -253,49 +266,6 @@ public class EntitySpellEffect extends Entity{
 			if (!AMCore.config.NoGFX()){
 				this.rotation += this.rotationSpeed;
 				this.rotation %= 360;
-
-				double dist = this.dataWatcher.getWatchableObjectFloat(WATCHER_RADIUS);
-				double _rotation = rotation;
-
-				if (spellStack == null){
-					spellStack = this.dataWatcher.getWatchableObjectItemStack(22);
-					if (spellStack == null){
-						return;
-					}
-				}
-
-				int color = 0xFFFFFF;
-				if (SpellUtils.instance.modifierIsPresent(SpellModifiers.COLOR, spellStack, 0)){
-					ISpellModifier[] mods = SpellUtils.instance.getModifiersForStage(spellStack, 0);
-					int ordinalCount = 0;
-					for (ISpellModifier mod : mods){
-						if (mod instanceof Colour){
-							byte[] meta = SpellUtils.instance.getModifierMetadataFromStack(spellStack, mod, 0, ordinalCount++);
-							color = (int)mod.getModifier(SpellModifiers.COLOR, null, null, null, meta);
-						}
-					}
-				}
-
-				if ((AMCore.config.FullGFX() && this.ticksExisted % 2 == 0) || this.ticksExisted % 8 == 0){
-					for (int i = 0; i < 4; ++i){
-						_rotation = (rotation + (90 * i)) % 360;
-						double x = this.posX - Math.cos(3.141 / 180 * (_rotation)) * dist;
-						double z = this.posZ - Math.sin(3.141 / 180 * (_rotation)) * dist;
-
-						AMParticle effect = (AMParticle)AMCore.instance.proxy.particleManager.spawn(worldObj, AMParticleIcons.instance.getParticleForAffinity(SpellUtils.instance.mainAffinityFor(spellStack)), x, posY, z);
-						if (effect != null){
-							effect.setIgnoreMaxAge(false);
-							effect.setMaxAge(20);
-							effect.setParticleScale(0.15f);
-							effect.setRGBColorI(color);
-							effect.AddParticleController(new ParticleFloatUpward(effect, 0, 0.07f, 1, false));
-							if (AMCore.config.LowGFX()){
-								effect.AddParticleController(new ParticleOrbitPoint(effect, posX, posY, posZ, 2, false).setIgnoreYCoordinate(true).SetOrbitSpeed(0.05f).SetTargetDistance(dist).setRotateDirection(true));
-							}
-						}
-					}
-				}
-
 			}
 		}
 
@@ -635,8 +605,13 @@ public class EntitySpellEffect extends Entity{
 
 		if (!worldObj.isRemote && doPulse){
 			AMVector3[] vecs = getAllBlockLocationsBetween(a, b);
-			for (AMVector3 vec : vecs){
-				SpellHelper.instance.applyStageToGround(spellStack, dummycaster, worldObj, (int)vec.x, (int)vec.y, (int)vec.z, 0, vec.x + 0.5, vec.y + 0.5, vec.z + 0.5, 0, false);
+			SpellDropConsolidator.beginBatch(worldObj, this.posX + dx, this.posY + 0.5D, this.posZ + dz, false);
+			try {
+				for (AMVector3 vec : vecs){
+					SpellHelper.instance.applyStageToGround(spellStack, dummycaster, worldObj, (int)vec.x, (int)vec.y, (int)vec.z, 0, vec.x + 0.5, vec.y + 0.5, vec.z + 0.5, 0, false);
+				}
+			} finally {
+				SpellDropConsolidator.endBatch(worldObj);
 			}
 		}
 
@@ -720,6 +695,10 @@ public class EntitySpellEffect extends Entity{
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_BLIZ;
 	}
 
+	public boolean isZone(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_ZONE;
+	}
+
 	public boolean isRainOfFire(){
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_ROF;
 	}
@@ -754,6 +733,9 @@ public class EntitySpellEffect extends Entity{
 	}
 
 	private int mergeCount = 1;
+	private long growBurstTick = Long.MIN_VALUE;
+	private int growBeamStartTick = Integer.MIN_VALUE;
+	private boolean growBurstFromChannelOrZone = false;
 
 	public void addMerged(int count){
 		this.mergeCount += count;
@@ -761,6 +743,35 @@ public class EntitySpellEffect extends Entity{
 
 	public int getMergeCount(){
 		return this.mergeCount;
+	}
+
+	public void initGrowBurstMetadata(long worldTick, int beamStartTick, boolean fromChannelOrZone){
+		this.growBurstTick = worldTick;
+		this.growBeamStartTick = beamStartTick;
+		this.growBurstFromChannelOrZone = fromChannelOrZone;
+	}
+
+	/** Allows same-tick AoE blocks or separate manual casts to merge, while blocking repeated ticks from one held Beam or Zone pulse. */
+	public boolean canAcceptGrowMerge(long worldTick, int beamStartTick, boolean fromBeam, boolean fromZone){
+		if (worldTick == this.growBurstTick){
+			return true;
+		}
+		if (fromBeam){
+			if (beamStartTick != Integer.MIN_VALUE && this.growBeamStartTick != Integer.MIN_VALUE){
+				if (Math.abs(beamStartTick - this.growBeamStartTick) <= 2){
+					return false;
+				}
+			}else if (this.growBurstFromChannelOrZone){
+				return false;
+			}
+		}
+		if (fromZone && this.growBurstFromChannelOrZone){
+			return false;
+		}
+		this.growBurstTick = worldTick;
+		this.growBeamStartTick = beamStartTick;
+		this.growBurstFromChannelOrZone = fromBeam || fromZone;
+		return true;
 	}
 
 	public int getGrowTier(){
@@ -852,37 +863,44 @@ public class EntitySpellEffect extends Entity{
 
 		finalPower = Math.min(14.0f, finalPower);
 
-		if (count <= 1){
-			// Single target cast: standard vanilla explosion
-			this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, finalPower, false, false);
-		}else{
-			// Multi-block AoE cast: break all targeted blocks across the entire area!
-			int miningPower = 0;
-			if (this.spellStack != null){
-				miningPower = SpellUtils.instance.countModifiers(SpellModifiers.MINING_POWER, this.spellStack, 0);
-			}
+		SpellDropConsolidator.beginBatch(this.worldObj, this.posX, this.posY + 0.5D, this.posZ, true);
+		try {
+			if (count <= 1){
+				// Single target cast: standard vanilla explosion with consolidated drops at center
+				this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, finalPower, false, false);
+			}else{
+				// Multi-block AoE cast: break all targeted blocks across the entire area!
+				int miningPower = 0;
+				if (this.spellStack != null){
+					miningPower = SpellUtils.instance.countModifiers(SpellModifiers.MINING_POWER, this.spellStack, 0);
+				}
 
-			int maxDepth = 2 + miningPower;
-			for (int[] pos : this.blocksToDestroy){
-				int bx = pos[0];
-				int by = pos[1];
-				int bz = pos[2];
+				int maxDepth = 2 + miningPower;
+				for (int[] pos : this.blocksToDestroy){
+					int bx = pos[0];
+					int by = pos[1];
+					int bz = pos[2];
 
-				for (int dy = 0; dy < maxDepth; dy++){
-					int curY = by - dy;
-					if (curY < 1) break;
-					Block block = this.worldObj.getBlock(bx, curY, bz);
-					if (block != Blocks.air && block.getBlockHardness(this.worldObj, bx, curY, bz) >= 0){
-						if (block.getExplosionResistance(this) <= 45.0f){
-							block.dropBlockAsItem(this.worldObj, bx, curY, bz, this.worldObj.getBlockMetadata(bx, curY, bz), 0);
-							this.worldObj.setBlock(bx, curY, bz, Blocks.air, 0, 2);
+					for (int dy = 0; dy < maxDepth; dy++){
+						int curY = by - dy;
+						if (curY < 1) break;
+						Block block = this.worldObj.getBlock(bx, curY, bz);
+						if (block != Blocks.air && block.getBlockHardness(this.worldObj, bx, curY, bz) >= 0){
+							if (block.getExplosionResistance(this) <= 45.0f){
+								int meta = this.worldObj.getBlockMetadata(bx, curY, bz);
+								SpellDropConsolidator.recordBrokenBlock(this.worldObj, block, meta, bx, curY, bz);
+								block.dropBlockAsItem(this.worldObj, bx, curY, bz, meta, 0);
+								this.worldObj.setBlock(bx, curY, bz, Blocks.air, 0, 2);
+							}
 						}
 					}
 				}
-			}
 
-			// Single centralized explosion for entity damage, knockback and central crater
-			this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, Math.min(8.0f, finalPower), false, false);
+				// Single centralized explosion for entity damage, knockback and central crater
+				this.worldObj.newExplosion(dummycaster != null ? dummycaster : this, this.posX, this.posY, this.posZ, Math.min(8.0f, finalPower), false, false);
+			}
+		} finally {
+			SpellDropConsolidator.endBatch(this.worldObj);
 		}
 
 		// Send visual effect packet to all clients in 96-block radius!
@@ -915,6 +933,27 @@ public class EntitySpellEffect extends Entity{
 
 	public boolean isExplosionImpact(){
 		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_EXPLOSION_IMPACT;
+	}
+
+	public void setAoEShockwave(ItemStack stack, float radius, int side){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_AOE_SHOCKWAVE);
+		this.setTicksToExist(14);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 10.0D;
+		this.setRadius(Math.max(0.5f, radius));
+		this.dataWatcher.updateObject(WATCHER_ROF_IGNITE, (byte) side);
+		if (stack != null){
+			this.spellStack = stack;
+			this.dataWatcher.updateObject(WATCHER_STACK, stack);
+		}
+	}
+
+	public boolean isAoEShockwave(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_AOE_SHOCKWAVE;
+	}
+
+	public int getAoESide(){
+		return this.dataWatcher.getWatchableObjectByte(WATCHER_ROF_IGNITE);
 	}
 
 	private double lightningAoERadius = 4.0;

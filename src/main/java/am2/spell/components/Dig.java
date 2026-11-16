@@ -84,17 +84,25 @@ public class Dig implements ISpellComponent{
 			float xBurnout = ArsMagicaApi.instance.getBurnoutFromMana(xMana);
 
 			if (!world.isRemote){
-				BreakEvent event = ForgeHooks.onBlockBreakEvent(world, ((EntityPlayerMP)casterPlayer).theItemInWorldManager.getGameType(), (EntityPlayerMP)casterPlayer, blockx, blocky, blockz);
-				if (event.isCanceled()){
-					return false;
+				SpellDropConsolidator.beginBatch(world, blockx + 0.5D, blocky + 0.5D, blockz + 0.5D, false);
+				try {
+					BreakEvent event = SpellDropConsolidator.fireBlockBreakEvent(world, casterPlayer, block, meta, blockx, blocky, blockz);
+					if (event.isCanceled()){
+						return false;
+					}
+					block.onBlockHarvested(world, blockx, blocky, blockz, meta, casterPlayer);
+					boolean flag = block.removedByPlayer(world, casterPlayer, blockx, blocky, blockz, true);
+					if(flag){
+						SpellDropConsolidator.recordBrokenBlock(world, block, meta, blockx, blocky, blockz);
+						block.onBlockDestroyedByPlayer(world, blockx, blocky, blockz, meta);
+						block.harvestBlock(world, casterPlayer, blockx, blocky, blockz, meta);
+						if (event.getExpToDrop() > 0){
+							block.dropXpOnBlockBreak(world, blockx, blocky, blockz, event.getExpToDrop());
+						}
+					}
+				} finally {
+					SpellDropConsolidator.endBatch(world);
 				}
-				block.onBlockHarvested(world, blockx, blocky, blockz, meta, casterPlayer);
-				boolean flag = block.removedByPlayer(world, casterPlayer, blockx, blocky, blockz, true);
-				if(flag){
-					block.onBlockDestroyedByPlayer(world, blockx, blocky, blockz, meta);
-					block.harvestBlock(world, casterPlayer, blockx, blocky, blockz, meta);
-				}
-
 			}
 
 			ExtendedProperties.For(caster).deductMana(xMana);
