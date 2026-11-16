@@ -38,3 +38,9 @@ abrange as correções de Bless, a tradução e iluminação do Compêndio, a se
 do Playground e as CR14–CR18: busca bilíngue, catálogo de rituais e a HUD e o menu
 do giz, incluindo seus ajustes locais. A [validação da CR18](docs/VALIDACAO-CR18.md)
 registra as verificações recentes. A autoria original permanece preservada.
+
+Atualização em 16 de novembro de 2026: o Codex implementou a revisão da Bússola
+Astral e suas integrações opcionais, a correção de mapeamento dos guardiões,
+os testes e a documentação da CR43. A base da CR41 e os créditos já existentes
+foram preservados. O registro de validação distingue testes locais, dedicado
+e limitações, sem atribuir ao assistente a autoria do mod original.

@@ -1,7 +1,54 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR40 (branch `correcoes`)
+## Versão de manutenção 1.6.11-LE-CR43 (branch `correcoes`)
+
+A CR43 corrige a busca da **Bússola Estrutural Astral** no servidor e acrescenta
+integrações opcionais com **46 tipos do OreSpawn Remastered**, torres do
+**Electroblob’s Wizardry**, seis estruturas do **ChromatiCraft**, três do
+**Thaumcraft** e dados de estruturas compatíveis de outros mods. Também inclui
+um adaptador opcional para features do Twilight Forest na própria dimensão.
+
+As buscas passam por validação no servidor e são divididas entre ticks, com
+limites compartilhados para evitar consultas extensas de uma vez. A bússola
+mantém o requisito de nível 50 e cobra **20.000 de mana somente no sucesso**.
+O servidor confirma novamente os recursos antes da cobrança e cancela consultas
+se o jogador sair, morrer, trocar de dimensão ou deixar de segurar a bússola.
+
+A atualização corrige também as chamadas herdadas da AnimationAPI nos guardiões,
+que podiam produzir `NoSuchMethodError` no dedicado. A API continua externa.
+Modelos, texturas, recursos da CR41 e a independência do Playground e do addon
+de tecnologia mágica foram preservados.
+
+**Limite de localização:** algumas integrações passam a registrar construções
+após a atualização. Não há recuperação automática universal das estruturas
+antigas do OreSpawn, Wizardry e Thaumcraft. Consulte a
+[tabela de suporte e validação da CR43](docs/BUSSOLA-ASTRAL-CR43.md).
+
+Validação local: 33 testes, nove verificadores e dedicado descartável do Forbidden
+Series com 196 JARs externos. Foram conferidos os dez guardiões, buscas, mana e
+pedidos inválidos. Isso não substitui testes de HUD, clientes remotos ou carga
+com muitos jogadores, que não foram realizados nesta etapa.
+
+### Baixar o mod compilado
+
+1. Abra o [GitHub Actions da branch `correcoes`](https://github.com/Carairritante/ArsMagica2/actions/workflows/ci.yml?query=branch%3Acorrecoes).
+2. Escolha a execução mais recente do **AM2.5 CI** e confira o resultado verde.
+3. Em **Artifacts**, baixe o JAR jogável `AM2.5-LTS-1.6.11-LE-CR43.jar` e o
+   **SHA256SUMS** correspondente. São arquivos separados, sem ZIP externo,
+   disponíveis por 14 dias. O GitHub pode solicitar login para o download.
+4. Use o mesmo JAR no cliente e no servidor. O SHA256SUMS daquela execução
+   permite verificar a integridade do arquivo baixado.
+
+O CI executa automaticamente em pushes e pull requests; os commits preservam a
+ordem do histórico e propostas de alteração podem apontar para `correcoes`.
+O [histórico](CHANGELOG.md) e a [documentação da CR43](docs/BUSSOLA-ASTRAL-CR43.md)
+detalham as mudanças e os limites dos testes.
+
+As menções a versões “locais/não publicadas” abaixo registram o estado de cada
+etapa histórica; o conteúdo da série CR26–CR40 já foi incorporado a esta branch.
+
+## Histórico: 1.6.11-LE-CR40
 
 A série CR32–CR40 evolui os efeitos atmosféricos e círculos de conjuração no
 cliente com foco em Firestorm (arcos de lava no céu), Blizzard (placas

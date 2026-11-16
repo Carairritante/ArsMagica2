@@ -1,5 +1,29 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR43 — 2026-11-16
+
+- Bússola Astral: validação estrita, fila no tick do servidor, busca incremental,
+  limites compartilhados e confirmação de mana/nível/dimensão antes do resultado.
+- Predição vanilla sem alterar o RNG ou os geradores ativos; suporte a listas de
+  geradores e leitura do centro das estruturas persistidas, descartando vilas inválidas.
+- Integrações opcionais: 46 construtores do OreSpawn Remastered, torres Wizardry,
+  seis tipos no cache do ChromatiCraft, três geradores Thaumcraft e adaptador
+  Twilight Forest. Índice próprio, limitado e separado por dimensão.
+- Campo comum da bússola compatível com a remoção de membros do lado cliente no dedicado.
+- Corrigido o mapeamento herdado da AnimationAPI no JAR de produção; novo
+  verificador para dez classes de IA, prevenindo `setMutexBits`/métodos sem mapeamento.
+- 33 testes locais e nove verificadores passaram; dedicado com 196 JARs externos,
+  dez guardiões, busca, cobrança e rejeição de pedidos inválidos. Sem cliente remoto
+  ou teste de carga. Os 1.679 modelos/texturas da base foram preservados.
+- [Suporte, limitações e reprodução](docs/BUSSOLA-ASTRAL-CR43.md).
+
+## 1.6.11-LE-CR41 — publicações anteriores
+
+- Arcane Striker e alvo invocado, ritual da Bússola Astral com modelo 3D,
+  interface e HUD; True Soulbound, integração Otherworld/AE2 e recursos visuais.
+- Corrigido o identificador da bússola no Compêndio e adicionado o catálogo
+  de receitas de rituais ao NEI. Essas alterações já constavam no histórico Git.
+
 ## 1.6.11-LE-CR40 — 2026-11-11 — publicada na branch `correcoes`
 
 - **CR40 (Otimização de FPS em Starfall e Storm + Lightning):** tabela estática pré-computada de seno/cosseno (`GLOW_COS`/`GLOW_SIN`, 24 segmentos) em `CastingAtmosphereVFX`, redução de spawn e limite de 22 cometas ativos por conjurador em Starfall, refatoração de `astralStar` para billboarding em diamante de 18 vértices, anéis de impacto com tabela pré-computada e redução de passos/vértices na nuvem e funil 3D de tempestade.

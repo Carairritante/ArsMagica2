@@ -53,3 +53,15 @@ Zergatul Freecam 2.3.1; `--playground-jar <jar>` troca apenas o addon na cópia
 descartável. Não execute o teste numa instância original. A classe de diagnóstico
 nunca deve ser incluída no JAR distribuído. A regressão dedicada também abre o
 container da Mesa de Inscrição sem bibliotecas gráficas.
+
+## CR43 — Bússola Astral e AnimationAPI
+
+`VerifyAnimationInheritanceJar.java` impede métodos de IA herdados sem o
+mapeamento de produção e confirma que a AnimationAPI não foi empacotada.
+É executado por `./gradlew build`, junto dos demais verificadores.
+
+Os testes da bússola ficam em `src/test/java/am2/compass`. O teste opcional
+contra JARs de terceiros usa `-PastralPackMods=/caminho/para/mods`; sem esse
+parâmetro somente esse teste é ignorado. A instrumentação de servidor fica
+em `tools/integration/AstralCompassProbe.java`. Veja a
+[documentação da CR43](../../docs/BUSSOLA-ASTRAL-CR43.md).
