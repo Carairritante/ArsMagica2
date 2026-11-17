@@ -1170,7 +1170,7 @@ am2.truesoulbound.cmd.destroyed=True Soulbound item permanently destroyed: %s.
 # Arcane Striker & Target Dummy
 tile.arsmagica2:arcane_striker.name=Arcane Striker
 entity.arsmagica2.ArcaneTargetDummy.name=Arcane Target Dummy
-am2.arcane_striker.no_space=Not enough open 2-block-tall space in front of the Arcane Striker!
+am2.arcane_striker.no_space=Need at least 2 empty blocks directly above the Arcane Striker pedestal!
 am2.arcane_striker.result=Test complete (%4$ss): Total Damage %1$s | DPS %2$s | Peak Hit %3$s
 am2.arcane_striker.result_record=NEW RECORD (%4$ss): Total Damage %1$s | DPS %2$s | Peak Hit %3$s!
 am2.arcane_striker.gui.title=Arcane Striker Controller

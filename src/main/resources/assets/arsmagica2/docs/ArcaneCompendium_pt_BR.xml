@@ -2076,7 +2076,7 @@
     </boss>
     <boss id="BossArcaneGuardian">
       <name>Guardião Arcano</name>
-      <desc>Um mago da antiguidade com enorme variedade de magias ofensivas, benéficas e prejudiciais. Prepare-se para um duelo que testará seu conhecimento de contramagia. Protegido por um poderoso sigilo, tem tantos truques contra inimigos próximos quanto contra os distantes. !l Nível recomendado: 45. !p Para invocá-lo, construa um Santuário do Conhecimento: dois pilares de estantes com 3 blocos de altura e um atril no chão entre eles, contendo um Compêndio Arcano. Faça um círculo de incrustação de ferro diretamente à frente da estrutura e jogue uma essência arcana no centro para iniciar o ritual.</desc>
+      <desc>Um mago da antiguidade com enorme variedade de magias ofensivas, benéficas e prejudiciais. Prepare-se para um duelo que testará seu conhecimento de contramagia. Protegido por um poderoso sigilo, tem tantos truques contra inimigos próximos quanto contra os distantes. !l Nível recomendado: 45. !p Para invocá-lo, construa um Santuário do Conhecimento: dois pilares de estantes com 3 blocos de altura e um atril no chão entre eles, contendo um Compêndio Arcano. Faça um círculo de incrustação de ferro diretamente acima da estrutura e jogue uma essência arcana no centro para iniciar o ritual.</desc>
       <relatedEntries />
     </boss>
     <boss id="BossAirGuardian">
@@ -2561,7 +2561,7 @@
 		<desc>Você conseguiu recolher um gerador de monstros, mas ele parece incapaz de gerar criaturas. Procure outros usos para o dispositivo ou um jeito de reativá-lo. !d Talvez #5Etherium Sombrio#0 e um #5Filactério de Cristal Cheio#0 possam fazê-lo funcionar novamente...</desc>
 		<relatedEntries>otherworldly_aura,blackaurem_structure,crystal_phylactery</relatedEntries>
 	</block>
-    <block id="arcane_striker" unlocked="true"><name>Bate-Estaca Arcano</name><desc>Uma máquina arcana de teste de força estilo parque criada para medir o dano de magias e armas. Clique com o botão direito no #5Bate-Estaca Arcano#0 para ajustar a duração do teste até #960 segundos#0, alternar se golpes #5ignoram invulnerabilidade (i-frames)#0 e invocar um manequim holográfico à frente da máquina. !d Ataque o manequim com feitiços, armas corpo a corpo ou projéteis durante a contagem. O indicador ascendente mostra seu progresso contra o recorde salvo e toca o sino do topo ao bater uma nova marca. !p Tanto o painel quanto o manequim exibem #9Dano Total#0, #9DPS#0, #9Maior Golpe#0 e o dono do #5Recorde#0 absoluto.</desc><relatedEntries>mana_battery</relatedEntries></block>
+    <block id="arcane_striker" unlocked="true"><name>Bate-Estaca Arcano</name><desc>Uma máquina arcana de teste de força estilo parque criada para medir o dano de magias e armas. Clique com o botão direito no #5Bate-Estaca Arcano#0 para ajustar a duração do teste até #960 segundos#0, alternar se golpes #5ignoram invulnerabilidade (i-frames)#0 e invocar um manequim holográfico exatamente em cima do pedestal. !d Ataque o manequim com feitiços, armas corpo a corpo ou projéteis durante a contagem. O indicador ascendente mostra seu progresso contra o recorde salvo e toca o sino do topo ao bater uma nova marca. !p Tanto o painel quanto o manequim exibem #9Dano Total#0, #9DPS#0, #9Maior Golpe#0 e o dono do #5Recorde#0 absoluto.</desc><relatedEntries>mana_battery</relatedEntries></block>
   </blocks>
   <mechanics>
     <mechanic id="affinity">
@@ -2594,7 +2594,7 @@
       </subitem>
       <subitem id="ice_affinity">
         <name>Afinidade com o Gelo</name>
-        <desc>Causa lentidão em quem ataca você. Com 50%, agachar-se congela a água à frente, formando pontes durante o movimento. Com 100%, também congela lava em obsidiana. !d Seu sangue frio reduz um pouco a velocidade, exceto sobre gelo ou na água.</desc>
+        <desc>Causa lentidão em quem ataca você. Com 50%, agachar-se congela a água acima, formando pontes durante o movimento. Com 100%, também congela lava em obsidiana. !d Seu sangue frio reduz um pouco a velocidade, exceto sobre gelo ou na água.</desc>
         <relatedEntries />
       </subitem>
       <subitem id="lightning_affinity">

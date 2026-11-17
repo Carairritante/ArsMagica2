@@ -14,13 +14,14 @@ import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
 /**
- * Summoned magical training target dummy linked to a {@link TileEntityArcaneStriker}.
- * Routes real post-hook combat/spell damage back to the testing machine, supports i-frame toggling,
- * and resists knockback/death until its test timer expires.
+ * Summoned magical training target dummy linked to a {@link TileEntityArcaneStriker} pedestal.
+ * Uses calibrated base health (1024.0F) with setHealth-hooked delta capture so both tiny (0.1)
+ * and massive overkill hits are measured accurately without float precision loss or lingering ghosts.
  */
 public class EntityArcaneTargetDummy extends EntityLiving {
 
-	private static final float DUMMY_MAX_HEALTH = 100000000.0F;
+	public static final float DUMMY_BASE_HEALTH = 1024.0F;
+	public static final float DUMMY_MAX_HEALTH = 2048.0F;
 
 	private static final int DW_REMAINING_TICKS = 22;
 	private static final int DW_TOTAL_DAMAGE_X10 = 23;
@@ -40,7 +41,9 @@ public class EntityArcaneTargetDummy extends EntityLiving {
 	private double anchorZ;
 	private float anchorYaw;
 	private boolean hasAnchor = false;
-	private boolean allowDiscard = false;
+
+	private boolean capturingDamage = false;
+	private float capturedDamage = 0.0F;
 
 	// Client-side recoil visual tracking
 	public int clientLastHitSeq = 0;
@@ -54,6 +57,7 @@ public class EntityArcaneTargetDummy extends EntityLiving {
 		this.targetTasks.taskEntries.clear();
 		this.experienceValue = 0;
 		this.stepHeight = 0.0F;
+		super.setHealth(DUMMY_BASE_HEALTH);
 	}
 
 	@Override
@@ -82,6 +86,7 @@ public class EntityArcaneTargetDummy extends EntityLiving {
 		this.hasMachineLink = true;
 		this.bypassIframes = bypassIframes;
 		this.maxLifetimeTicks = Math.max(20, maxTicks);
+		super.setHealth(DUMMY_BASE_HEALTH);
 		syncLiveStats(maxTicks, 0.0, 0.0, 0.0, 0);
 	}
 
@@ -154,19 +159,20 @@ public class EntityArcaneTargetDummy extends EntityLiving {
 			this.renderYawOffset = this.anchorYaw;
 		}
 
-		// Ensure stray server restarts / orphaned entities never linger forever.
-		if (!hasMachineLink || this.ticksExisted > maxLifetimeTicks + 40) {
-			discardDummy();
+		if (!hasMachineLink || this.ticksExisted > maxLifetimeTicks + 20) {
+			this.setDead();
 			return;
 		}
-		if (this.ticksExisted % 10 == 0) {
+		if (this.ticksExisted % 2 == 0) {
 			if (worldObj.provider.dimensionId != machineDim || !worldObj.blockExists(machineX, machineY, machineZ)) {
-				discardDummy();
+				this.setDead();
 				return;
 			}
 			TileEntity te = worldObj.getTileEntity(machineX, machineY, machineZ);
-			if (!(te instanceof TileEntityArcaneStriker) || !((TileEntityArcaneStriker) te).isTestActive()) {
-				discardDummy();
+			if (!(te instanceof TileEntityArcaneStriker)
+					|| !((TileEntityArcaneStriker) te).isTestActive()
+					|| !((TileEntityArcaneStriker) te).isExpectedDummy(this)) {
+				this.setDead();
 			}
 		}
 	}
@@ -213,7 +219,7 @@ public class EntityArcaneTargetDummy extends EntityLiving {
 		if (source == DamageSource.inWall || source == DamageSource.drown || source == DamageSource.outOfWorld || amount <= 0.0F) {
 			return false;
 		}
-		if (worldObj.isRemote) {
+		if (worldObj == null || worldObj.isRemote) {
 			return false;
 		}
 		if (bypassIframes) {
@@ -230,18 +236,24 @@ public class EntityArcaneTargetDummy extends EntityLiving {
 
 	@Override
 	protected void damageEntity(DamageSource source, float amount) {
-		float before = this.getHealth();
-		super.damageEntity(source, amount);
-		float dealt = Math.max(0.0F, before - this.getHealth());
-		super.setHealth(this.getMaxHealth());
+		super.setHealth(DUMMY_BASE_HEALTH);
+		capturedDamage = 0.0F;
+		capturingDamage = true;
+		try {
+			super.damageEntity(source, amount);
+		} finally {
+			capturingDamage = false;
+			super.setHealth(DUMMY_BASE_HEALTH);
+		}
 
-		if (!worldObj.isRemote && dealt > 0.0F) {
+		float dealt = capturedDamage;
+		if (dealt <= 0.0F) {
+			return;
+		}
+
+		if (worldObj != null && !worldObj.isRemote) {
 			this.dataWatcher.updateObject(DW_HIT_SEQ, Integer.valueOf(getHitSeq() + 1));
-			String attackerName = "";
-			Entity attacker = source != null ? source.getEntity() : null;
-			if (attacker instanceof EntityPlayer) {
-				attackerName = ((EntityPlayer) attacker).getCommandSenderName();
-			}
+			String attackerName = resolveAttackerName(source);
 			TileEntityArcaneStriker te = resolveMachine();
 			if (te != null) {
 				te.recordHit(dealt, attackerName);
@@ -257,29 +269,48 @@ public class EntityArcaneTargetDummy extends EntityLiving {
 		}
 	}
 
+	private static String resolveAttackerName(DamageSource source) {
+		if (source == null) {
+			return "";
+		}
+		Entity attacker = source.getEntity();
+		if (attacker instanceof EntityPlayer) {
+			return ((EntityPlayer) attacker).getCommandSenderName();
+		}
+		Entity direct = source.getSourceOfDamage();
+		if (direct instanceof EntityPlayer) {
+			return ((EntityPlayer) direct).getCommandSenderName();
+		}
+		return "";
+	}
+
+	/**
+	 * Computes captured hit damage from the target health value passed to {@link #setHealth(float)}.
+	 */
+	public static float computeCapturedDamage(float newHealth) {
+		return Math.max(0.0F, DUMMY_BASE_HEALTH - newHealth);
+	}
+
 	@Override
 	public void setHealth(float health) {
-		// Prevent external scripts/spells from dropping dummy health to 0 mid-test.
-		super.setHealth(Math.max(1000.0F, health));
+		if (capturingDamage) {
+			float delta = computeCapturedDamage(health);
+			if (delta > capturedDamage) {
+				capturedDamage = delta;
+			}
+			super.setHealth(DUMMY_BASE_HEALTH);
+			return;
+		}
+		super.setHealth(DUMMY_BASE_HEALTH);
 	}
 
 	@Override
 	public void onDeath(DamageSource cause) {
-		super.setHealth(this.getMaxHealth());
-	}
-
-	@Override
-	public void setDead() {
-		if (allowDiscard) {
-			super.setDead();
-		} else {
-			super.setHealth(this.getMaxHealth());
-		}
+		super.setHealth(DUMMY_BASE_HEALTH);
 	}
 
 	public void discardDummy() {
-		this.allowDiscard = true;
-		super.setDead();
+		this.setDead();
 	}
 
 	@Override
@@ -292,7 +323,7 @@ public class EntityArcaneTargetDummy extends EntityLiving {
 			if (te != null) {
 				te.stopTestEarly();
 			} else {
-				discardDummy();
+				this.setDead();
 			}
 			return true;
 		}
@@ -363,5 +394,6 @@ public class EntityArcaneTargetDummy extends EntityLiving {
 			anchorZ = tag.getDouble("anchorZ");
 			anchorYaw = tag.getFloat("anchorYaw");
 		}
+		super.setHealth(DUMMY_BASE_HEALTH);
 	}
 }

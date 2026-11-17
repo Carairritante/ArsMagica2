@@ -57,6 +57,7 @@ public class TileEntityArcaneStriker extends TileEntity {
 	private int bellTimerTicks = 0;
 	private int syncCooldown = 0;
 	private boolean dirtySync = false;
+	private long lastStartWorldTick = -100L;
 
 	// Client-only smoothed visual state for TESR slider & bell bounce
 	public float clientSliderProgress = 0.0f;
@@ -141,7 +142,15 @@ public class TileEntityArcaneStriker extends TileEntity {
 		if (worldObj == null || worldObj.isRemote) {
 			return false;
 		}
-		discardActiveDummy();
+		long nowTick = worldObj.getTotalWorldTime();
+		if (nowTick - lastStartWorldTick < 5L && testActive) {
+			return false;
+		}
+		if (testActive) {
+			finishTest(true);
+		} else {
+			discardActiveDummy();
+		}
 
 		double[] spawnPos = resolveDummySpawnPosition();
 		if (spawnPos == null) {
@@ -151,6 +160,7 @@ public class TileEntityArcaneStriker extends TileEntity {
 			return false;
 		}
 
+		lastStartWorldTick = nowTick;
 		configuredDurationSec = MathHelper.clamp_int(configuredDurationSec, MIN_DURATION_SEC, MAX_DURATION_SEC);
 		testActive = true;
 		remainingTicks = configuredDurationSec * 20;
@@ -258,9 +268,9 @@ public class TileEntityArcaneStriker extends TileEntity {
 		}
 		if (recordTotalDamage > 0.0 && currentTotalDamage >= recordTotalDamage && bellTimerTicks <= 0) {
 			bellTimerTicks = 24;
-			worldObj.playSoundEffect(xCoord + 0.5, yCoord + 1.9, zCoord + 0.5, "note.pling", 0.85f, 1.95f);
+			worldObj.playSoundEffect(xCoord + 0.5, yCoord + 1.0, zCoord + 0.5, "note.pling", 0.85f, 1.95f);
 		}
-		dirtySync = true;
+		requestSyncImmediate();
 	}
 
 	public void setConfiguredDurationSec(int seconds) {
@@ -296,17 +306,30 @@ public class TileEntityArcaneStriker extends TileEntity {
 		if (dummy != null) {
 			dummy.discardDummy();
 		}
-		// Fallback sweep in local radius for any dummy linked to these coordinates
-		AxisAlignedBB box = AxisAlignedBB.getBoundingBox(xCoord - 12, yCoord - 8, zCoord - 12, xCoord + 13, yCoord + 10, zCoord + 13);
+		// Sweep any leftover dummy linked to this pedestal or sitting on top of it
+		AxisAlignedBB box = AxisAlignedBB.getBoundingBox(xCoord - 6, yCoord - 2, zCoord - 6, xCoord + 7, yCoord + 6, zCoord + 7);
 		@SuppressWarnings("unchecked")
 		List<EntityArcaneTargetDummy> nearby = worldObj.getEntitiesWithinAABB(EntityArcaneTargetDummy.class, box);
 		for (EntityArcaneTargetDummy d : nearby) {
-			if (d.isBoundTo(xCoord, yCoord, zCoord, worldObj.provider.dimensionId)) {
+			boolean onTop = Math.abs(d.posX - (xCoord + 0.5)) < 0.75
+					&& Math.abs(d.posZ - (zCoord + 0.5)) < 0.75
+					&& Math.abs(d.posY - (yCoord + 1.0)) < 1.2;
+			if (onTop || d.isBoundTo(xCoord, yCoord, zCoord, worldObj.provider.dimensionId)) {
 				d.discardDummy();
 			}
 		}
 		activeDummyEntityId = -1;
 		activeDummyUuid = null;
+	}
+
+	public boolean isExpectedDummy(EntityArcaneTargetDummy dummy) {
+		if (dummy == null) {
+			return false;
+		}
+		if (activeDummyUuid != null) {
+			return activeDummyUuid.equals(dummy.getUniqueID());
+		}
+		return activeDummyEntityId >= 0 && activeDummyEntityId == dummy.getEntityId();
 	}
 
 	public EntityArcaneTargetDummy findActiveDummy() {
@@ -334,35 +357,11 @@ public class TileEntityArcaneStriker extends TileEntity {
 	}
 
 	private double[] resolveDummySpawnPosition() {
-		int meta = worldObj.getBlockMetadata(xCoord, yCoord, zCoord) & 3;
-		// Facing direction toward front of machine (-Z for meta=0 / South-facing player looking North)
-		int fx = 0, fz = 0;
-		switch (meta) {
-			case 0: fz = 1; break;  // Front points +Z (facing South toward placer)
-			case 1: fx = -1; break; // Front points -X
-			case 2: fz = -1; break; // Front points -Z
-			case 3: fx = 1; break;  // Front points +X
+		if (worldObj == null || yCoord < 0 || yCoord >= 253) {
+			return null;
 		}
-		int[][] candidates = {
-				{ xCoord + fx * 2, yCoord, zCoord + fz * 2 },
-				{ xCoord + fx, yCoord, zCoord + fz },
-				{ xCoord + fx * 3, yCoord, zCoord + fz * 3 },
-				{ xCoord + 2, yCoord, zCoord },
-				{ xCoord - 2, yCoord, zCoord },
-				{ xCoord, yCoord, zCoord + 2 },
-				{ xCoord, yCoord, zCoord - 2 },
-				{ xCoord, yCoord + 1, zCoord }
-		};
-		for (int[] c : candidates) {
-			for (int dy = 0; dy >= -1; dy--) {
-				int cy = c[1] + dy;
-				if (cy < 1 || cy > 253) {
-					continue;
-				}
-				if (worldObj.isAirBlock(c[0], cy, c[2]) && worldObj.isAirBlock(c[0], cy + 1, c[2])) {
-					return new double[] { c[0] + 0.5, cy, c[2] + 0.5 };
-				}
-			}
+		if (worldObj.isAirBlock(xCoord, yCoord + 1, zCoord) && worldObj.isAirBlock(xCoord, yCoord + 2, zCoord)) {
+			return new double[] { xCoord + 0.5, yCoord + 1.0, zCoord + 0.5 };
 		}
 		return null;
 	}
@@ -403,7 +402,7 @@ public class TileEntityArcaneStriker extends TileEntity {
 
 	@Override
 	public AxisAlignedBB getRenderBoundingBox() {
-		return AxisAlignedBB.getBoundingBox(xCoord - 1, yCoord, zCoord - 1, xCoord + 2, yCoord + 3.5, zCoord + 2);
+		return AxisAlignedBB.getBoundingBox(xCoord - 1, yCoord, zCoord - 1, xCoord + 2, yCoord + 4.5, zCoord + 2);
 	}
 
 	@Override

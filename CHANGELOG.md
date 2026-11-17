@@ -1,5 +1,11 @@
 # Alterações de manutenção do AM2.5 LE
 
+## 1.6.11-LE-CR44 — 2026-11-16
+
+- Arcane Striker & Manequim Arcano: corrigida a captura de dano para evitar perda de precisão IEEE-754 (`DUMMY_BASE_HEALTH = 1024.0F` com delta capturado diretamente em `setHealth` dentro de `damageEntity`), adicionado popup de dano no cliente e sincronização imediata com a máquina.
+- Corrigido o ciclo de vida do manequim: liberado `setDead()`, verificação contínua `isExpectedDummy(this)` e trava anti-duplicação ao iniciar o teste.
+- Remodelado o bloco do Arcane Striker para um pedestal 1×1×1 sólido (`arcane_striker_machine.bbmodel`) com spawn do Manequim diretamente em cima `(x+0.5, y+1.0, z+0.5)` e atualização do Compêndio + traduções.
+
 ## 1.6.11-LE-CR43 — 2026-11-16
 
 - Bússola Astral: validação estrita, fila no tick do servidor, busca incremental,

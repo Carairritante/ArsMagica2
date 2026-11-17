@@ -73,13 +73,13 @@ public class ArcaneStrikerRenderer extends TileEntitySpecialRenderer {
 		shardsOverride.reset();
 
 		if (isInventory) {
-			sliderOverride.dy = 12.0f;
+			sliderOverride.dy = 5.2f;
 		} else {
-			sliderOverride.dy = Math.max(0.0f, Math.min(1.0f, striker.clientSliderProgress)) * 22.0f;
+			sliderOverride.dy = Math.max(0.0f, Math.min(1.0f, striker.clientSliderProgress)) * 7.6f;
 			float bounce = striker.clientBellBounce;
 			if (bounce > 0.01f) {
 				float wave = (float) Math.sin(bounce * 18.0f) * bounce;
-				bellOverride.dy = Math.abs(wave) * 1.4f;
+				bellOverride.dy = Math.abs(wave) * 0.9f;
 				bellOverride.drz = wave * 10.0f;
 			}
 			float time = (Minecraft.getMinecraft().theWorld != null ? Minecraft.getMinecraft().theWorld.getTotalWorldTime() : 0) + partialTicks;
@@ -89,9 +89,8 @@ public class ArcaneStrikerRenderer extends TileEntitySpecialRenderer {
 		GL11.glPushMatrix();
 		GL11.glTranslated(x + 0.5, y, z + 0.5);
 		if (isInventory) {
-			// Fit ~2.4-block tall High Striker cleanly inside 16x16 inventory slot
-			GL11.glTranslatef(0.0f, -0.52f, 0.0f);
-			GL11.glScalef(0.46f, 0.46f, 0.46f);
+			GL11.glTranslatef(0.0f, -0.45f, 0.0f);
+			GL11.glScalef(0.95f, 0.95f, 0.95f);
 			GL11.glRotatef(25.0f, 0.0f, 1.0f, 0.0f);
 		} else {
 			GL11.glRotatef(yawDeg, 0.0f, 1.0f, 0.0f);
@@ -101,7 +100,8 @@ public class ArcaneStrikerRenderer extends TileEntitySpecialRenderer {
 		GL11.glPopMatrix();
 
 		if (!isInventory && striker.getWorldObj() != null) {
-			renderOverheadScoreboard(striker, x + 0.5, y + 2.65, z + 0.5);
+			double boardY = striker.isTestActive() ? (y + 3.68) : (y + 1.42);
+			renderOverheadScoreboard(striker, x + 0.5, boardY, z + 0.5);
 		}
 	}
 

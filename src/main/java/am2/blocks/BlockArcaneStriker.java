@@ -25,7 +25,7 @@ public class BlockArcaneStriker extends BlockContainer {
 		setHardness(3.5f);
 		setResistance(15.0f);
 		setStepSound(soundTypeMetal);
-		setBlockBounds(0.06f, 0.0f, 0.06f, 0.94f, 1.0f, 0.94f);
+		setBlockBounds(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	@Override

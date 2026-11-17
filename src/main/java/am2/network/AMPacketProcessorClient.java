@@ -858,7 +858,8 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 		String damageType = rdr.getString();
 		World world = Minecraft.getMinecraft().theWorld;
 		if (world == null) return;
-		int count = Math.min(12, Math.max(3, (int) Math.ceil(damage / 8.0f)));
+		am2.entities.renderers.RenderArcaneTargetDummy.spawnDamagePopup(x, y, z, damage, damageType);
+		int count = Math.min(8, Math.max(2, (int) Math.ceil(damage / 12.0f)));
 		for (int i = 0; i < count; i++){
 			double ox = (world.rand.nextDouble() - 0.5) * 0.55;
 			double oy = world.rand.nextDouble() * 0.35;

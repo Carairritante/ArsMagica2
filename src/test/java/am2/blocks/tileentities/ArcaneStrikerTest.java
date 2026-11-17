@@ -65,4 +65,13 @@ public class ArcaneStrikerTest {
 		assertEquals(950.0, loaded.getRecordPeakHit(), 0.001);
 		assertEquals("Archmage", loaded.getRecordHolderName());
 	}
+
+	@Test
+	public void dummyCapturesTinyAndHugeDamageAccurately() {
+		float base = am2.entities.EntityArcaneTargetDummy.DUMMY_BASE_HEALTH;
+		assertEquals(0.5f, am2.entities.EntityArcaneTargetDummy.computeCapturedDamage(base - 0.5f), 0.01f);
+		assertEquals(7.5f, am2.entities.EntityArcaneTargetDummy.computeCapturedDamage(base - 7.5f), 0.01f);
+		assertEquals(500000.0f, am2.entities.EntityArcaneTargetDummy.computeCapturedDamage(base - 500000.0f), 0.5f);
+		assertEquals(0.0f, am2.entities.EntityArcaneTargetDummy.computeCapturedDamage(base + 10.0f), 0.001f);
+	}
 }

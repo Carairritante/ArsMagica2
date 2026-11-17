@@ -833,7 +833,7 @@ am2.truesoulbound.cmd.destroyed=Item True Soulbound destruído permanentemente: 
 # Bate-Estaca Arcano & Manequim de Treino
 tile.arsmagica2:arcane_striker.name=Bate-Estaca Arcano
 entity.arsmagica2.ArcaneTargetDummy.name=Manequim Arcano
-am2.arcane_striker.no_space=Sem espaço livre de 2 blocos de altura à frente do Bate-Estaca Arcano!
+am2.arcane_striker.no_space=É necessário pelo menos 2 blocos livres exatamente acima do pedestal do Bate-Estaca Arcano!
 am2.arcane_striker.result=Teste concluído (%4$ss): Dano Total %1$s | DPS %2$s | Maior Golpe %3$s
 am2.arcane_striker.result_record=NOVO RECORDE (%4$ss): Dano Total %1$s | DPS %2$s | Maior Golpe %3$s!
 am2.arcane_striker.gui.title=Controlador do Bate-Estaca Arcano
