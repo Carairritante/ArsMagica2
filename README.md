@@ -1,52 +1,76 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR43 (branch `correcoes`)
+## Versão de manutenção 1.6.11-LE-CR44 (branch `correcoes`)
 
-A CR43 corrige a busca da **Bússola Estrutural Astral** no servidor e acrescenta
-integrações opcionais com **46 tipos do OreSpawn Remastered**, torres do
-**Electroblob’s Wizardry**, seis estruturas do **ChromatiCraft**, três do
-**Thaumcraft** e dados de estruturas compatíveis de outros mods. Também inclui
-um adaptador opcional para features do Twilight Forest na própria dimensão.
+Esta atualização reúne, em commits separados e na ordem de implementação:
 
-As buscas passam por validação no servidor e são divididas entre ticks, com
-limites compartilhados para evitar consultas extensas de uma vez. A bússola
-mantém o requisito de nível 50 e cobra **20.000 de mana somente no sucesso**.
-O servidor confirma novamente os recursos antes da cobrança e cancela consultas
-se o jogador sair, morrer, trocar de dimensão ou deixar de segurar a bússola.
+- Bússola Astral funcionando no servidor integrado: catálogo do servidor chega à interface.
+- Filtros por mod/dimensão, favoritos, histórico local e HUD configurável.
+- Busca incremental com raios de 2.000/5.000/10.000 blocos, opção Encontrar outra,
+  suporte a alturas negativas e indicação de registro, previsão ou região aproximada.
+- ChromatiCraft: pylons de qualquer cor ou por cor e recuperação de registros de
+  ruínas V33 cujo campo de coordenada exata não está preenchido.
+- HUD própria da bússola com rosa dos ventos e agulha de alvo; poses na mão,
+  ícones de hotbar e painéis internos próprios da bússola e do bate-estacas.
 
-A atualização corrige também as chamadas herdadas da AnimationAPI nos guardiões,
-que podiam produzir `NoSuchMethodError` no dedicado. A API continua externa.
-Modelos, texturas, recursos da CR41 e a independência do Playground e do addon
-de tecnologia mágica foram preservados.
+As correções da CR44 anterior para o manequim e a medição de dano foram
+preservadas. A busca continua exigindo nível 50 e cobra 20.000 de mana apenas
+no sucesso, com limites compartilhados no servidor. Playground e o addon de
+tecnologia mágica permanecem projetos separados, sem nova dependência.
 
-**Limite de localização:** algumas integrações passam a registrar construções
-após a atualização. Não há recuperação automática universal das estruturas
-antigas do OreSpawn, Wizardry e Thaumcraft. Consulte a
-[tabela de suporte e validação da CR43](docs/BUSSOLA-ASTRAL-CR43.md).
-
-Validação local: 33 testes, nove verificadores e dedicado descartável do Forbidden
-Series com 196 JARs externos. Foram conferidos os dez guardiões, buscas, mana e
-pedidos inválidos. Isso não substitui testes de HUD, clientes remotos ou carga
-com muitos jogadores, que não foram realizados nesta etapa.
+O nome CR44 foi mantido por orientação do mantenedor. **Compare o SHA-256:**
+dois arquivos com o mesmo nome podem pertencer a compilações diferentes.
+Cliente e servidor devem usar o mesmo build para dispor de todas as funções.
 
 ### Baixar o mod compilado
 
-1. Abra o [GitHub Actions da branch `correcoes`](https://github.com/Carairritante/ArsMagica2/actions/workflows/ci.yml?query=branch%3Acorrecoes).
-2. Escolha a execução mais recente do **AM2.5 CI** e confira o resultado verde.
-3. Em **Artifacts**, baixe o JAR jogável `AM2.5-LTS-1.6.11-LE-CR43.jar` e o
-   **SHA256SUMS** correspondente. São arquivos separados, sem ZIP externo,
-   disponíveis por 14 dias. O GitHub pode solicitar login para o download.
-4. Use o mesmo JAR no cliente e no servidor. O SHA256SUMS daquela execução
-   permite verificar a integridade do arquivo baixado.
+1. Abra o [Actions da branch correcoes](https://github.com/Carairritante/ArsMagica2/actions/workflows/ci.yml?query=branch%3Acorrecoes).
+2. Escolha a execução do commit mais recente e confira o resultado verde.
+3. Em Artifacts, baixe `AM2.5-LTS-1.6.11-LE-CR44.jar` e `SHA256SUMS`.
+   São arquivos separados, sem ZIP externo, com retenção de 14 dias.
+   O GitHub pode solicitar login.
+4. Substitua o JAR anterior, mantendo uma única cópia ativa. Confira o checksum
+   da própria execução; o JAR é jogável, não um pacote de ferramentas.
 
-O CI executa automaticamente em pushes e pull requests; os commits preservam a
-ordem do histórico e propostas de alteração podem apontar para `correcoes`.
-O [histórico](CHANGELOG.md) e a [documentação da CR43](docs/BUSSOLA-ASTRAL-CR43.md)
-detalham as mudanças e os limites dos testes.
+O CI roda em pushes e pull requests, compila o mod, executa os testes e
+verificadores e publica os artefatos na execução. Não são criadas releases
+automáticas. Pull requests de colaboradores podem apontar para `correcoes`.
 
-As menções a versões “locais/não publicadas” abaixo registram o estado de cada
-etapa histórica; o conteúdo da série CR26–CR40 já foi incorporado a esta branch.
+### Escopo e limites da validação
+
+Para esta publicação, o build local passou em 35 testes automatizados, nove
+verificadores do JAR e na conferência de 542 entradas/481 descrições do Compêndio.
+O resultado do Actions correspondente deve ser conferido antes de baixar.
+
+A correção inicial do catálogo foi reproduzida no Forbidden em singleplayer
+(64 entradas, 56 na aba Mods, busca pela GUI) e no dedicado com 196 mods.
+As melhorias posteriores de busca, ChromatiCraft e apresentação foram
+compiladas e entregues para teste manual, sem nova execução do jogo pelo agente.
+O CI valida compilação e verificações automatizadas; não equivale a teste visual,
+multiplayer remoto, carga ou comprovação de localização de todas as estruturas.
+
+Não existe recuperação universal de construções antigas sem metadados.
+Registro não garante uma construção intacta; previsão não confirma sua geração.
+Quando só a região é conhecida, a bússola não inventa a altura.
+
+Detalhes: [busca](docs/BUSSOLA-BUSCA-CR44.md),
+[ChromatiCraft](docs/BUSSOLA-CHROMATICRAFT-CR44.md),
+[HUD](docs/BUSSOLA-HUD-CR44.md),
+[apresentação dos instrumentos](docs/INSTRUMENTOS-VISUAL-CR44.md) e
+[histórico completo](CHANGELOG.md).
+
+O projeto preserva as licenças e os créditos dos autores originais. OpenAI
+Codex teve participação substancial na investigação, implementação, documentação
+e verificações destas alterações, com orientação e testes manuais do mantenedor.
+
+### Histórico da CR43
+
+A CR43 acrescentou as integrações opcionais OreSpawn, Wizardry, ChromatiCraft,
+Thaumcraft e Twilight Forest e corrigiu o mapeamento herdado da AnimationAPI
+nos guardiões. [Suporte e validação da CR43](docs/BUSSOLA-ASTRAL-CR43.md).
+Os estados locais/não publicados nos documentos registram a etapa em que foram
+escritos; consulte o commit e o resultado do Actions para identificar o build.
 
 ## Histórico: 1.6.11-LE-CR40
 
