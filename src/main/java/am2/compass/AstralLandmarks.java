@@ -27,7 +27,9 @@ public final class AstralLandmarks extends WorldSavedData {
     public AstralLandmarks(String name){super(name);}
     public static final class Point {
         public final String id; public final int x,y,z;
-        Point(String id,int x,int y,int z){this.id=id;this.x=x;this.y=y;this.z=z;}
+        public final boolean hasY; public final String source;
+        Point(String id,int x,int y,int z){this(id,x,y,z,true,"recorded");}
+        Point(String id,int x,int y,int z,boolean hasY,String source){this.id=id;this.x=x;this.y=y;this.z=z;this.hasY=hasY;this.source=source;}
         String key(){return id+":"+x+":"+y+":"+z;}
     }
     public static AstralLandmarks get(World world) {

@@ -1359,3 +1359,23 @@ am2.astral_compass.gui.status_7=Search timed out. Try a smaller range. No mana s
 am2.astral_compass.err_timeout=Search timed out. Try a smaller range. No mana spent.
 am2.astral_compass.gui.server_range=Server range
 am2.astral_compass.gui.update_server=Update the server AM2.5 build to enable selectable range and Find another.
+
+# ChromatiCraft pylons and region fallback
+am2.astral_compass.struct.chromaticraft_pylon=Pylon (any color)
+am2.astral_compass.gui.source_region=Recorded region (approximate position)
+am2.astral_compass.struct.chromaticraft_pylon_black=Black Pylon
+am2.astral_compass.struct.chromaticraft_pylon_red=Red Pylon
+am2.astral_compass.struct.chromaticraft_pylon_green=Green Pylon
+am2.astral_compass.struct.chromaticraft_pylon_brown=Brown Pylon
+am2.astral_compass.struct.chromaticraft_pylon_blue=Blue Pylon
+am2.astral_compass.struct.chromaticraft_pylon_purple=Purple Pylon
+am2.astral_compass.struct.chromaticraft_pylon_cyan=Cyan Pylon
+am2.astral_compass.struct.chromaticraft_pylon_lightgray=Light Gray Pylon
+am2.astral_compass.struct.chromaticraft_pylon_gray=Gray Pylon
+am2.astral_compass.struct.chromaticraft_pylon_pink=Pink Pylon
+am2.astral_compass.struct.chromaticraft_pylon_lime=Lime Pylon
+am2.astral_compass.struct.chromaticraft_pylon_yellow=Yellow Pylon
+am2.astral_compass.struct.chromaticraft_pylon_lightblue=Light Blue Pylon
+am2.astral_compass.struct.chromaticraft_pylon_magenta=Magenta Pylon
+am2.astral_compass.struct.chromaticraft_pylon_orange=Orange Pylon
+am2.astral_compass.struct.chromaticraft_pylon_white=White Pylon

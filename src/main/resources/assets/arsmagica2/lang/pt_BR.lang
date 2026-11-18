@@ -1022,3 +1022,23 @@ am2.astral_compass.gui.status_7=Tempo limite atingido. Tente um alcance menor. N
 am2.astral_compass.err_timeout=Tempo limite atingido. Tente um alcance menor. Nenhuma mana gasta.
 am2.astral_compass.gui.server_range=Alcance do servidor
 am2.astral_compass.gui.update_server=Atualize o AM2.5 do servidor para habilitar alcance selecionável e Encontrar outra.
+
+# ChromatiCraft pylons and region fallback
+am2.astral_compass.struct.chromaticraft_pylon=Pylon (qualquer cor)
+am2.astral_compass.gui.source_region=Região registrada (posição aproximada)
+am2.astral_compass.struct.chromaticraft_pylon_black=Pylon Preto
+am2.astral_compass.struct.chromaticraft_pylon_red=Pylon Vermelho
+am2.astral_compass.struct.chromaticraft_pylon_green=Pylon Verde
+am2.astral_compass.struct.chromaticraft_pylon_brown=Pylon Marrom
+am2.astral_compass.struct.chromaticraft_pylon_blue=Pylon Azul
+am2.astral_compass.struct.chromaticraft_pylon_purple=Pylon Roxo
+am2.astral_compass.struct.chromaticraft_pylon_cyan=Pylon Ciano
+am2.astral_compass.struct.chromaticraft_pylon_lightgray=Pylon Cinza-Claro
+am2.astral_compass.struct.chromaticraft_pylon_gray=Pylon Cinza
+am2.astral_compass.struct.chromaticraft_pylon_pink=Pylon Rosa
+am2.astral_compass.struct.chromaticraft_pylon_lime=Pylon Verde-Claro
+am2.astral_compass.struct.chromaticraft_pylon_yellow=Pylon Amarelo
+am2.astral_compass.struct.chromaticraft_pylon_lightblue=Pylon Azul-Claro
+am2.astral_compass.struct.chromaticraft_pylon_magenta=Pylon Magenta
+am2.astral_compass.struct.chromaticraft_pylon_orange=Pylon Laranja
+am2.astral_compass.struct.chromaticraft_pylon_white=Pylon Branco

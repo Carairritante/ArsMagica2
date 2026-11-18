@@ -141,6 +141,8 @@ public final class AstralStructureLocator {
             double dist=squaredDistance(x,z,bx,bz);if(dist>(double)radius*radius)return;
             if(excluded!=null) {
                 if(bx==excluded.x&&bz==excluded.z&&(!hasY||!excluded.hasY||by==excluded.y))return;
+                if(target.id.startsWith("chromaticraft:")&&("region".equals(source)||"region".equals(excluded.source))
+                        &&(bx>>4)==(excluded.x>>4)&&(bz>>4)==(excluded.z>>4))return;
                 if("predicted".equals(source)&&excludedStarts.contains(chunkKey(bx>>4,bz>>4)))return;
                 for(StructureBoundingBox box:excludedBounds)if(contains(box,bx,bz)&&(!hasY||by>=box.minY&&by<=box.maxY))return;
             }
@@ -189,11 +191,11 @@ public final class AstralStructureLocator {
                     if(memory.hasNext())registeredBox(memory.next(),null,null);
                     else {points=AstralLandmarks.get(world).points(target.id).iterator();stage=3;}
                 } else if(stage==3) {
-                    if(points.hasNext()){AstralLandmarks.Point p=points.next();consider(p.x,p.y,p.z,true,"recorded");}
+                    if(points.hasNext()){AstralLandmarks.Point p=points.next();consider(p.x,p.y,p.z,p.hasY,p.source);}
                     else stage=4;
                 } else if(stage==4) {
-                    if(foreign==null)foreign=AstralModStructures.known(world,target,x,z);
-                    if(foreign.hasNext()){AstralLandmarks.Point p=foreign.next();if(p!=null)consider(p.x,p.y,p.z,true,"recorded");continue;}
+                    if(foreign==null)foreign=AstralModStructures.known(world,target,x,z,radius);
+                    if(foreign.hasNext()){AstralLandmarks.Point p=foreign.next();if(p!=null)consider(p.x,p.y,p.z,p.hasY,p.source);continue;}
                     if(world.getWorldInfo().isMapFeaturesEnabled()&&ID_STRONGHOLD.equals(target.id))try {
                         for(ChunkPosition p:VanillaStructureProbe.strongholds(world,generators))consider(p.chunkPosX,p.chunkPosY,p.chunkPosZ,false,"predicted");
                     }catch(ReflectiveOperationException e){am2.LogHelper.warn("Astral Compass: stronghold prediction unavailable: %s",e.toString());}

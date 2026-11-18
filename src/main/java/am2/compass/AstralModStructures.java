@@ -16,6 +16,16 @@ final class AstralModStructures {
     static void addCatalog(World world,Map<String,StructureTargetInfo> map) {
         if(available(CHROMA)) for(String type:new String[]{"CAVERN","BURROW","OCEAN","DESERT","SNOWSTRUCT","BIOMEFRAG"})
             add(map,"chromaticraft:"+type,"ChromatiCraft: "+StructureTargetInfo.prettify(type),world);
+        if(available("Reika.ChromatiCraft.World.IWG.PylonGenerator")) {
+            add(map,"chromaticraft:PYLON","ChromatiCraft: Pylon",world);
+            try {
+                Class<?> colors=Class.forName("Reika.ChromatiCraft.Registry.CrystalElement",false,AstralModStructures.class.getClassLoader());
+                int count=0;for(Object color:colors.getEnumConstants()) {
+                    if(count++>=16)break;String name=((Enum<?>)color).name();
+                    add(map,"chromaticraft:PYLON_"+name,"ChromatiCraft: "+StructureTargetInfo.prettify(name)+" Pylon",world);
+                }
+            } catch(ClassNotFoundException e){warn("chromaticraft:pylon-colors",e);}catch(LinkageError e){warn("chromaticraft:pylon-colors",e);}
+        }
         if(available("electroblob.wizardry.WizardryWorldGenerator")) add(map,"wizardry:wizard_tower","Electroblob's Wizardry: Wizard Tower",world);
         if(available("mglucas0123.utils.GenericDungeon")) for(String method:am2.preloader.AstralStructureTransformer.oreCatalog())
             add(map,"orespawn:"+method,"OreSpawn: "+StructureTargetInfo.prettify(method.substring(4)),world);
@@ -36,6 +46,9 @@ final class AstralModStructures {
         if(!map.containsKey(id))map.put(id,new StructureTargetInfo(id,name,StructureTargetInfo.CAT_MODDED,world.provider.dimensionId,true,id.hashCode()));
     }
     static Iterator<AstralLandmarks.Point> known(final World world,StructureTargetInfo target,final int originX,final int originZ) {
+        return known(world,target,originX,originZ,AstralStructureLocator.DEFAULT_RADIUS);
+    }
+    static Iterator<AstralLandmarks.Point> known(final World world,StructureTargetInfo target,final int originX,final int originZ,int radius) {
         if(target.id.startsWith("twilightforest:") && world.provider.getClass().getName().startsWith("twilightforest.")) try {
             final Class<?> feature=Class.forName("twilightforest.TFFeature");
             final Method find=feature.getMethod("getFeatureForRegion",int.class,int.class,World.class);
@@ -58,38 +71,8 @@ final class AstralModStructures {
                 public void remove(){throw new UnsupportedOperationException();}
             };
         } catch(ReflectiveOperationException e){warn(target.id,e);}catch(LinkageError e){warn(target.id,e);}
-        if(!target.id.startsWith("chromaticraft:"))return Collections.<AstralLandmarks.Point>emptyList().iterator();
-        try {
-            Class<?> generator=Class.forName(CHROMA);
-            Object instance=generator.getField("instance").get(null);
-            Field structures=generator.getDeclaredField("structureMap");structures.setAccessible(true);
-            final Object cache=findEnumEntry((Map<?,?>)structures.get(instance),target.id.substring(target.id.indexOf(':')+1));
-            if(cache==null)return Collections.<AstralLandmarks.Point>emptyList().iterator();
-            final Method get=cache.getClass().getMethod("get",Class.forName("Reika.DragonAPI.Instantiable.Data.Immutable.WorldLocation"));
-            final Iterator<?> locations=((Collection<?>)cache.getClass().getMethod("keySet").invoke(cache)).iterator();
-            final String id=target.id;final int dimension=world.provider.dimensionId;
-            return new Iterator<AstralLandmarks.Point>() {
-                int count;
-                public boolean hasNext(){return count<8192 && locations.hasNext();}
-                public AstralLandmarks.Point next(){
-                    count++;Object location=locations.next();
-                    try {
-                        if(location.getClass().getField("dimensionID").getInt(location)!=dimension)return null;
-                        Object data=get.invoke(cache,location);if(data==null)return null;
-                        Field status=data.getClass().getDeclaredField("status");status.setAccessible(true);
-                        if(!"SUCCESS".equals(((Enum<?>)status.get(data)).name()))return null;
-                        Field generated=data.getClass().getDeclaredField("generatedLocation");generated.setAccessible(true);
-                        Object point=generated.get(data);if(point==null)return null;
-                        return new AstralLandmarks.Point(id,point.getClass().getField("xCoord").getInt(point),point.getClass().getField("yCoord").getInt(point),point.getClass().getField("zCoord").getInt(point));
-                    }catch(ReflectiveOperationException e){warn(id,e);return null;}
-                }
-                public void remove(){throw new UnsupportedOperationException();}
-            };
-        } catch(ReflectiveOperationException e){warn(target.id,e);}catch(LinkageError e){warn(target.id,e);}
+        if(target.id.startsWith("chromaticraft:"))return ChromaStructureLookup.known(world,target.id,originX,originZ,radius);
         return Collections.<AstralLandmarks.Point>emptyList().iterator();
-    }
-    private static Object findEnumEntry(Map<?,?> entries,String name) {
-        for(Map.Entry<?,?> e:entries.entrySet())if(e.getKey() instanceof Enum && ((Enum<?>)e.getKey()).name().equals(name))return e.getValue();return null;
     }
     private static void warn(String id,Throwable e){if(warned.add(id))am2.LogHelper.warn("Astral Compass: optional adapter unavailable for %s: %s",id,e.toString());}
     // Kept as a harmless empty fallback: incremental known() owns external cache iteration.

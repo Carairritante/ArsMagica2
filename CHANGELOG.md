@@ -1,5 +1,16 @@
 # Alterações de manutenção do AM2.5 LE
 
+### Localização ChromatiCraft na CR44 — 2026-11-17
+
+- Incluídos pylons de qualquer cor e por cor, consultando PylonGenerator.colorCache
+  e tiles existentes em chunks carregados, sem alterar o ChromatiCraft.
+- Corrigida a rejeição de ruínas V33 com SUCCESS e generatedLocation nula:
+  coordenada exata pelo controlador carregado ou região aproximada pelo cache,
+  com altura desconhecida em vez de assumir Y=0 real.
+- Novo adaptador opcional com leituras limitadas, snapshots e indicação de
+  região aproximada em GUI/HUD/histórico. Suporte à exclusão do alvo regional.
+- Apenas compilação, sem testes ou abertura do jogo nesta etapa. Mantido CR44.
+
 ### Melhorias da localização de estruturas na CR44 — 2026-11-17
 
 - Índice aceita alturas negativas, distingue posições verticais e usa consultas

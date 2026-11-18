@@ -4,6 +4,13 @@ Preferência do usuário (2026-11-17): pequenas correções não exigem renomear
 mod nem incrementar o CR. Preservar CR44 nesta correção da Bússola Astral;
 distinguir os builds pelo checksum e pelo registro das alterações.
 
+Lição de integração (2026-11-17): verificar o ciclo de preenchimento dos campos
+nos JARs, além de suas assinaturas. ChromatiCraft V33 pode manter SUCCESS com
+generatedLocation nula, e pylons usam cache separado das ruínas. Não confundir
+campo vazio com ausência da estrutura, nem catálogo listado com localização
+validada. Exibir a precisão disponível; registrar claramente quando houve só
+compilação e o teste em jogo ficou para o usuário.
+
 Estas regras registram o fluxo solicitado pelo usuário e por seu colaborador
 Akashiic. Consulte-as antes de preparar commits, publicar atualizações ou alterar
 os repositórios deste projeto. Novas instruções explícitas do usuário prevalecem.

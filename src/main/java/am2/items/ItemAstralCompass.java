@@ -146,7 +146,7 @@ public class ItemAstralCompass extends ArsMagicaItem {
 	}
 
     public static String normalizeSource(String source) {
-        return "recorded".equals(source)||"predicted".equals(source)||"biome".equals(source)?source:"unknown";
+        return "recorded".equals(source)||"predicted".equals(source)||"biome".equals(source)||"region".equals(source)?source:"unknown";
     }
 
 	public static boolean hasTarget(ItemStack stack) {
