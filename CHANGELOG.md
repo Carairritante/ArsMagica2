@@ -1,5 +1,17 @@
 # Alterações de manutenção do AM2.5 LE
 
+### Apresentação dos instrumentos — CR44 — 2026-11-17
+
+- Novas poses de primeira/terceira pessoa da bússola e renderer de item próprio
+  para o bate-estacas, separado do modelo colocado no mundo.
+- Ícones vetoriais próprios de inventário/hotbar: bússola com agulha e pedestal
+  de medição com núcleo luminoso, sem depender da miniatura do modelo completo.
+- Telas internas com painel e botões de instrumentos, cabeçalhos próprios e
+  leitura do medidor. Presets/alternâncias acompanham o estado sincronizado.
+- Ajustes de posição/escala/transparência preservados. Sem edição de meshes,
+  texturas, mecânica, protocolos, custos ou outros mods. Apenas assemble; teste
+  visual em jogo fica com o usuário. Nome CR44 mantido.
+
 ### Desenho exclusivo da HUD da Bússola — CR44 — 2026-11-17
 
 - Substituída somente a renderização da HUD por mostrador circular de navegação:

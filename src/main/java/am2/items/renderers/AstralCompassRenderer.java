@@ -50,7 +50,8 @@ public final class AstralCompassRenderer implements IItemRenderer {
 
 	@Override
 	public boolean handleRenderType(ItemStack item, ItemRenderType type) {
-		return type == ItemRenderType.EQUIPPED
+		return type == ItemRenderType.INVENTORY
+                || type == ItemRenderType.EQUIPPED
 				|| type == ItemRenderType.EQUIPPED_FIRST_PERSON
 				|| type == ItemRenderType.ENTITY;
 	}
@@ -62,6 +63,7 @@ public final class AstralCompassRenderer implements IItemRenderer {
 
 	@Override
 	public void renderItem(ItemRenderType type, ItemStack item, Object... data) {
+        if(type==ItemRenderType.INVENTORY){am2.guis.controls.InstrumentStyle.icon(false,0,0,16);return;}
 		BlockbenchRigModel rig = getModel();
 		if (rig == null || item == null) {
 			return;
@@ -93,15 +95,15 @@ public final class AstralCompassRenderer implements IItemRenderer {
 		try {
 			if (type == ItemRenderType.EQUIPPED_FIRST_PERSON) {
 				// Position comfortably in first-person right hand tilted so the 3D dial & needle are clearly legible
-				GL11.glTranslatef(0.70f, 0.45f, 0.35f);
-				GL11.glRotatef(36.0f, 1.0f, 0.0f, 0.0f);
-				GL11.glRotatef(-12.0f, 0.0f, 0.0f, 1.0f);
-				GL11.glScalef(0.88f, 0.88f, 0.88f);
+				GL11.glTranslatef(0.62f, 0.28f, 0.30f);
+				GL11.glRotatef(58.0f, 1.0f, 0.0f, 0.0f);
+				GL11.glRotatef(-8.0f, 0.0f, 0.0f, 1.0f);
+				GL11.glScalef(0.72f, 0.72f, 0.72f);
 			} else if (type == ItemRenderType.EQUIPPED) {
-				GL11.glTranslatef(0.55f, 0.30f, 0.45f);
-				GL11.glRotatef(52.0f, 1.0f, 0.0f, 0.0f);
+				GL11.glTranslatef(0.52f, 0.24f, 0.38f);
+				GL11.glRotatef(70.0f, 1.0f, 0.0f, 0.0f);
 				GL11.glRotatef(-15.0f, 0.0f, 1.0f, 0.0f);
-				GL11.glScalef(0.75f, 0.75f, 0.75f);
+				GL11.glScalef(0.58f, 0.58f, 0.58f);
 			} else if (type == ItemRenderType.ENTITY) {
 				GL11.glTranslatef(0.0f, 0.10f, 0.0f);
 				GL11.glScalef(0.78f, 0.78f, 0.78f);

@@ -1,8 +1,8 @@
 package am2.guis;
 
 import am2.blocks.tileentities.TileEntityArcaneStriker;
-import am2.guis.controls.ArcaneChalkStyle;
-import am2.guis.controls.GuiButtonArcaneChalk;
+import am2.guis.controls.InstrumentStyle;
+import am2.guis.controls.GuiInstrumentButton;
 import am2.network.AMNetHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -29,13 +29,16 @@ public class GuiArcaneStriker extends GuiScreen {
 	private final TileEntityArcaneStriker tile;
 
 	private int left, top, panelW, panelH;
+    private int paintedDuration=-1;
+    private boolean paintedActive,paintedBypass;
+    private void drawLabel(String text,int x,int y,int color){fontRendererObj.drawStringWithShadow(fontRendererObj.trimStringToWidth(text,Math.max(1,left+panelW-18-x)),x,y,color);}
 
-	private GuiButtonArcaneChalk btnMinus5, btnMinus1, btnPlus1, btnPlus5;
-	private GuiButtonArcaneChalk btnPre10, btnPre30, btnPre60;
-	private GuiButtonArcaneChalk btnIframes;
-	private GuiButtonArcaneChalk btnStartStop;
-	private GuiButtonArcaneChalk btnResetRecord;
-	private GuiButtonArcaneChalk btnClose;
+	private GuiInstrumentButton btnMinus5, btnMinus1, btnPlus1, btnPlus5;
+	private GuiInstrumentButton btnPre10, btnPre30, btnPre60;
+	private GuiInstrumentButton btnIframes;
+	private GuiInstrumentButton btnStartStop;
+	private GuiInstrumentButton btnResetRecord;
+	private GuiInstrumentButton btnClose;
 
 	public GuiArcaneStriker(EntityPlayer player, TileEntityArcaneStriker tile) {
 		this.player = player;
@@ -50,7 +53,7 @@ public class GuiArcaneStriker extends GuiScreen {
 	@Override
 	public void initGui() {
 		panelW = Math.min(390, width - 20);
-		panelH = Math.min(256, height - 20);
+		panelH = Math.min(282, height - 16);
 		left = (width - panelW) / 2;
 		top = (height - panelH) / 2;
 		rebuildButtons();
@@ -58,6 +61,7 @@ public class GuiArcaneStriker extends GuiScreen {
 
 	@SuppressWarnings("unchecked")
 	private void rebuildButtons() {
+        paintedDuration=tile.getConfiguredDurationSec();paintedActive=tile.isTestActive();paintedBypass=tile.isBypassIframes();
 		buttonList.clear();
 
 		int colLeft = left + 18;
@@ -65,20 +69,20 @@ public class GuiArcaneStriker extends GuiScreen {
 		int yDur = top + 76;
 		int bW = (colW - 12) / 4;
 
-		btnMinus5 = new GuiButtonArcaneChalk(1, colLeft, yDur, bW, 20, "-5s");
-		btnMinus1 = new GuiButtonArcaneChalk(2, colLeft + bW + 4, yDur, bW, 20, "-1s");
-		btnPlus1 = new GuiButtonArcaneChalk(3, colLeft + (bW + 4) * 2, yDur, bW, 20, "+1s");
-		btnPlus5 = new GuiButtonArcaneChalk(4, colLeft + (bW + 4) * 3, yDur, bW, 20, "+5s");
+		btnMinus5 = new GuiInstrumentButton(1, colLeft, yDur, bW, 20, "-5s");
+		btnMinus1 = new GuiInstrumentButton(2, colLeft + bW + 4, yDur, bW, 20, "-1s");
+		btnPlus1 = new GuiInstrumentButton(3, colLeft + (bW + 4) * 2, yDur, bW, 20, "+1s");
+		btnPlus5 = new GuiInstrumentButton(4, colLeft + (bW + 4) * 3, yDur, bW, 20, "+5s");
 
 		int preW = (colW - 8) / 3;
 		int yPre = yDur + 25;
 		int curDur = tile.getConfiguredDurationSec();
-		btnPre10 = new GuiButtonArcaneChalk(5, colLeft, yPre, preW, 20, "10s", -1, curDur == 10);
-		btnPre30 = new GuiButtonArcaneChalk(6, colLeft + preW + 4, yPre, preW, 20, "30s", -1, curDur == 30);
-		btnPre60 = new GuiButtonArcaneChalk(7, colLeft + (preW + 4) * 2, yPre, preW, 20, "60s", -1, curDur == 60);
+		btnPre10 = new GuiInstrumentButton(5, colLeft, yPre, preW, 20, "10s", -1, curDur == 10);
+		btnPre30 = new GuiInstrumentButton(6, colLeft + preW + 4, yPre, preW, 20, "30s", -1, curDur == 30);
+		btnPre60 = new GuiInstrumentButton(7, colLeft + (preW + 4) * 2, yPre, preW, 20, "60s", -1, curDur == 60);
 
 		boolean bypass = tile.isBypassIframes();
-		btnIframes = new GuiButtonArcaneChalk(
+		btnIframes = new GuiInstrumentButton(
 				8,
 				colLeft,
 				yPre + 34,
@@ -90,10 +94,10 @@ public class GuiArcaneStriker extends GuiScreen {
 		);
 
 		boolean active = tile.isTestActive();
-		btnStartStop = new GuiButtonArcaneChalk(
+		btnStartStop = new GuiInstrumentButton(
 				9,
 				colLeft,
-				top + panelH - 58,
+				top + panelH - 38,
 				colW,
 				24,
 				StatCollector.translateToLocal(active ? "am2.arcane_striker.gui.stop" : "am2.arcane_striker.gui.start"),
@@ -101,19 +105,19 @@ public class GuiArcaneStriker extends GuiScreen {
 				active
 		);
 
-		btnResetRecord = new GuiButtonArcaneChalk(
+		btnResetRecord = new GuiInstrumentButton(
 				10,
 				colLeft + colW + 14,
-				top + panelH - 58,
+				top + panelH - 38,
 				colW - 58,
 				22,
 				StatCollector.translateToLocal("am2.arcane_striker.gui.reset_record")
 		);
 
-		btnClose = new GuiButtonArcaneChalk(
+		btnClose = new GuiInstrumentButton(
 				11,
 				left + panelW - 72,
-				top + panelH - 58,
+				top + panelH - 38,
 				54,
 				22,
 				StatCollector.translateToLocal("am2.gui.close")
@@ -140,6 +144,7 @@ public class GuiArcaneStriker extends GuiScreen {
 			mc.displayGuiScreen(null);
 			return;
 		}
+        if(paintedDuration!=tile.getConfiguredDurationSec()||paintedActive!=tile.isTestActive()||paintedBypass!=tile.isBypassIframes())rebuildButtons();
 		// Refresh toggle/active button labels smoothly from synced TE state
 		boolean active = tile.isTestActive();
 		btnStartStop.displayString = StatCollector.translateToLocal(active ? "am2.arcane_striker.gui.stop" : "am2.arcane_striker.gui.start");
@@ -180,30 +185,30 @@ public class GuiArcaneStriker extends GuiScreen {
 	@Override
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		drawDefaultBackground();
-		ArcaneChalkStyle.panel(left, top, panelW, panelH);
-		ArcaneChalkStyle.seal(mc, 3, left + 34, top + 30);
+		InstrumentStyle.panel(left, top, panelW, panelH,true);
+		InstrumentStyle.icon(true,left+19,top+10,30);
 
 		String title = StatCollector.translateToLocal("am2.arcane_striker.gui.title");
-		fontRendererObj.drawStringWithShadow(title, left + 64, top + 18, 0xF0F6FF);
+		drawLabel(title, left + 64, top + 18, 0xF0F6FF);
 		String sub = StatCollector.translateToLocalFormatted(
 				"am2.arcane_striker.gui.duration_label",
 				tile.getConfiguredDurationSec(),
 				TileEntityArcaneStriker.MAX_DURATION_SEC
 		);
-		fontRendererObj.drawStringWithShadow(sub, left + 64, top + 32, 0x77CAFF);
+		drawLabel(sub, left + 64, top + 32, 0x77CAFF);
 		Gui.drawRect(left + 16, top + 54, left + panelW - 16, top + 55, 0x55446EAB);
 
 		int colLeft = left + 18;
 		int colW = (panelW - 44) / 2;
 		int rightCol = colLeft + colW + 14;
 
-		fontRendererObj.drawStringWithShadow(StatCollector.translateToLocal("am2.arcane_striker.gui.config_header"), colLeft, top + 62, 0x9FD6FF);
+		drawLabel(StatCollector.translateToLocal("am2.arcane_striker.gui.config_header"), colLeft, top + 62, 0x9FD6FF);
 
 		// Right-hand High Striker Readout Card
-		Gui.drawRect(rightCol, top + 62, left + panelW - 18, top + panelH - 66, 0x66061224);
+		Gui.drawRect(rightCol, top + 62, left + panelW - 18, top + panelH - 44, 0x66061224);
 		int meterX = rightCol + 8;
 		int meterY = top + 70;
-		int meterH = panelH - 146;
+		int meterH = panelH - 122;
 		int meterW = 14;
 		Gui.drawRect(meterX, meterY, meterX + meterW, meterY + meterH, 0xFF0A162B);
 		float prog = tile.computeMeterProgress();
@@ -212,31 +217,32 @@ public class GuiArcaneStriker extends GuiScreen {
 			int fillTop = meterY + meterH - fillH;
 			drawGradientRect(meterX + 2, fillTop, meterX + meterW - 2, meterY + meterH - 2, prog >= 0.99f ? 0xFFFFD84D : 0xFF55E6FF, 0xFF2882E6);
 		}
+        for(int i=0;i<=5;i++){int yy=meterY+i*meterH/5;Gui.drawRect(meterX-2,yy,meterX+meterW+2,yy+1,0x774d8194);}
 		// Bell dot at top of bar
 		Gui.drawRect(meterX + 2, meterY - 5, meterX + meterW - 2, meterY - 1, prog >= 0.99f ? 0xFFFFEA70 : 0xFF776633);
 
 		int tx = rightCol + 30;
 		int ty = top + 68;
 		if (tile.isTestActive()) {
-			fontRendererObj.drawStringWithShadow(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.status_live", String.format("%.1f", tile.getRemainingTicks() / 20.0f)), tx, ty, 0x78E2BA);
-			fontRendererObj.drawStringWithShadow(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_total", String.format("%.1f", tile.getCurrentTotalDamage())), tx, ty + 14, 0xFFE680);
-			fontRendererObj.drawStringWithShadow(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_dps", String.format("%.1f", tile.getCurrentDps())), tx, ty + 26, 0x77CAFF);
-			fontRendererObj.drawStringWithShadow(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_peak", String.format("%.1f", tile.getCurrentPeakHit())), tx, ty + 38, 0xD4E4F6);
-			fontRendererObj.drawStringWithShadow(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_hits", tile.getCurrentHitCount()), tx, ty + 50, 0x88A3C4);
+			drawLabel(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.status_live", String.format("%.1f", tile.getRemainingTicks() / 20.0f)), tx, ty, 0x78E2BA);
+			drawLabel(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_total", String.format("%.1f", tile.getCurrentTotalDamage())), tx, ty + 14, 0xFFE680);
+			drawLabel(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_dps", String.format("%.1f", tile.getCurrentDps())), tx, ty + 26, 0x77CAFF);
+			drawLabel(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_peak", String.format("%.1f", tile.getCurrentPeakHit())), tx, ty + 38, 0xD4E4F6);
+			drawLabel(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_hits", tile.getCurrentHitCount()), tx, ty + 50, 0x88A3C4);
 		} else {
-			fontRendererObj.drawStringWithShadow(StatCollector.translateToLocal("am2.arcane_striker.gui.last_header"), tx, ty, 0x9FD6FF);
-			fontRendererObj.drawStringWithShadow(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_total", String.format("%.1f", tile.getLastTotalDamage())), tx, ty + 12, 0xF0F6FF);
-			fontRendererObj.drawStringWithShadow(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_dps", String.format("%.1f", tile.getLastDps())), tx, ty + 24, 0x78E2BA);
-			fontRendererObj.drawStringWithShadow(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_peak", String.format("%.1f", tile.getLastPeakHit())), tx, ty + 36, 0xD4E4F6);
+			drawLabel(StatCollector.translateToLocal("am2.arcane_striker.gui.last_header"), tx, ty, 0x9FD6FF);
+			drawLabel(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_total", String.format("%.1f", tile.getLastTotalDamage())), tx, ty + 12, 0xF0F6FF);
+			drawLabel(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_dps", String.format("%.1f", tile.getLastDps())), tx, ty + 24, 0x78E2BA);
+			drawLabel(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_peak", String.format("%.1f", tile.getLastPeakHit())), tx, ty + 36, 0xD4E4F6);
 		}
 
 		int recY = ty + 68;
 		Gui.drawRect(tx, recY - 4, left + panelW - 24, recY - 3, 0x445588CC);
-		fontRendererObj.drawStringWithShadow(StatCollector.translateToLocal("am2.arcane_striker.gui.record_header"), tx, recY, 0xFFD25A);
-		fontRendererObj.drawStringWithShadow(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_total", String.format("%.1f", tile.getRecordTotalDamage())), tx, recY + 12, 0xFFE89B);
-		fontRendererObj.drawStringWithShadow(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_dps", String.format("%.1f", tile.getRecordDps())), tx, recY + 24, 0xB8E6D6);
+		drawLabel(StatCollector.translateToLocal("am2.arcane_striker.gui.record_header"), tx, recY, 0xFFD25A);
+		drawLabel(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_total", String.format("%.1f", tile.getRecordTotalDamage())), tx, recY + 12, 0xFFE89B);
+		drawLabel(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_dps", String.format("%.1f", tile.getRecordDps())), tx, recY + 24, 0xB8E6D6);
 		if (!tile.getRecordHolderName().isEmpty()) {
-			fontRendererObj.drawStringWithShadow(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_holder", tile.getRecordHolderName()), tx, recY + 36, 0x88A3C4);
+			drawLabel(StatCollector.translateToLocalFormatted("am2.arcane_striker.gui.stat_holder", tile.getRecordHolderName()), tx, recY + 36, 0x88A3C4);
 		}
 
 		super.drawScreen(mouseX, mouseY, partialTicks);

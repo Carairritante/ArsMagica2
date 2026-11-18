@@ -92,12 +92,12 @@ public class GuiAstralCompass extends GuiScreen {
         return null;
     }
     private GuiButton button(int id,int x,int y,int w,int h,String label,boolean enabled) {
-        GuiButton button=new GuiButtonArcaneChalk(id,x,y,w,h,label);button.enabled=enabled;buttonList.add(button);return button;
+        GuiButton button=new GuiInstrumentButton(id,x,y,w,h,label);button.enabled=enabled;buttonList.add(button);return button;
     }
     private boolean busy() { return ItemAstralCompass.getClientSearchStatus().status==ItemAstralCompass.STATUS_SEARCHING; }
     @SuppressWarnings("unchecked") private void refreshButtons() {
         buttonList.clear();int tabW=(panelWidth-32-20)/6;
-        for(int i=0;i<CATEGORIES.length;i++)buttonList.add(new GuiButtonArcaneChalk(20+i,left+16+i*(tabW+4),top+44,tabW,18,
+        for(int i=0;i<CATEGORIES.length;i++)buttonList.add(new GuiInstrumentButton(20+i,left+16+i*(tabW+4),top+44,tabW,18,
                 text("tab_"+CATEGORIES[i]),-1,CATEGORIES[i].equals(category)));
         int half=(panelWidth-36)/2;
         String mod="";for(StructureTargetInfo info:ItemAstralCompass.getClientCatalog())if(info.getModId().equals(modFilter)){mod=info.getModName();break;}
@@ -110,7 +110,7 @@ public class GuiAstralCompass extends GuiScreen {
         }
         button(1,left+16,footer,24,18,"<",page>0);button(2,left+44,footer,24,18,">",(page+1)*rows<filtered.size());
         button(7,left+112,footer,Math.max(60,panelWidth-246),18,text(prefs.favorite(selectedId)?"unfavorite":"favorite"),selected()!=null);
-        buttonList.add(new GuiButtonArcaneChalk(6,left+panelWidth-126,footer,24,18,"",GuiButtonArcaneChalk.GEAR,false));
+        buttonList.add(new GuiInstrumentButton(6,left+panelWidth-126,footer,24,18,"",GuiInstrumentButton.GEAR,false));
         button(3,left+panelWidth-98,footer,82,18,text("done"),true);
         int actionW=(panelWidth-40)/3; StructureTargetInfo entry=selected();
         boolean rightDimension=entry!=null&&(!entry.dimensionRestricted||entry.preferredDimension==player.dimension);
@@ -172,7 +172,7 @@ public class GuiAstralCompass extends GuiScreen {
     @Override public void handleMouseInput(){super.handleMouseInput();int wheel=Mouse.getEventDWheel();if(wheel!=0){page=Math.max(0,Math.min(page+(wheel>0?-1:1),Math.max(0,(filtered.size()-1)/rows)));refreshButtons();}}
     private void line(String text,int y,int color){fontRendererObj.drawStringWithShadow(fontRendererObj.trimStringToWidth(text,panelWidth-36),left+18,y,color);}
     @Override public void drawScreen(int x,int y,float partial){
-        drawWorldBackground(0);ArcaneChalkStyle.panel(left,top,panelWidth,panelHeight);ArcaneChalkStyle.seal(mc,11,left+32,top+24);
+        drawWorldBackground(0);InstrumentStyle.panel(left,top,panelWidth,panelHeight,false);InstrumentStyle.icon(false,left+18,top+9,30);
         fontRendererObj.drawStringWithShadow(text("title"),left+58,top+9,0xf0f6ff);
         ExtendedProperties p=ExtendedProperties.For(player);int level=p==null?0:p.getMagicLevel();int mana=p==null?0:(int)(p.getCurrentMana()+p.getBonusCurrentMana());
         fontRendererObj.drawStringWithShadow(text("req_status",level,50,mana,20000),left+58,top+25,canAffordSearch()?0x78e2ba:0xff929f);
@@ -204,7 +204,7 @@ public class GuiAstralCompass extends GuiScreen {
             if(!visible)return;boolean hover=x>=xPosition&&x<xPosition+width&&y>=yPosition&&y<yPosition+height;
             Gui.drawRect(xPosition,yPosition,xPosition+width,yPosition+height,selected?0xff67ccff:hover?0xff428dcc:0xff294d74);
             Gui.drawRect(xPosition+1,yPosition+1,xPosition+width-1,yPosition+height-1,selected?0xff143654:hover?0xff102c45:0xff0a192d);
-            ArcaneChalkStyle.glyph(mc,entry.glyphIndex,xPosition+8,yPosition+8,14,0x77caff,1);
+            InstrumentStyle.icon(false,xPosition+8,yPosition+8,14);
             mc.fontRenderer.drawStringWithShadow(mc.fontRenderer.trimStringToWidth(entry.getDisplayName(),width-50),xPosition+30,yPosition+5,0xecf7ff);
             String subtitle=entry.getModName()+" | "+dim(entry.preferredDimension);
             mc.fontRenderer.drawStringWithShadow(mc.fontRenderer.trimStringToWidth(subtitle,width-42),xPosition+30,yPosition+17,0x8daac3);

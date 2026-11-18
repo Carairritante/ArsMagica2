@@ -20,14 +20,14 @@ public final class GuiAstralCompassHudSettings extends GuiScreen {
         panelWidth=Math.min(350,width-16);left=(width-panelWidth)/2;top=height-110;
         buttonList.clear();
         int half=(panelWidth-34)/2;
-        buttonList.add(new GuiButtonArcaneChalk(1,left+12,top+36,24,20,"-"));
-        buttonList.add(new GuiButtonArcaneChalk(2,left+half-14,top+36,24,20,"+"));
-        buttonList.add(new GuiButtonArcaneChalk(3,left+half+20,top+36,24,20,"-"));
-        buttonList.add(new GuiButtonArcaneChalk(4,left+panelWidth-36,top+36,24,20,"+"));
+        buttonList.add(new GuiInstrumentButton(1,left+12,top+36,24,20,"-"));
+        buttonList.add(new GuiInstrumentButton(2,left+half-14,top+36,24,20,"+"));
+        buttonList.add(new GuiInstrumentButton(3,left+half+20,top+36,24,20,"-"));
+        buttonList.add(new GuiInstrumentButton(4,left+panelWidth-36,top+36,24,20,"+"));
         int third=(panelWidth-40)/3;
-        buttonList.add(new GuiButtonArcaneChalk(5,left+12,top+75,third,20,GuiAstralCompass.text("reset")));
-        buttonList.add(new GuiButtonArcaneChalk(6,left+20+third,top+75,third,20,GuiAstralCompass.text("position")));
-        buttonList.add(new GuiButtonArcaneChalk(0,left+28+third*2,top+75,third,20,GuiAstralCompass.text("done")));
+        buttonList.add(new GuiInstrumentButton(5,left+12,top+75,third,20,GuiAstralCompass.text("reset")));
+        buttonList.add(new GuiInstrumentButton(6,left+20+third,top+75,third,20,GuiAstralCompass.text("position")));
+        buttonList.add(new GuiInstrumentButton(0,left+28+third*2,top+75,third,20,GuiAstralCompass.text("done")));
     }
     @Override protected void actionPerformed(GuiButton b){
         if(b.id==0){prefs.save();mc.displayGuiScreen(parent);return;}
@@ -40,7 +40,7 @@ public final class GuiAstralCompassHudSettings extends GuiScreen {
     }
     @Override public void drawScreen(int x,int y,float partial){
         preview=AstralCompassHudRenderer.drawHud(new ScaledResolution(mc,mc.displayWidth,mc.displayHeight),true);
-        ArcaneChalkStyle.panel(left,top,panelWidth,103);
+        InstrumentStyle.panel(left,top,panelWidth,103,false);
         drawCenteredString(fontRendererObj,GuiAstralCompass.text("hud_settings"),width/2,top+8,0xecf7ff);
         drawCenteredString(fontRendererObj,GuiAstralCompass.text("drag_hint"),width/2,top+22,0x77caff);
         int half=(panelWidth-34)/2;
