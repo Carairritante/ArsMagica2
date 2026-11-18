@@ -1,5 +1,30 @@
 # Alterações de manutenção do AM2.5 LE
 
+### Prévias visuais das estruturas na Bússola — CR44 — 2026-11-18
+
+- Substituído o ícone genérico de bússola na lista de `GuiAstralCompass` por
+  miniaturas isométricas `24×24` exclusivas de cada estrutura (102 texturas `256×256`
+  em `textures/gui/compass_previews/` cobrindo Vanilla, AM2, os 16 Pylons + 6 ruínas
+  do ChromatiCraft, Wizardry, Thaumcraft, os 47 construtores do OreSpawn e Twilight Forest).
+- Adicionado painel lateral de prévia nítida com dica visual de reconhecimento
+  (`am2.astral_compass.desc.*` em `en_US`/`pt_BR`) e modal de zoom expandido até
+  `256×256` ao clicar na prévia, no botão `+` ou com duplo clique na linha.
+
+### Intervalos de pedidos no servidor — CR44 — 2026-11-17
+
+- Bate-estacas: o intervalo mínimo de cinco ticks entre tentativas de início
+  também vale após parar o teste ou falhar por falta de espaço. Tentativas
+  rejeitadas durante o intervalo não adiam o próximo início permitido.
+- Bússola: buscas rejeitadas também respeitam o intervalo de vinte ticks,
+  registrado antes das verificações de progressão e da descoberta do catálogo.
+  Alvos inexistentes não podem repetir essa leitura a cada tick. Rejeições
+  continuam sem custo de mana; cancelamento e consulta do catálogo preservados.
+- Acrescentado probe descartável de regressão para servidor dedicado com dois
+  jogadores simulados, criação/remoção de manequins, pedidos repetidos, recuperação
+  após os intervalos e buscas pela fila com cobrança exata de mana.
+- Nome CR44 mantido. Índice de 8.192 locais e demais mods não alterados.
+
+
 ### Apresentação dos instrumentos — CR44 — 2026-11-17
 
 - Novas poses de primeira/terceira pessoa da bússola e renderer de item próprio

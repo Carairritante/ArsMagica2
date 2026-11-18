@@ -29,4 +29,28 @@ public class AstralCompassRegressionTest {
         root.setTag("points",entries);AstralLandmarks data=new AstralLandmarks("test");data.readFromNBT(root);
         assertEquals(AstralLandmarks.MAX_POINTS,data.points("test:tower").size());
     }
+    @Test public void bundledStructurePreviewsResolveAndExist() {
+        String[] sampleIds = {
+            "Stronghold", "Village", "Mineshaft", "Temple:DesertPyramid",
+            "Temple:JungleTemple", "Temple:WitchHut", "Fortress", "am2:witchwood_forest",
+            "chromaticraft:PYLON", "chromaticraft:PYLON_BLUE", "chromaticraft:PYLON_RED",
+            "chromaticraft:PYLON_WHITE", "chromaticraft:OCEAN", "wizardry:wizard_tower",
+            "thaumcraft:mound", "thaumcraft:eldritch_ring", "thaumcraft:hilltop_stones",
+            "orespawn:makeKingAltar", "orespawn:makeQueenAltar", "orespawn:makeCrystalBattleTower",
+            "twilightforest:finalCastle", "twilightforest:lichTower"
+        };
+        for (String id : sampleIds) {
+            String key = am2.compass.client.StructurePreviewRegistry.resolvePreviewKey(id);
+            assertNotNull("Missing preview key for " + id, key);
+            assertNotNull("Missing PNG resource for " + id,
+                getClass().getResourceAsStream("/assets/arsmagica2/textures/gui/compass_previews/" + key + ".png"));
+        }
+        for (String oreMethod : am2.preloader.AstralStructureTransformer.ORE_METHODS) {
+            String id = "orespawn:" + oreMethod;
+            String key = am2.compass.client.StructurePreviewRegistry.resolvePreviewKey(id);
+            assertNotNull("Missing preview key for " + id, key);
+            assertNotNull("Missing PNG resource for " + id,
+                getClass().getResourceAsStream("/assets/arsmagica2/textures/gui/compass_previews/" + key + ".png"));
+        }
+    }
 }
