@@ -20,7 +20,7 @@ import java.util.*;
 
 @SideOnly(Side.CLIENT)
 public class GuiAstralCompass extends GuiScreen {
-    private static final String[] CATEGORIES={"all","vanilla","am2","modded","favorites","history"};
+    private static final String[] CATEGORIES={"all","favorites","history"};
     private final EntityPlayer player;
     private final int heldSlot;
     private GuiTextField searchField;
@@ -114,8 +114,8 @@ public class GuiAstralCompass extends GuiScreen {
     }
     private boolean busy() { return ItemAstralCompass.getClientSearchStatus().status==ItemAstralCompass.STATUS_SEARCHING; }
     @SuppressWarnings("unchecked") private void refreshButtons() {
-        buttonList.clear();int tabW=(panelWidth-32-20)/6;
-        for(int i=0;i<CATEGORIES.length;i++)buttonList.add(new GuiInstrumentButton(20+i,left+16+i*(tabW+4),top+44,tabW,18,
+        buttonList.clear();int tabGap=4;int tabW=(panelWidth-32-(CATEGORIES.length-1)*tabGap)/CATEGORIES.length;
+        for(int i=0;i<CATEGORIES.length;i++)buttonList.add(new GuiInstrumentButton(20+i,left+16+i*(tabW+tabGap),top+44,tabW,18,
                 text("tab_"+CATEGORIES[i]),-1,CATEGORIES[i].equals(category)));
         int half=(panelWidth-36)/2;
         String mod="";for(StructureTargetInfo info:ItemAstralCompass.getClientCatalog())if(info.getModId().equals(modFilter)){mod=info.getModName();break;}

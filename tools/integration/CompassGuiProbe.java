@@ -31,7 +31,7 @@ public class CompassGuiProbe {
  age++; if(age==40){call(mc,"func_147108_a",(Object)null);call(get(mc,"field_71442_b"),"func_78769_a",player,get(mc,"field_71441_e"),held);record("OPENED="+get(mc,"field_71462_r"));}
  if(age==180){List<?> list=(List<?>)stat("am2.items.ItemAstralCompass","getClientCatalog");record("CLIENT_CATALOG="+list.size());
  Object gui=get(mc,"field_71462_r");record("SCREEN="+gui);if(gui!=null&&gui.getClass().getName().equals("am2.guis.GuiAstralCompass"))record("FILTERED="+((List<?>)get(gui,"filtered")).size());
- click(gui,23);List<?> mods=(List<?>)get(gui,"filtered");record("MODS_TAB="+mods.size());
+ List<?> mods=(List<?>)get(gui,"filtered");record("MODS_TAB="+mods.size());
  Set<String> ids=new HashSet<String>();for(Object entry:mods)ids.add((String)get(entry,"id"));
  boolean ore=false,chroma=false;for(String id:ids){ore|=id.startsWith("orespawn:");chroma|=id.startsWith("chromaticraft:");}
  record("ORESPAWN="+ore+" CHROMATICRAFT="+chroma+" WIZARDRY="+ids.contains("wizardry:wizard_tower"));
