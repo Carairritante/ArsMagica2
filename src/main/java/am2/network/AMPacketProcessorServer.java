@@ -502,12 +502,14 @@ public class AMPacketProcessorServer{
 	}
 
 	private void handleAstralCompassAction(byte[] data, EntityPlayerMP player){
-        if(player==null || data==null || data.length<10 || data.length>396)return;
+        if(player==null || data==null || data.length<10 || data.length>401)return;
         try {
             java.io.DataInputStream input=new java.io.DataInputStream(new java.io.ByteArrayInputStream(data));
             int slot=input.readInt(),action=input.readInt();String id=input.readUTF();
-            if(input.available()!=0 || id.length()>128)return;
-            am2.items.ItemAstralCompass.handleServerAction(player,slot,action,id);
+            int radius=am2.compass.AstralStructureLocator.DEFAULT_RADIUS;boolean next=false;
+            if(input.available()==5) {radius=input.readInt();next=input.readBoolean();}
+            if(input.available()!=0 || id.length()>128 || !am2.compass.AstralStructureLocator.validRadius(radius))return;
+            am2.items.ItemAstralCompass.handleServerAction(player,slot,action,id,radius,next);
         } catch(java.io.IOException ignored) { /* Reject malformed requests without fallback actions or log spam. */ }
     }
 

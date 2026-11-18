@@ -47,7 +47,7 @@ public class GuiAstralCompass extends GuiScreen {
         left=(width-panelWidth)/2; top=Math.max(2,(height-panelHeight)/2);
         listTop=top+112; footer=listTop+rows*32+5;
         String query=searchField==null?"":searchField.getText();
-        searchField=new GuiTextField(fontRendererObj,left+20,top+91,panelWidth-40,16);
+        searchField=new GuiTextField(fontRendererObj,left+20,top+91,Math.max(40,panelWidth-174),16);
         searchField.setMaxStringLength(64);searchField.setEnableBackgroundDrawing(false);searchField.setFocused(true);searchField.setText(query);
         requestCatalogSync(); rebuildFilter(false);
     }
@@ -103,6 +103,7 @@ public class GuiAstralCompass extends GuiScreen {
         String mod="";for(StructureTargetInfo info:ItemAstralCompass.getClientCatalog())if(info.getModId().equals(modFilter)){mod=info.getModName();break;}
         button(8,left+16,top+66,half,18,text("mod_filter",modFilter.isEmpty()?text("all"):mod),true);
         button(9,left+20+half,top+66,half,18,text("dimension_filter",dimensionFilter==null?text("all"):dim(dimensionFilter)),true);
+        button(10,left+panelWidth-140,top+88,124,20,ItemAstralCompass.getClientSearchProtocol()>=2?text("radius",prefs.searchRadius/1000):text("server_range"),!busy()&&ItemAstralCompass.getClientSearchProtocol()>=2);
         for(int i=0;i<rows;i++) {int idx=page*rows+i;if(idx>=filtered.size())break;
             StructureTargetInfo entry=filtered.get(idx);buttonList.add(new StructureRow(100+idx,left+16,listTop+i*32,panelWidth-32,entry,
                     entry.id.equals(selectedId),prefs.favorite(entry.id),"history".equals(category)?historyRows.get(idx):null));
@@ -111,10 +112,13 @@ public class GuiAstralCompass extends GuiScreen {
         button(7,left+112,footer,Math.max(60,panelWidth-246),18,text(prefs.favorite(selectedId)?"unfavorite":"favorite"),selected()!=null);
         buttonList.add(new GuiButtonArcaneChalk(6,left+panelWidth-126,footer,24,18,"",GuiButtonArcaneChalk.GEAR,false));
         button(3,left+panelWidth-98,footer,82,18,text("done"),true);
-        int actionW=(panelWidth-36)/2; StructureTargetInfo entry=selected();
+        int actionW=(panelWidth-40)/3; StructureTargetInfo entry=selected();
         boolean rightDimension=entry!=null&&(!entry.dimensionRestricted||entry.preferredDimension==player.dimension);
         button(4,left+16,footer+23,actionW,22,busy()?text("cancel"):text("divinate",20),toolReady()&&(busy()||entry!=null&&rightDimension&&canAffordSearch()));
-        button(5,left+20+actionW,footer+23,actionW,22,text("clear"),toolReady()&&!busy()&&ItemAstralCompass.hasTarget(player.getCurrentEquippedItem()));
+        ItemAstralCompass.TargetData current=ItemAstralCompass.getTarget(player.getCurrentEquippedItem());
+        boolean canNext=ItemAstralCompass.getClientSearchProtocol()>=2&&current!=null&&current.dimension==player.dimension&&current.id.equals(selectedId)&&!AstralStructureLocator.ID_WITCHWOOD_FOREST.equals(selectedId);
+        button(11,left+20+actionW,footer+23,actionW,22,text("next_structure"),toolReady()&&!busy()&&canNext&&canAffordSearch());
+        button(5,left+24+actionW*2,footer+23,actionW,22,text("clear"),toolReady()&&!busy()&&current!=null);
     }
     private boolean canAffordSearch() {ExtendedProperties p=ExtendedProperties.For(player);return p!=null&&AstralStructureLocator.hasRequiredLevel(p.getMagicLevel())&&AstralStructureLocator.hasEnoughMana(p.getCurrentMana(),p.getBonusCurrentMana());}
     private boolean toolReady() {ItemStack stack=player.getCurrentEquippedItem();return player.inventory.currentItem==heldSlot&&stack!=null&&stack.getItem() instanceof ItemAstralCompass;}
@@ -131,6 +135,8 @@ public class GuiAstralCompass extends GuiScreen {
             case 7:prefs.toggle(selectedId);rebuildFilter(false);break;
             case 8:cycleMod();break;
             case 9:cycleDimension();break;
+            case 10:prefs.searchRadius=prefs.searchRadius==2000?5000:prefs.searchRadius==5000?10000:2000;prefs.save();refreshButtons();break;
+            case 11:beginSearch(true);break;
         }
     }
     private void cycleMod() {
@@ -141,9 +147,19 @@ public class GuiAstralCompass extends GuiScreen {
         TreeSet<Integer> ids=new TreeSet<Integer>();for(StructureTargetInfo e:ItemAstralCompass.getClientCatalog())ids.add(e.preferredDimension);
         List<Integer> dimensions=new ArrayList<Integer>();dimensions.add(null);dimensions.addAll(ids);int at=dimensions.indexOf(dimensionFilter);dimensionFilter=dimensions.get((at+1)%dimensions.size());rebuildFilter(true);
     }
-    private void beginSearch() {
+    private void beginSearch() {beginSearch(false);}
+    private void beginSearch(boolean next) {
         StructureTargetInfo entry=selected();if(!toolReady()||busy()||!canAffordSearch()||entry==null||entry.dimensionRestricted&&entry.preferredDimension!=player.dimension)return;
-        ItemAstralCompass.setClientSearchStatus(ItemAstralCompass.STATUS_SEARCHING,selectedId);sendAction(ItemAstralCompass.ACT_SEARCH,selectedId);refreshButtons();
+        if(ItemAstralCompass.getClientSearchProtocol()<2) {
+            if(next)return;
+            if(ItemAstralCompass.getClientSearchProtocol()>=1)ItemAstralCompass.setClientSearchStatus(ItemAstralCompass.STATUS_SEARCHING,selectedId);
+            sendAction(ItemAstralCompass.ACT_SEARCH,selectedId);
+            if(ItemAstralCompass.getClientSearchProtocol()<1){mc.displayGuiScreen(null);mc.setIngameFocus();}
+            else refreshButtons();
+            return;
+        }
+        ItemAstralCompass.setClientSearchStatus(ItemAstralCompass.STATUS_SEARCHING,selectedId);
+        AMNetHandler.INSTANCE.sendPacketToServer(AMPacketIDs.ASTRAL_COMPASS_ACTION,new AMDataWriter().add(heldSlot).add(ItemAstralCompass.ACT_SEARCH).add(selectedId).add(prefs.searchRadius).add(next).generate());refreshButtons();
     }
     private void requestCatalogSync(){if(toolReady())sendAction(ItemAstralCompass.ACT_REQUEST_CATALOG,"");}
     private void sendAction(int action,String id){AMNetHandler.INSTANCE.sendPacketToServer(AMPacketIDs.ASTRAL_COMPASS_ACTION,new AMDataWriter().add(heldSlot).add(action).add(id).generate());}
@@ -160,22 +176,25 @@ public class GuiAstralCompass extends GuiScreen {
         fontRendererObj.drawStringWithShadow(text("title"),left+58,top+9,0xf0f6ff);
         ExtendedProperties p=ExtendedProperties.For(player);int level=p==null?0:p.getMagicLevel();int mana=p==null?0:(int)(p.getCurrentMana()+p.getBonusCurrentMana());
         fontRendererObj.drawStringWithShadow(text("req_status",level,50,mana,20000),left+58,top+25,canAffordSearch()?0x78e2ba:0xff929f);
-        Gui.drawRect(left+16,top+88,left+panelWidth-16,top+108,0xff294d74);Gui.drawRect(left+17,top+89,left+panelWidth-17,top+107,0xff081526);searchField.drawTextBox();
+        Gui.drawRect(left+16,top+88,left+panelWidth-144,top+108,0xff294d74);Gui.drawRect(left+17,top+89,left+panelWidth-145,top+107,0xff081526);searchField.drawTextBox();
         if(filtered.isEmpty())line(text("no_results"),listTop+10,0x8ea7c4);
         fontRendererObj.drawStringWithShadow((page+1)+"/"+Math.max(1,(filtered.size()+rows-1)/rows),left+74,footer+5,0x99b6d4);
         ItemAstralCompass.ClientSearchStatus state=ItemAstralCompass.getClientSearchStatus();
-        line(text("status_"+state.status),footer+50,state.status==1?0x77caff:state.status==2?0x78e2ba:0xffce86);
+        line(statusText(state),footer+50,state.status==1?0x77caff:state.status==2?0x78e2ba:0xffce86);
         ItemAstralCompass.TargetData target=ItemAstralCompass.getTarget(player.getCurrentEquippedItem());
-        String active=target==null?text("no_active_target"):text("active_short",new StructureTargetInfo(target.id,target.name,"modded",target.dimension,true,0).getDisplayName(),dim(target.dimension));
+        String active=target==null?text("no_active_target"):text("active_short",new StructureTargetInfo(target.id,target.name,"modded",target.dimension,true,0).getDisplayName()+" ["+text("source_"+target.source)+"]",dim(target.dimension));
         line(active,footer+62,0xa1e5ff);
         StructureTargetInfo entry=selected();String hint=selectedVisit!=null?text("history_coords",selectedVisit.coordinates(),dim(selectedVisit.dimension)):entry==null?text("select_hint"):text("search_dimension",entry.getModName(),dim(entry.preferredDimension));
         line(hint,footer+74,0x88a3c4);super.drawScreen(x,y,partial);
         for(Object raw:buttonList){GuiButton b=(GuiButton)raw;if(x>=b.xPosition&&x<b.xPosition+b.width&&y>=b.yPosition&&y<b.yPosition+b.height){
             List<String> tip=new ArrayList<String>();
-            if(b instanceof StructureRow){StructureRow row=(StructureRow)b;tip.add(row.entry.getDisplayName());tip.add(row.entry.getModName());tip.add(text("search_dimension_only",dim(row.entry.preferredDimension)));if(row.visit!=null)tip.add(row.visit.coordinates());tip.add(text("favorite_hint"));}
-            else if(b.id==6)tip.add(text("hud_settings"));else if(b.id==8||b.id==9)tip.add(b.displayString);
+            if(b instanceof StructureRow){StructureRow row=(StructureRow)b;tip.add(row.entry.getDisplayName());tip.add(row.entry.getModName());tip.add(text("search_dimension_only",dim(row.entry.preferredDimension)));if(row.visit!=null){tip.add(row.visit.coordinates());tip.add(text("source_"+row.visit.source));}tip.add(text("favorite_hint"));}
+            else if(b.id==6)tip.add(text("hud_settings"));else if(b.id==10)tip.add(text(ItemAstralCompass.getClientSearchProtocol()>=2?"radius_hint":"update_server"));else if(b.id==11)tip.add(text(ItemAstralCompass.getClientSearchProtocol()>=2?"next_hint":"update_server"));else if(b.id==8||b.id==9)tip.add(b.displayString);
             if(!tip.isEmpty())drawHoveringText(tip,x,y,fontRendererObj);break;
         }}
+    }
+    public static String statusText(ItemAstralCompass.ClientSearchStatus state) {
+        return state.status==ItemAstralCompass.STATUS_SEARCHING?text("progress",text("phase_"+state.phase),state.samples):text("status_"+state.status);
     }
     @Override public boolean doesGuiPauseGame(){return false;}
     private static final class StructureRow extends GuiButton {

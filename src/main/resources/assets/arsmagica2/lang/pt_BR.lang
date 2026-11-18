@@ -1001,3 +1001,24 @@ am2.astral_compass.struct.orespawn_makespitbuglair=Covil do Besouro Cuspidor
 am2.astral_compass.struct.orespawn_makestinkyhouse=Casa do Stinky
 am2.astral_compass.struct.orespawn_makeurchinspawner=Gerador de Ouriços
 am2.astral_compass.struct.orespawn_makewaterdragonlair=Covil do Dragão Aquático
+
+# Astral Compass: bounded search and result source
+am2.astral_compass.gui.radius=Alcance: %sk
+am2.astral_compass.gui.radius_hint=Raio de 2.000, 5.000 ou 10.000 blocos. A consulta não gera chunks.
+am2.astral_compass.gui.next_structure=Encontrar outra
+am2.astral_compass.gui.next_hint=Ignora o alvo atual do mesmo tipo. Nova busca: 20.000 de mana se encontrar. Não se aplica ao bosque.
+am2.astral_compass.gui.progress=%s | %s verificações
+am2.astral_compass.gui.phase_0=Preparando consulta
+am2.astral_compass.gui.phase_1=Consultando dados salvos
+am2.astral_compass.gui.phase_2=Lendo registros dos geradores
+am2.astral_compass.gui.phase_3=Consultando índice de estruturas
+am2.astral_compass.gui.phase_4=Consultando registros dos mods
+am2.astral_compass.gui.phase_5=Verificando posições possíveis
+am2.astral_compass.gui.source_recorded=Registro do mundo
+am2.astral_compass.gui.source_predicted=Posição prevista
+am2.astral_compass.gui.source_biome=Área do bioma
+am2.astral_compass.gui.source_unknown=Origem da posição não informada
+am2.astral_compass.gui.status_7=Tempo limite atingido. Tente um alcance menor. Nenhuma mana gasta.
+am2.astral_compass.err_timeout=Tempo limite atingido. Tente um alcance menor. Nenhuma mana gasta.
+am2.astral_compass.gui.server_range=Alcance do servidor
+am2.astral_compass.gui.update_server=Atualize o AM2.5 do servidor para habilitar alcance selecionável e Encontrar outra.

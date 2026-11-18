@@ -1,5 +1,22 @@
 # Alterações de manutenção do AM2.5 LE
 
+### Melhorias da localização de estruturas na CR44 — 2026-11-17
+
+- Índice aceita alturas negativas, distingue posições verticais e usa consultas
+  por tipo com snapshots reutilizados, mantendo o limite de 8.192 registros.
+- Vilas e templos consultam diretamente candidatos por região, sem varrer todos
+  os chunks nem alterar o RNG do mundo. Geradores são coletados uma vez por busca.
+- Raios de 2.000/5.000/10.000 blocos, aplicados também aos registros conhecidos;
+  Encontrar outra ignora o alvo autenticado atual e mantém o custo normal.
+- Recuperação adicional de bounding boxes já existentes nos caches de geradores
+  MapGenStructure. Não há varredura física ou geração de chunks para recuperação.
+- Etapas e contagem de verificações no cliente, origem registrada/prevista/bioma
+  no alvo e histórico compatível com os registros anteriores. Timeouts explícitos.
+- Detecção de capacidades do servidor: controles novos dependem de suporte;
+  consultas básicas conservam o formato anterior quando necessário.
+- Apenas `assemble`, sem testes ou execução do jogo a pedido do usuário.
+  Detalhes em `docs/BUSSOLA-BUSCA-CR44.md`; nome CR44 preservado.
+
 ### Melhorias da Bússola Astral na CR44 — 2026-11-17
 
 - Lista com nome legível, mod de origem, dimensão de busca e filtros por mod e

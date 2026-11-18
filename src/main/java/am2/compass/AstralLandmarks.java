@@ -9,11 +9,26 @@ public final class AstralLandmarks extends WorldSavedData {
     private static final String NAME="AM2AstralLandmarks";
     public static final int MAX_POINTS=8192;
     private final LinkedHashMap<String,Point> entries=new LinkedHashMap<String,Point>();
+    private final Map<String,LinkedHashMap<String,Point>> byType=new LinkedHashMap<String,LinkedHashMap<String,Point>>();
+    private final Map<String,List<Point>> snapshots=new HashMap<String,List<Point>>();
+    static boolean validHeight(int y) { return y>=-4096 && y<=4095; }
+    private void put(Point point) {
+        String key=point.key();if(entries.containsKey(key))return;
+        if(entries.size()>=MAX_POINTS) {
+            Point old=entries.remove(entries.keySet().iterator().next());
+            Map<String,Point> type=byType.get(old.id);type.remove(old.key());
+            if(type.isEmpty())byType.remove(old.id);snapshots.remove(old.id);
+        }
+        entries.put(key,point);
+        LinkedHashMap<String,Point> type=byType.get(point.id);
+        if(type==null){type=new LinkedHashMap<String,Point>();byType.put(point.id,type);}
+        type.put(key,point);snapshots.remove(point.id);
+    }
     public AstralLandmarks(String name){super(name);}
     public static final class Point {
         public final String id; public final int x,y,z;
         Point(String id,int x,int y,int z){this.id=id;this.x=x;this.y=y;this.z=z;}
-        String key(){return id+":"+(x>>4)+":"+(z>>4);}
+        String key(){return id+":"+x+":"+y+":"+z;}
     }
     public static AstralLandmarks get(World world) {
         AstralLandmarks data=(AstralLandmarks)world.perWorldStorage.loadData(AstralLandmarks.class,NAME);
@@ -21,11 +36,10 @@ public final class AstralLandmarks extends WorldSavedData {
         return data;
     }
     public static void record(World world,int x,int y,int z,String id) {
-        if(world==null || world.isRemote || world.perWorldStorage==null || !AstralStructureLocator.validId(id) || Math.abs((long)x)>30000000 || Math.abs((long)z)>30000000 || y<0 || y>4095) return;
+        if(world==null || world.isRemote || world.perWorldStorage==null || !AstralStructureLocator.validId(id) || Math.abs((long)x)>30000000 || Math.abs((long)z)>30000000 || !validHeight(y)) return;
         AstralLandmarks data=get(world);Point p=new Point(id,x,y,z);
         if(data.entries.containsKey(p.key())) return;
-        if(data.entries.size()>=MAX_POINTS) data.entries.remove(data.entries.keySet().iterator().next());
-        data.entries.put(p.key(),p);data.markDirty();
+        data.put(p);data.markDirty();
     }
     /** ASM hook keeps the original success result and does not run a generator. */
     public static boolean recordSuccess(boolean success,World world,int x,int y,int z,String id) {
@@ -34,15 +48,21 @@ public final class AstralLandmarks extends WorldSavedData {
     public static void recordIfChanged(boolean changed,World world,int x,int y,int z,String id) {
         if(changed)record(world,x,y,z,id);
     }
-    public Collection<String> types(){Set<String> types=new LinkedHashSet<String>();for(Point p:entries.values()) types.add(p.id);return types;}
-    public List<Point> points(String id){List<Point> out=new ArrayList<Point>();for(Point p:entries.values()) if(id.equals(p.id)) out.add(p);return out;}
+    public Collection<String> types(){return new LinkedHashSet<String>(byType.keySet());}
+    public List<Point> points(String id){
+        List<Point> cached=snapshots.get(id);if(cached!=null)return cached;
+        Map<String,Point> type=byType.get(id);
+        cached=type==null?Collections.<Point>emptyList():Collections.unmodifiableList(new ArrayList<Point>(type.values()));
+        // Do not retain arbitrary missing query IDs.
+        if(type!=null)snapshots.put(id,cached);return cached;
+    }
     @Override public void readFromNBT(NBTTagCompound tag) {
-        entries.clear();NBTTagList list=tag.getTagList("points",10);
+        entries.clear();byType.clear();snapshots.clear();NBTTagList list=tag.getTagList("points",10);
         for(int i=0;i<Math.min(MAX_POINTS,list.tagCount());i++) {
             NBTTagCompound e=list.getCompoundTagAt(i);String id=e.getString("id");
             if(!AstralStructureLocator.validId(id))continue;
             Point p=new Point(id,e.getInteger("x"),e.getInteger("y"),e.getInteger("z"));
-            if(Math.abs((long)p.x)<=30000000 && Math.abs((long)p.z)<=30000000 && p.y>=0 && p.y<=4095)entries.put(p.key(),p);
+            if(Math.abs((long)p.x)<=30000000 && Math.abs((long)p.z)<=30000000 && validHeight(p.y))put(p);
         }
     }
     @Override public void writeToNBT(NBTTagCompound tag) {

@@ -8,8 +8,13 @@ import java.util.*;
 /** Probes private copies only. Village/temple maths avoids World.setRandomSeed. */
 abstract class VanillaStructureProbe {
     abstract boolean test(int x,int z);
+    int spacing() { return 1; }
+    int[] candidate(int regionX,int regionZ) { return test(regionX,regionZ)?new int[]{regionX,regionZ}:null; }
     static VanillaStructureProbe create(final World world, String id) {
-        for(final MapGenStructure original:AstralStructureLocator.collectMapGenStructures(world)) {
+        return create(world,id,AstralStructureLocator.collectMapGenStructures(world));
+    }
+    static VanillaStructureProbe create(final World world,String id,List<MapGenStructure> generators) {
+        for(final MapGenStructure original:generators) {
             final Class<?> cls=original.getClass();
             try {
                 if(AstralStructureLocator.ID_VILLAGE.equals(id) && cls==MapGenVillage.class
@@ -19,11 +24,15 @@ abstract class VanillaStructureProbe {
                     final int separation=integer(original,village?new String[]{"field_82666_h"}:new String[]{"minDistanceBetweenScatteredFeatures","field_82670_h"});
                     if(distance<=separation || separation<0 || distance>4096) return null;
                     return new VanillaStructureProbe() {
-                        boolean test(int x,int z) {
-                            int rx=Math.floorDiv(x,distance),rz=Math.floorDiv(z,distance);
+                        @Override int spacing() { return distance; }
+                        @Override int[] candidate(int rx,int rz) {
                             Random r=new Random((long)rx*341873128712L+(long)rz*132897987541L+world.getSeed()+(village?10387312:14357617));
-                            if(x!=rx*distance+r.nextInt(distance-separation) || z!=rz*distance+r.nextInt(distance-separation)) return false;
-                            return !village || world.getWorldChunkManager().areBiomesViable(x*16+8,z*16+8,0,MapGenVillage.villageSpawnBiomes);
+                            int x=rx*distance+r.nextInt(distance-separation),z=rz*distance+r.nextInt(distance-separation);
+                            return !village || world.getWorldChunkManager().areBiomesViable(x*16+8,z*16+8,0,MapGenVillage.villageSpawnBiomes)?new int[]{x,z}:null;
+                        }
+                        boolean test(int x,int z) {
+                            int[] point=candidate(Math.floorDiv(x,distance),Math.floorDiv(z,distance));
+                            return point!=null && point[0]==x && point[1]==z;
                         }
                     };
                 }
@@ -43,7 +52,10 @@ abstract class VanillaStructureProbe {
         return null;
     }
     static java.util.List<net.minecraft.world.ChunkPosition> strongholds(World world) throws ReflectiveOperationException {
-        for(MapGenStructure original:AstralStructureLocator.collectMapGenStructures(world)) if(original.getClass()==MapGenStronghold.class) {
+        return strongholds(world,AstralStructureLocator.collectMapGenStructures(world));
+    }
+    static java.util.List<net.minecraft.world.ChunkPosition> strongholds(World world,List<MapGenStructure> generators) throws ReflectiveOperationException {
+        for(MapGenStructure original:generators) if(original.getClass()==MapGenStronghold.class) {
             StrongholdProbe p=new StrongholdProbe();copyFields(original,p,MapGenStronghold.class);return p.positions(world);
         }
         return Collections.emptyList();

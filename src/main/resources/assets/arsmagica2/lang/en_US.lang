@@ -1338,3 +1338,24 @@ am2.astral_compass.struct.orespawn_makespitbuglair=Spit Bug Lair
 am2.astral_compass.struct.orespawn_makestinkyhouse=Stinky House
 am2.astral_compass.struct.orespawn_makeurchinspawner=Urchin Spawner
 am2.astral_compass.struct.orespawn_makewaterdragonlair=Water Dragon Lair
+
+# Astral Compass: bounded search and result source
+am2.astral_compass.gui.radius=Range: %sk
+am2.astral_compass.gui.radius_hint=Radius: 2,000, 5,000 or 10,000 blocks. Searching does not generate chunks.
+am2.astral_compass.gui.next_structure=Find another
+am2.astral_compass.gui.next_hint=Skip the current target of this type. New search: 20,000 mana on success. Not for the forest.
+am2.astral_compass.gui.progress=%s | %s checks
+am2.astral_compass.gui.phase_0=Preparing search
+am2.astral_compass.gui.phase_1=Reading saved data
+am2.astral_compass.gui.phase_2=Reading generator records
+am2.astral_compass.gui.phase_3=Querying structure index
+am2.astral_compass.gui.phase_4=Querying mod records
+am2.astral_compass.gui.phase_5=Checking possible locations
+am2.astral_compass.gui.source_recorded=World record
+am2.astral_compass.gui.source_predicted=Predicted position
+am2.astral_compass.gui.source_biome=Biome area
+am2.astral_compass.gui.source_unknown=Position source unknown
+am2.astral_compass.gui.status_7=Search timed out. Try a smaller range. No mana spent.
+am2.astral_compass.err_timeout=Search timed out. Try a smaller range. No mana spent.
+am2.astral_compass.gui.server_range=Server range
+am2.astral_compass.gui.update_server=Update the server AM2.5 build to enable selectable range and Find another.

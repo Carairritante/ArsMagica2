@@ -36,12 +36,16 @@ public class ItemAstralCompass extends ArsMagicaItem {
 	public static final int ACT_CLEAR = 2;
 	public static final int ACT_CANCEL = 3;
 	public static final int STATUS_IDLE=0, STATUS_SEARCHING=1, STATUS_FOUND=2,
-            STATUS_NOT_FOUND=3, STATUS_CANCELLED=4, STATUS_FAILED=5, STATUS_REJECTED=6;
+            STATUS_NOT_FOUND=3, STATUS_CANCELLED=4, STATUS_FAILED=5, STATUS_REJECTED=6, STATUS_TIMEOUT=7;
 	public static final class ClientSearchStatus {
         public final int status; public final String id;
-        ClientSearchStatus(int status,String id) { this.status=status; this.id=id; }
+        public final int phase, samples, radius;
+        ClientSearchStatus(int status,String id) { this(status,id,0,0,AstralStructureLocator.DEFAULT_RADIUS); }
+        ClientSearchStatus(int status,String id,int phase,int samples,int radius) { this.status=status;this.id=id;this.phase=phase;this.samples=samples;this.radius=radius; }
     }
 	private static volatile ClientSearchStatus clientSearchStatus = new ClientSearchStatus(STATUS_IDLE, "");
+	private static volatile int clientSearchProtocol;
+	private static volatile java.lang.ref.WeakReference<Object> clientProtocolWorld = new java.lang.ref.WeakReference<Object>(null);
 
 	private static final String TAG_ROOT = "am2AstralCompass";
 	private static final String TAG_HAS_TARGET = "hasTarget";
@@ -99,6 +103,7 @@ public class ItemAstralCompass extends ArsMagicaItem {
 		if (hasTarget(stack)) {
 			TargetData target = getTarget(stack);
 			if (target != null) {
+				list.add(EnumChatFormatting.GRAY + StatCollector.translateToLocal("am2.astral_compass.gui.source_" + target.source));
 				list.add(EnumChatFormatting.GOLD + StatCollector.translateToLocalFormatted(
 						"am2.astral_compass.tooltip.target",
 						target.name, target.x, target.z, target.dimension));
@@ -122,8 +127,13 @@ public class ItemAstralCompass extends ArsMagicaItem {
 		public final int y;
 		public final int z;
 		public final boolean hasY;
+		public final String source;
 
 		public TargetData(String id, String name, int dimension, int x, int y, int z, boolean hasY) {
+			this(id,name,dimension,x,y,z,hasY,"unknown");
+		}
+
+		public TargetData(String id, String name, int dimension, int x, int y, int z, boolean hasY,String source) {
 			this.id = id;
 			this.name = name;
 			this.dimension = dimension;
@@ -131,8 +141,13 @@ public class ItemAstralCompass extends ArsMagicaItem {
 			this.y = y;
 			this.z = z;
 			this.hasY = hasY;
+			this.source = normalizeSource(source);
 		}
 	}
+
+    public static String normalizeSource(String source) {
+        return "recorded".equals(source)||"predicted".equals(source)||"biome".equals(source)?source:"unknown";
+    }
 
 	public static boolean hasTarget(ItemStack stack) {
 		if (stack == null || !(stack.getItem() instanceof ItemAstralCompass) || !stack.hasTagCompound()) {
@@ -152,7 +167,7 @@ public class ItemAstralCompass extends ArsMagicaItem {
 				tag.getInteger(TAG_TARGET_X),
 				tag.getInteger(TAG_TARGET_Y),
 				tag.getInteger(TAG_TARGET_Z),
-				tag.getBoolean(TAG_HAS_Y));
+				tag.getBoolean(TAG_HAS_Y), tag.hasKey("targetSource") ? tag.getString("targetSource") : "unknown");
 	}
 
 	public static void setTarget(ItemStack stack, AstralStructureLocator.SearchResult result) {
@@ -167,6 +182,7 @@ public class ItemAstralCompass extends ArsMagicaItem {
 		tag.setInteger(TAG_TARGET_Y, result.y);
 		tag.setInteger(TAG_TARGET_Z, result.z);
 		tag.setBoolean(TAG_HAS_Y, result.hasY);
+		tag.setString("targetSource", result.source);
 		root.setTag(TAG_ROOT, tag);
 		stack.setTagCompound(root);
 	}
@@ -186,8 +202,14 @@ public class ItemAstralCompass extends ArsMagicaItem {
 	public static void handleServerAction(EntityPlayerMP player, int heldSlot, int action, String targetId) {
         am2.compass.AstralCompassService.enqueue(player,heldSlot,action,targetId);
     }
+    public static void handleServerAction(EntityPlayerMP player,int heldSlot,int action,String targetId,int radius,boolean next) {
+        am2.compass.AstralCompassService.enqueue(player,heldSlot,action,targetId,radius,next);
+    }
 
     public static void processServerAction(EntityPlayerMP player, int heldSlot, int action, String targetId) {
+        processServerAction(player,heldSlot,action,targetId,AstralStructureLocator.DEFAULT_RADIUS,false);
+    }
+    public static void processServerAction(EntityPlayerMP player,int heldSlot,int action,String targetId,int radius,boolean next) {
 		if (player == null || player.isDead || player.worldObj == null) return;
 		if (heldSlot < 0 || heldSlot >= 9 || player.inventory.currentItem != heldSlot) return;
 
@@ -221,6 +243,7 @@ public class ItemAstralCompass extends ArsMagicaItem {
 		}
 
 		if (action == ACT_SEARCH) {
+            if(!AstralStructureLocator.validRadius(radius)) {sendSearchStatus(player,STATUS_REJECTED,targetId);return;}
 			NBTTagCompound tag = player.getEntityData();
 			long now = clock;
 			long cooldownUntil = tag.getLong("am2AstralRequestUntil");
@@ -258,7 +281,12 @@ public class ItemAstralCompass extends ArsMagicaItem {
                 player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_dimension",selected.preferredDimension));return;
             }
             tag.setLong("am2AstralRequestUntil",now+AstralStructureLocator.COOLDOWN_TICKS);
-            am2.compass.AstralCompassService.start(player,stack,selected);
+            TargetData excluded=next?getTarget(stack):null;
+            if(next&&(excluded==null||!excluded.id.equals(selected.id)||excluded.dimension!=player.dimension
+                    ||AstralStructureLocator.ID_WITCHWOOD_FOREST.equals(selected.id))) {
+                sendSearchStatus(player,STATUS_REJECTED,targetId);return;
+            }
+            am2.compass.AstralCompassService.start(player,stack,selected,radius,excluded);
         }
     }
 
@@ -305,7 +333,7 @@ public class ItemAstralCompass extends ArsMagicaItem {
 			writer.add(info.glyphIndex);
 		}
 		// Optional trailer: legacy clients finish after the catalog and ignore this.
-		writer.add(0x414d3244).add(player.dimension).add(player.worldObj.provider.getDimensionName());
+		writer.add(0x414d3244).add(player.dimension).add(player.worldObj.provider.getDimensionName()).add(2);
 		AMNetHandler.INSTANCE.sendPacketToClientPlayer(player, AMPacketIDs.ASTRAL_COMPASS_ACTION, writer.generate());
 	}
 
@@ -313,11 +341,30 @@ public class ItemAstralCompass extends ArsMagicaItem {
         if(player != null) AMNetHandler.INSTANCE.sendPacketToClientPlayer(player, AMPacketIDs.ASTRAL_COMPASS_STATUS,
                 new AMDataWriter().add(status).add(id == null ? "" : id).generate());
     }
+    public static void sendSearchProgress(EntityPlayerMP player,int phase,int samples,int radius) {
+        AMNetHandler.INSTANCE.sendPacketToClientPlayer(player,AMPacketIDs.ASTRAL_COMPASS_PROGRESS,
+                new AMDataWriter().add(phase).add(samples).add(radius).generate());
+    }
     @SideOnly(Side.CLIENT)
     public static ClientSearchStatus getClientSearchStatus() { return clientSearchStatus; }
     @SideOnly(Side.CLIENT)
+    public static int getClientSearchProtocol() {
+        return clientProtocolWorld.get()==net.minecraft.client.Minecraft.getMinecraft().theWorld?clientSearchProtocol:0;
+    }
+    @SideOnly(Side.CLIENT)
+    public static void setClientSearchProtocol(int version) {
+        clientSearchProtocol=Math.max(0,Math.min(2,version));
+        clientProtocolWorld=new java.lang.ref.WeakReference<Object>(net.minecraft.client.Minecraft.getMinecraft().theWorld);
+    }
+    @SideOnly(Side.CLIENT)
     public static void setClientSearchStatus(int status,String id) {
-        if(status >= STATUS_IDLE && status <= STATUS_REJECTED) clientSearchStatus = new ClientSearchStatus(status,id);
+        if(status >= STATUS_IDLE && status <= STATUS_TIMEOUT) clientSearchStatus = new ClientSearchStatus(status,id);
+    }
+    @SideOnly(Side.CLIENT)
+    public static void setClientSearchProgress(int phase,int samples,int radius) {
+        ClientSearchStatus old=clientSearchStatus;
+        if(old.status==STATUS_SEARCHING&&phase>=0&&phase<=5&&samples>=0&&samples<=10000000&&AstralStructureLocator.validRadius(radius))
+            clientSearchStatus=new ClientSearchStatus(old.status,old.id,phase,samples,radius);
     }
 
 	@SideOnly(Side.CLIENT)

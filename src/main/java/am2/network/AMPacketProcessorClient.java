@@ -206,6 +206,12 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
                         am2.items.ItemAstralCompass.setClientSearchStatus(state, id);
                 }
                 break;
+            case AMPacketIDs.ASTRAL_COMPASS_PROGRESS:
+                if(remaining.length==12) {
+                    java.io.DataInputStream input=new java.io.DataInputStream(new java.io.ByteArrayInputStream(remaining));
+                    am2.items.ItemAstralCompass.setClientSearchProgress(input.readInt(),input.readInt(),input.readInt());
+                }
+                break;
 			}
 		}catch (Throwable t){
 			LogHelper.error("Client Packet Failed to Handle!");
@@ -903,10 +909,13 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			list.add(new am2.compass.StructureTargetInfo(id, rawName, category, prefDim, dimRestricted, glyph));
 		}
 		am2.items.ItemAstralCompass.setClientCatalog(list);
+        am2.items.ItemAstralCompass.setClientSearchProtocol(0);
 		try {
             if(rdr.dataStream.available() >= 10 && rdr.dataStream.readInt() == 0x414d3244) {
                 int dimension = rdr.dataStream.readInt(); String name = rdr.dataStream.readUTF();
                 if(name.length() <= 128) am2.compass.client.AstralCompassPreferences.dimensionNames.put(dimension, name);
+                am2.items.ItemAstralCompass.setClientSearchProtocol(1);
+                if(rdr.dataStream.available()>=4&&rdr.dataStream.readInt()>=2)am2.items.ItemAstralCompass.setClientSearchProtocol(2);
             }
         } catch(java.io.IOException ignored) { /* Catalog remains usable with legacy servers. */ }
 	}

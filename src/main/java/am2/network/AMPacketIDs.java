@@ -68,4 +68,5 @@ public class AMPacketIDs{
 	public static final byte DUMMY_DAMAGE_POPUP = 78;
 	public static final byte ASTRAL_COMPASS_ACTION = 79;
 	public static final byte ASTRAL_COMPASS_STATUS = 80;
+	public static final byte ASTRAL_COMPASS_PROGRESS = 81;
 }

@@ -21,14 +21,20 @@ public final class AstralStructureLocator {
         ID_WITCH_HUT="Temple:WitchHut", ID_MINESHAFT="Mineshaft", ID_FORTRESS="Fortress",
         ID_WITCHWOOD_FOREST="am2:witchwood_forest";
     public static final int MAX_CATALOG = 256;
+    public static final int DEFAULT_RADIUS=5000;
+    public static boolean validRadius(int radius) { return radius==2000 || radius==5000 || radius==10000; }
     private AstralStructureLocator() {}
 
     public static final class SearchResult {
         public final String targetId, displayName;
         public final int dimension,x,y,z;
         public final boolean hasY;
+        public final String source;
         public SearchResult(String id,String name,int dim,int x,int y,int z,boolean hasY) {
-            targetId=id; displayName=name; dimension=dim; this.x=x;this.y=y;this.z=z;this.hasY=hasY;
+            this(id,name,dim,x,y,z,hasY,"unknown");
+        }
+        public SearchResult(String id,String name,int dim,int x,int y,int z,boolean hasY,String source) {
+            targetId=id;displayName=name;dimension=dim;this.x=x;this.y=y;this.z=z;this.hasY=hasY;this.source=source;
         }
     }
     public static boolean hasRequiredLevel(int level) { return level>=REQUIRED_MAGIC_LEVEL; }
@@ -91,6 +97,7 @@ public final class AstralStructureLocator {
         return result;
     }
     static boolean matchesTempleBiome(World world,int x,int z,String id) {
+        if(!id.startsWith("Temple:"))return true;
         BiomeGenBase b=world.getWorldChunkManager().getBiomeGenAt(x,z);
         if(b==null) return false;
         if(ID_DESERT_PYRAMID.equals(id)) return b==BiomeGenBase.desert || b==BiomeGenBase.desertHills;
@@ -100,81 +107,122 @@ public final class AstralStructureLocator {
     public static final class Search {
         public final World world;
         public final StructureTargetInfo target;
+        public final int radius;
         private final int x,z;
+        private final am2.items.ItemAstralCompass.TargetData excluded;
+        private final Set<Long> excludedStarts=new HashSet<Long>();
+        private final List<StructureBoundingBox> excludedBounds=new ArrayList<StructureBoundingBox>();
         private Iterator<String> savedKeys;
+        private List<MapGenStructure> generators;
         private NBTTagCompound saved;
-        private Iterator<AstralLandmarks.Point> points;
+        private Iterator<StructureBoundingBox> memory;
+        private Iterator<AstralLandmarks.Point> points,foreign;
         private VanillaStructureProbe probe;
-        private Iterator<AstralLandmarks.Point> foreign;
         private int stage,rx,rz,dx=0,dz=-1,iterations;
+        public int samples;
         private double bestDistance=Double.POSITIVE_INFINITY;
         private SearchResult best;
         public boolean done;
         public Search(World world,EntityPlayer player,StructureTargetInfo target) {
-            this.world=world;this.target=target;x=(int)Math.floor(player.posX);z=(int)Math.floor(player.posZ);
+            this(world,player,target,DEFAULT_RADIUS,null);
         }
-        public SearchResult result() { return best; }
-        private void consider(int bx,int by,int bz,boolean hasY) {
-            double dist=squaredDistance(x,z,bx,bz);
-            if(dist<bestDistance) { bestDistance=dist; best=new SearchResult(target.id,target.rawName,world.provider.dimensionId,bx,by,bz,hasY); }
+        public Search(World world,EntityPlayer player,StructureTargetInfo target,int radius,am2.items.ItemAstralCompass.TargetData excluded) {
+            if(!validRadius(radius))throw new IllegalArgumentException("Unsupported compass radius");
+            this.world=world;this.target=target;this.radius=radius;this.excluded=excluded;
+            x=(int)Math.floor(player.posX);z=(int)Math.floor(player.posZ);
         }
-        public static double squaredDistance(int x,int z,int bx,int bz) {
-            double a=(double)bx-x,b=(double)bz-z;return a*a+b*b;
+        public SearchResult result(){return best;}
+        public int phase(){return stage;}
+        private static long chunkKey(int x,int z){return ((long)x<<32)^(z&0xffffffffL);}
+        private boolean contains(StructureBoundingBox box,int bx,int bz){return bx>=box.minX&&bx<=box.maxX&&bz>=box.minZ&&bz<=box.maxZ;}
+        private boolean includesExcluded(StructureBoundingBox box){return excluded!=null&&contains(box,excluded.x,excluded.z)&&(!excluded.hasY||excluded.y>=box.minY&&excluded.y<=box.maxY);}
+        private void consider(int bx,int by,int bz,boolean hasY,String source) {
+            if(Math.abs((long)bx)>30000000 || Math.abs((long)bz)>30000000 || hasY&&!AstralLandmarks.validHeight(by))return;
+            double dist=squaredDistance(x,z,bx,bz);if(dist>(double)radius*radius)return;
+            if(excluded!=null) {
+                if(bx==excluded.x&&bz==excluded.z&&(!hasY||!excluded.hasY||by==excluded.y))return;
+                if("predicted".equals(source)&&excludedStarts.contains(chunkKey(bx>>4,bz>>4)))return;
+                for(StructureBoundingBox box:excludedBounds)if(contains(box,bx,bz)&&(!hasY||by>=box.minY&&by<=box.maxY))return;
+            }
+            if(dist<bestDistance) {bestDistance=dist;best=new SearchResult(target.id,target.rawName,world.provider.dimensionId,bx,by,bz,hasY,source);}
         }
-        /** At most budget samples, with a cooperative wall-clock deadline between samples. */
+        private void registeredBox(StructureBoundingBox box,Integer startX,Integer startZ) {
+            if(box.minX>box.maxX||box.minY>box.maxY||box.minZ>box.maxZ)return;
+            int bx=(int)(((long)box.minX+box.maxX)/2),bz=(int)(((long)box.minZ+box.maxZ)/2);
+            if(target.id.startsWith("Temple:")&&!matchesTempleBiome(world,bx,bz,target.id))return;
+            if(includesExcluded(box)) {
+                if(excludedBounds.size()<256)excludedBounds.add(box);
+                if(startX!=null)excludedStarts.add(chunkKey(startX,startZ));return;
+            }
+            consider(bx,box.minY,bz,true,"recorded");
+            AstralLandmarks.record(world,bx,box.minY,bz,target.id);
+        }
+        public static double squaredDistance(int x,int z,int bx,int bz){double a=(double)bx-x,b=(double)bz-z;return a*a+b*b;}
+        /** Cooperative global tick budget. None of the sources calls world generation. */
         public void step(int budget,long deadline) {
-            while(!done && budget-->0 && System.nanoTime()<deadline) {
+            while(!done&&budget-->0&&System.nanoTime()<deadline) {
+                samples++;
                 if(stage==0) {
+                    generators=collectMapGenStructures(world);
                     String base=target.id.startsWith("Temple:")?"Temple":target.id;
-                    WorldSavedData data=world.perWorldStorage==null || base.indexOf(':')>=0 || base.indexOf('/')>=0 || base.contains("..")?null:world.perWorldStorage.loadData(MapGenStructureData.class,base);
+                    WorldSavedData data=world.perWorldStorage==null||base.indexOf(':')>=0||base.indexOf('/')>=0||base.contains("..")?null:world.perWorldStorage.loadData(MapGenStructureData.class,base);
                     if(data instanceof MapGenStructureData) {
                         saved=((MapGenStructureData)data).func_143041_a();
-                        savedKeys=new ArrayList<String>(saved.func_150296_c()).iterator();
+                        List<String> keys=new ArrayList<String>();for(Object key:saved.func_150296_c()){if(keys.size()>=65536)break;if(key instanceof String)keys.add((String)key);}savedKeys=keys.iterator();
                     }
-                    points=AstralLandmarks.get(world).points(target.id).iterator();
                     stage=1;
                 } else if(stage==1) {
-                    if(savedKeys!=null && savedKeys.hasNext()) {
-                        NBTBase raw=saved.getTag(savedKeys.next());
-                        if(!(raw instanceof NBTTagCompound)) continue;
+                    if(savedKeys!=null&&savedKeys.hasNext()) {
+                        NBTBase raw=saved.getTag(savedKeys.next());if(!(raw instanceof NBTTagCompound))continue;
                         NBTTagCompound entry=(NBTTagCompound)raw;
-                        if(!entry.hasKey("ChunkX",99) || !entry.hasKey("ChunkZ",99) || entry.hasKey("Valid") && !entry.getBoolean("Valid")) continue;
-                        int cx=(entry.getInteger("ChunkX")<<4)+8,cz=(entry.getInteger("ChunkZ")<<4)+8;
-                        if(target.id.startsWith("Temple:") && !matchesTempleBiome(world,cx,cz,target.id)) continue;
+                        if(!entry.hasKey("ChunkX",99)||!entry.hasKey("ChunkZ",99)||entry.hasKey("Valid")&&!entry.getBoolean("Valid"))continue;
+                        int cx=entry.getInteger("ChunkX"),cz=entry.getInteger("ChunkZ");
+                        if(Math.abs((long)cx)>1875000||Math.abs((long)cz)>1875000)continue;
                         int[] bb=entry.getIntArray("BB");
-                        if(bb.length==6) consider((int)(((long)bb[0]+bb[3])/2),bb[1],(int)(((long)bb[2]+bb[5])/2),true);
-                        else consider(cx,64,cz,false);
-                    } else stage=2;
+                        if(bb.length==6)registeredBox(new StructureBoundingBox(bb),cx,cz);
+                        else {
+                            int bx=cx*16+8,bz=cz*16+8;
+                            if(!target.id.startsWith("Temple:")||matchesTempleBiome(world,bx,bz,target.id))consider(bx,64,bz,false,"recorded");
+                        }
+                    } else {memory=SavedStructureRecords.snapshot(generators,target.id).iterator();stage=2;}
                 } else if(stage==2) {
-                    if(points.hasNext()) { AstralLandmarks.Point p=points.next();consider(p.x,p.y,p.z,true); }
-                    else { stage=3; }
+                    if(memory.hasNext())registeredBox(memory.next(),null,null);
+                    else {points=AstralLandmarks.get(world).points(target.id).iterator();stage=3;}
                 } else if(stage==3) {
+                    if(points.hasNext()){AstralLandmarks.Point p=points.next();consider(p.x,p.y,p.z,true,"recorded");}
+                    else stage=4;
+                } else if(stage==4) {
                     if(foreign==null)foreign=AstralModStructures.known(world,target,x,z);
-                    if(foreign.hasNext()){AstralLandmarks.Point p=foreign.next();if(p!=null)consider(p.x,p.y,p.z,true);continue;}
-                    SearchResult mod=AstralModStructures.locateKnown(world,target,x,z);
-                    if(mod!=null) consider(mod.x,mod.y,mod.z,mod.hasY);
-                    if(world.getWorldInfo().isMapFeaturesEnabled() && ID_STRONGHOLD.equals(target.id)) try {
-                        for(ChunkPosition p:VanillaStructureProbe.strongholds(world)) consider(p.chunkPosX,p.chunkPosY,p.chunkPosZ,false);
-                    } catch(ReflectiveOperationException e) { am2.LogHelper.warn("Astral Compass: stronghold prediction unavailable: %s",e.toString()); }
-                    probe=world.getWorldInfo().isMapFeaturesEnabled()?VanillaStructureProbe.create(world,target.id):null;
-                    if(probe==null && !ID_WITCHWOOD_FOREST.equals(target.id)) done=true;
-                    stage=4;
+                    if(foreign.hasNext()){AstralLandmarks.Point p=foreign.next();if(p!=null)consider(p.x,p.y,p.z,true,"recorded");continue;}
+                    if(world.getWorldInfo().isMapFeaturesEnabled()&&ID_STRONGHOLD.equals(target.id))try {
+                        for(ChunkPosition p:VanillaStructureProbe.strongholds(world,generators))consider(p.chunkPosX,p.chunkPosY,p.chunkPosZ,false,"predicted");
+                    }catch(ReflectiveOperationException e){am2.LogHelper.warn("Astral Compass: stronghold prediction unavailable: %s",e.toString());}
+                    probe=world.getWorldInfo().isMapFeaturesEnabled()?VanillaStructureProbe.create(world,target.id,generators):null;
+                    stage=5;if(probe==null&&!ID_WITCHWOOD_FOREST.equals(target.id))done=true;
                 } else {
                     boolean biome=ID_WITCHWOOD_FOREST.equals(target.id);
-                    int step=biome?32:16,limit=biome?128:220;
-                    int bx=biome?x+rx*step:((x>>4)+rx)*16+8;
-                    int bz=biome?z+rz*step:((z>>4)+rz)*16+8;
+                    int spacing=biome?1:probe.spacing(),step=biome?32:spacing*16,limit=radius/step+2;
                     if(biome) {
-                        if(BiomeWitchwoodForest.instance!=null && world.getWorldChunkManager().getBiomeGenAt(bx,bz)==BiomeWitchwoodForest.instance) consider(bx,64,bz,false);
-                    } else if(probe.test(bx>>4,bz>>4) && matchesTempleBiome(world,bx,bz,target.id)) consider(bx,64,bz,false);
-                    if(rx==rz || rx<0 && rx==-rz || rx>0 && rx==1-rz) { int t=dx;dx=-dz;dz=t; }
-                    rx+=dx;rz+=dz;
-                    int ring=Math.max(Math.abs(rx),Math.abs(rz));
-                    if(++iterations>=(2*limit+1)*(2*limit+1) || best!=null && ring*step>Math.sqrt(bestDistance)+step*2) done=true;
+                        int bx=x+rx*step,bz=z+rz*step;
+                        if(Math.abs((long)bx)<=30000000&&Math.abs((long)bz)<=30000000&&BiomeWitchwoodForest.instance!=null&&world.getWorldChunkManager().getBiomeGenAt(bx,bz)==BiomeWitchwoodForest.instance)consider(bx,64,bz,false,"biome");
+                    } else {
+                        int originX=Math.floorDiv(x>>4,spacing),originZ=Math.floorDiv(z>>4,spacing);
+                        int regionX=originX+rx,regionZ=originZ+rz;
+                        if(Math.abs((long)regionX*spacing)<=1875002&&Math.abs((long)regionZ*spacing)<=1875002) {
+                            int[] point=probe.candidate(regionX,regionZ);
+                            if(point!=null) {int bx=point[0]*16+8,bz=point[1]*16+8;
+                                if(Math.abs((long)bx)<=30000000&&Math.abs((long)bz)<=30000000&&matchesTempleBiome(world,bx,bz,target.id))consider(bx,64,bz,false,"predicted");
+                            }
+                        }
+                    }
+                    if(rx==rz||rx<0&&rx==-rz||rx>0&&rx==1-rz){int t=dx;dx=-dz;dz=t;}
+                    rx+=dx;rz+=dz;int ring=Math.max(Math.abs(rx),Math.abs(rz));
+                    if(++iterations>=(2*limit+1)*(2*limit+1)||best!=null&&(long)Math.max(0,ring-1)*step>Math.sqrt(bestDistance)+1)done=true;
                 }
             }
         }
     }
+
 	static List<MapGenStructure> collectMapGenStructures(World world) {
 		List<MapGenStructure> found = new ArrayList<MapGenStructure>();
 		Set<Object> visited = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());

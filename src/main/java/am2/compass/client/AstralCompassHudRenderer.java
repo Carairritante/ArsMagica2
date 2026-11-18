@@ -53,8 +53,8 @@ public final class AstralCompassHudRenderer extends Gui {
             label(AstralCompassPreferences.dimensionName(target.dimension),44,same?0x94b8d4:0xffce86);
             label(same?StatCollector.translateToLocalFormatted(arrived?"am2.astral_compass.hud.arrived":"am2.astral_compass.hud.distance",distance):GuiAstralCompass.text("other_dimension"),56,arrived?0x78e2ba:0xa1e5ff);
             label("X: "+target.x+(target.hasY?" Y: "+target.y:"")+" Z: "+target.z,68,0x9ab8d9);
-            int status=ItemAstralCompass.getClientSearchStatus().status;
-            if(status!=0)label(GuiAstralCompass.text("status_"+status),81,0x77caff);
+            ItemAstralCompass.ClientSearchStatus status=ItemAstralCompass.getClientSearchStatus();
+            label(status.status==ItemAstralCompass.STATUS_SEARCHING?GuiAstralCompass.statusText(status):GuiAstralCompass.text("source_"+target.source),81,0x77caff);
         } finally {GL11.glPopMatrix();GL11.glPopAttrib();}
         return new int[]{left,top,w,h};
     }

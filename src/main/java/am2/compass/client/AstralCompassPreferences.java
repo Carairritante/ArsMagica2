@@ -23,7 +23,7 @@ public final class AstralCompassPreferences {
     private java.lang.ref.WeakReference<Object> scopeWorld = new java.lang.ref.WeakReference<Object>(null);
     private String cachedScope;
     public double x, y;
-    public int size = 100, transparency = 45;
+    public int size = 100, transparency = 45, searchRadius = 5000;
     public static final Map<Integer,String> dimensionNames = new java.util.concurrent.ConcurrentHashMap<Integer,String>();
 
     private AstralCompassPreferences() {
@@ -33,6 +33,8 @@ public final class AstralCompassPreferences {
         x = number("hud.x", 0, 0, 1); y = number("hud.y", 0, 0, 1);
         size = (int) number("hud.size", 100, 50, 150);
         transparency = (int) number("hud.transparency", 45, 0, 100);
+        searchRadius=(int)number("search.radius",5000,2000,10000);
+        if(!am2.compass.AstralStructureLocator.validRadius(searchRadius))searchRadius=5000;
         for (String id : data.getProperty("favorites", "").split(","))
             if (favorites.size() < 256 && am2.compass.AstralStructureLocator.validId(id)) favorites.add(id);
     }
@@ -46,6 +48,7 @@ public final class AstralCompassPreferences {
     public void save() {
         data.setProperty("favorites", String.join(",", favorites));
         data.setProperty("hud.x", Double.toString(x)); data.setProperty("hud.y", Double.toString(y));
+        data.setProperty("search.radius",Integer.toString(searchRadius));
         data.setProperty("hud.size", Integer.toString(size)); data.setProperty("hud.transparency", Integer.toString(transparency));
         try {
             Files.createDirectories(file.toPath().getParent());
@@ -79,8 +82,9 @@ public final class AstralCompassPreferences {
     }
     public void enterWorld() { scope(); }
     public static final class Visit {
-        public final String id, name; public final int dimension, x, y, z; public final boolean hasY;
-        Visit(String id, String name, int dimension, int x, int y, int z, boolean hasY) { this.id=id; this.name=name; this.dimension=dimension; this.x=x; this.y=y; this.z=z; this.hasY=hasY; }
+        public final String id, name, source; public final int dimension, x, y, z; public final boolean hasY;
+        Visit(String id, String name, int dimension, int x, int y, int z, boolean hasY) { this(id,name,dimension,x,y,z,hasY,"unknown"); }
+        Visit(String id,String name,int dimension,int x,int y,int z,boolean hasY,String source) {this.id=id;this.name=name;this.dimension=dimension;this.x=x;this.y=y;this.z=z;this.hasY=hasY;this.source=source;}
         public StructureTargetInfo info() { return new StructureTargetInfo(id, name, StructureTargetInfo.categoryForId(id), dimension, true, id.hashCode()); }
         public String coordinates() { return "X: " + x + (hasY ? " Y: " + y : "") + " Z: " + z; }
     }
@@ -89,9 +93,10 @@ public final class AstralCompassPreferences {
         String encoded = data.getProperty(scope(), "");
         if (encoded.length() > 32768 || encoded.isEmpty()) return visits;
         try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(Base64.getDecoder().decode(encoded)))) {
-            int count = in.readInt(); if (count < 0 || count > 12) return visits;
+            int format=in.readInt();boolean modern=format==-2;int count=modern?in.readInt():format;if(count<0||count>12)return visits;
             for (int i=0;i<count;i++) {
                 Visit v = new Visit(in.readUTF(), in.readUTF(), in.readInt(), in.readInt(), in.readInt(), in.readInt(), in.readBoolean());
+                if(modern)v=new Visit(v.id,v.name,v.dimension,v.x,v.y,v.z,v.hasY,ItemAstralCompass.normalizeSource(in.readUTF()));
                 if (am2.compass.AstralStructureLocator.validId(v.id) && Math.abs((long)v.x)<=30000000 && Math.abs((long)v.z)<=30000000) visits.add(v);
             }
         } catch (IOException | IllegalArgumentException ignored) { visits.clear(); }
@@ -99,16 +104,16 @@ public final class AstralCompassPreferences {
     }
     public void remember(ItemAstralCompass.TargetData target) {
         if (target == null) return;
-        String scope = scope(), key = scope + ":" + target.id + ":" + target.dimension + ":" + target.x + ":" + target.y + ":" + target.z;
+        String scope = scope(), key = scope + ":" + target.id + ":" + target.dimension + ":" + target.x + ":" + target.y + ":" + target.z + ":" + target.source;
         if (key.equals(lastRecorded)) return;
         lastRecorded = key;
         List<Visit> visits = history();
         for (Iterator<Visit> it=visits.iterator();it.hasNext();) { Visit v=it.next(); if (v.id.equals(target.id) && v.dimension==target.dimension && v.x==target.x && v.z==target.z) it.remove(); }
-        visits.add(0, new Visit(target.id, target.name, target.dimension, target.x, target.y, target.z, target.hasY));
+        visits.add(0, new Visit(target.id, target.name, target.dimension, target.x, target.y, target.z, target.hasY,target.source));
         while(visits.size()>12) visits.remove(visits.size()-1);
         try {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream(); DataOutputStream out = new DataOutputStream(bytes);
-            out.writeInt(visits.size()); for(Visit v:visits) { out.writeUTF(v.id); out.writeUTF(v.name); out.writeInt(v.dimension); out.writeInt(v.x); out.writeInt(v.y); out.writeInt(v.z); out.writeBoolean(v.hasY); }
+            out.writeInt(-2);out.writeInt(visits.size()); for(Visit v:visits) { out.writeUTF(v.id); out.writeUTF(v.name); out.writeInt(v.dimension); out.writeInt(v.x); out.writeInt(v.y); out.writeInt(v.z); out.writeBoolean(v.hasY);out.writeUTF(v.source); }
             data.setProperty(scope, Base64.getEncoder().encodeToString(bytes.toByteArray()));
             List<String> scopes=new ArrayList<String>(); for(String k:data.stringPropertyNames()) if(k.startsWith("history.")) scopes.add(k);
             int count=scopes.size();
