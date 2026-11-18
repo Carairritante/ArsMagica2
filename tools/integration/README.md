@@ -24,3 +24,27 @@ O teste reproduz o defeito de acesso entre tarefas. Ele não provoca de propósi
 uma mutação concorrente da lista de tiles do Minecraft e não prova que outros
 mods estejam livres de condições de corrida. O CI executa separadamente o
 verificador de bytecode `VerifyItemFrameWatcherJar` durante o build.
+
+
+## Intervalos de pedidos — CR44
+
+`ServerThrottleProbe.java` é um mod de teste descartável para cópia de servidor
+Forge do Forbidden Series. Compile para Java 8 com Forge/bibliotecas do servidor
+no classpath e empacote a classe no JAR separado do probe. Nunca inclua o probe
+no JAR do AM2.5 ou em uma instância de uso normal. Ele cria blocos/entidades em
+um mundo descartável e encerra o servidor ao terminar; não usar saves do jogador.
+
+A cópia deve conter AM2.5, OreSpawn, Wizardry e ChromatiCraft, com os mods
+exclusivos de cliente removidos. O teste usa dois Forge FakePlayers e chama os
+handlers reais de pedidos e a fila de buscas no lado servidor. Os FakePlayers
+recebem NetHandlerPlayServer e NetworkDispatcher com canal embarcado fechado:
+as respostas são capturadas na fila de saída sem usar sockets. Não conecta
+clientes remotos nem valida a interface gráfica ou o transporte pela rede.
+
+Confere 100 sequências parar/iniciar no mesmo tick, independência entre máquinas,
+início sem espaço, limpeza dos manequins e recuperação após cinco ticks. Na
+bússola, confere 100 alvos inexistentes, intervalo de vinte ticks sem renovação
+por pedidos bloqueados, ausência de cobrança nas rejeições/cancelamento,
+independência entre jogadores e duas buscas válidas pela fila cobrando exatamente
+20.000 de mana uma vez por jogador. Resultado em `throttle-results.txt`, terminando
+com `SERVER_THROTTLES=PASS`, mais saída zero e inspeção dos logs.

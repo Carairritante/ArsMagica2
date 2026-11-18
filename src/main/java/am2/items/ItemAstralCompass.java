@@ -252,6 +252,9 @@ public class ItemAstralCompass extends ArsMagicaItem {
 				player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_cooldown"));
 				return;
 			}
+			// Rejected searches also consume the request interval, never mana.
+			// Claim it before catalog discovery so unknown IDs cannot repeat expensive work.
+			tag.setLong("am2AstralRequestUntil", now + AstralStructureLocator.COOLDOWN_TICKS);
 
 			ExtendedProperties props = ExtendedProperties.For(player);
 			if (props == null || !AstralStructureLocator.hasRequiredLevel(props.getMagicLevel())) {
@@ -280,7 +283,6 @@ public class ItemAstralCompass extends ArsMagicaItem {
                 sendSearchStatus(player,STATUS_REJECTED,targetId);
                 player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_dimension",selected.preferredDimension));return;
             }
-            tag.setLong("am2AstralRequestUntil",now+AstralStructureLocator.COOLDOWN_TICKS);
             TargetData excluded=next?getTarget(stack):null;
             if(next&&(excluded==null||!excluded.id.equals(selected.id)||excluded.dimension!=player.dimension
                     ||AstralStructureLocator.ID_WITCHWOOD_FOREST.equals(selected.id))) {

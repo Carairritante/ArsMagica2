@@ -143,9 +143,11 @@ public class TileEntityArcaneStriker extends TileEntity {
 			return false;
 		}
 		long nowTick = worldObj.getTotalWorldTime();
-		if (nowTick - lastStartWorldTick < 5L && testActive) {
+		if (nowTick - lastStartWorldTick < 5L) {
 			return false;
 		}
+		// Stopping a test or failing to find space must not reset the start throttle.
+		lastStartWorldTick = nowTick;
 		if (testActive) {
 			finishTest(true);
 		} else {
@@ -160,7 +162,6 @@ public class TileEntityArcaneStriker extends TileEntity {
 			return false;
 		}
 
-		lastStartWorldTick = nowTick;
 		configuredDurationSec = MathHelper.clamp_int(configuredDurationSec, MIN_DURATION_SEC, MAX_DURATION_SEC);
 		testActive = true;
 		remainingTicks = configuredDurationSec * 20;
