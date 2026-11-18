@@ -4,7 +4,9 @@ import java.lang.reflect.Method;
 import java.util.UUID;
 
 import cpw.mods.fml.common.registry.FMLControlledNamespacedRegistry;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.inventory.InventoryBasic;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -200,5 +202,80 @@ public class TrueSoulboundTest {
 		assertTrue(TrueSoulboundHelper.clampDurability(bound));
 		assertEquals(99, bound.getItemDamage());
 		assertFalse(TrueSoulboundHelper.clampDurability(bound));
+	}
+
+	private static final class FakeThiefMob extends EntityLivingBase {
+		public ItemStack[] MymainInventory = new ItemStack[100];
+		private final InventoryBasic hiddenBag = new InventoryBasic("bag", false, 4);
+		private ItemStack pocketed;
+		private final ItemStack[] equipped = new ItemStack[5];
+
+		FakeThiefMob() {
+			super(null);
+		}
+
+		@Override
+		public ItemStack getHeldItem() {
+			return equipped[0];
+		}
+
+		@Override
+		public ItemStack getEquipmentInSlot(int slot) {
+			return slot >= 0 && slot < equipped.length ? equipped[slot] : null;
+		}
+
+		@Override
+		public void setCurrentItemOrArmor(int slot, ItemStack stack) {
+			if (slot >= 0 && slot < equipped.length) {
+				equipped[slot] = stack;
+			}
+		}
+
+		@Override
+		public ItemStack[] getLastActiveItems() {
+			return equipped;
+		}
+	}
+
+	@Test
+	public void purgeStolenSoulboundFromEntityClearsMobInternalInventoriesWithoutTouchingNormalLoot() {
+		UUID ownerId = UUID.randomUUID();
+		ItemStack stolenBookA = TrueSoulboundHelper.bind(new ItemStack(TEST_ITEM, 1, 0), ownerId, "MageOwner", 100L);
+		ItemStack stolenBookB = TrueSoulboundHelper.bind(new ItemStack(TEST_ITEM, 1, 0), ownerId, "MageOwner", 101L);
+		ItemStack stolenBagItem = TrueSoulboundHelper.bind(new ItemStack(TEST_ITEM, 1, 0), ownerId, "MageOwner", 102L);
+		ItemStack stolenPocketItem = TrueSoulboundHelper.bind(new ItemStack(TEST_ITEM, 1, 0), ownerId, "MageOwner", 103L);
+		ItemStack stolenHeldItem = TrueSoulboundHelper.bind(new ItemStack(TEST_ITEM, 1, 0), ownerId, "MageOwner", 104L);
+		ItemStack ordinaryLoot = new ItemStack(TEST_ITEM, 1, 0);
+
+		FakeThiefMob criminal = new FakeThiefMob();
+		criminal.MymainInventory[0] = stolenBookA;
+		criminal.MymainInventory[1] = ordinaryLoot;
+		criminal.MymainInventory[2] = stolenBookB;
+		criminal.hiddenBag.setInventorySlotContents(1, stolenBagItem);
+		criminal.hiddenBag.setInventorySlotContents(2, new ItemStack(TEST_ITEM, 1, 0));
+		criminal.pocketed = stolenPocketItem;
+		criminal.setCurrentItemOrArmor(0, stolenHeldItem);
+
+		// Targeted purge by UID only removes the matching stolen stack from MymainInventory
+		int targeted = TrueSoulboundHandler.purgeStolenSoulboundFromEntity(
+				criminal, TrueSoulboundHelper.getItemUID(stolenBookA), false, false);
+		assertEquals(1, targeted);
+		assertNull(criminal.MymainInventory[0]);
+		assertSame(ordinaryLoot, criminal.MymainInventory[1]);
+		assertSame(stolenBookB, criminal.MymainInventory[2]);
+		assertSame(stolenBagItem, criminal.hiddenBag.getStackInSlot(1));
+		assertSame(stolenPocketItem, criminal.pocketed);
+		assertSame(stolenHeldItem, criminal.getEquipmentInSlot(0));
+
+		// Full purge (used on mob tick and LivingDeathEvent HIGHEST before dropFewItems) clears all stolen Soulbound items
+		int remaining = TrueSoulboundHandler.purgeStolenSoulboundFromEntity(criminal, null, false, false);
+		assertEquals(4, remaining);
+		assertNull(criminal.MymainInventory[0]);
+		assertSame(ordinaryLoot, criminal.MymainInventory[1]);
+		assertNull(criminal.MymainInventory[2]);
+		assertNull(criminal.hiddenBag.getStackInSlot(1));
+		assertNotNull(criminal.hiddenBag.getStackInSlot(2));
+		assertNull(criminal.pocketed);
+		assertNull(criminal.getEquipmentInSlot(0));
 	}
 }

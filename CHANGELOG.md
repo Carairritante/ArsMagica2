@@ -1,5 +1,15 @@
 # Alterações de manutenção do AM2.5 LE
 
+### True Soulbound anti-dupe contra mobs ladrões — CR44 — 2026-11-18
+
+- `TrueSoulboundHandler`: adicionada purga genérica (cacheada por classe) de itens
+  True Soulbound roubados para inventários internos de mobs (`ItemStack[]`, `IInventory`
+  e campos escalares mutáveis `ItemStack`, como `BandP.MymainInventory` do OreSpawn).
+- Executada no resgate imediato (`reconcileLiveInventorySnapshot` num raio de 16 blocos),
+  em `onLivingUpdate` e em `onNonPlayerLivingDeath` (`EventPriority.HIGHEST`, antes de
+  `dropFewItems`), impedindo que mobs que descartam NBT ao dropar (como o Criminal)
+  dupem livros/itens True Soulbound vazios ao morrer.
+
 ### Prévias visuais das estruturas na Bússola — CR44 — 2026-11-18
 
 - Substituído o ícone genérico de bússola na lista de `GuiAstralCompass` por

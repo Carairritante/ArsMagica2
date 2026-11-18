@@ -1,8 +1,12 @@
 package am2.soulbound;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -25,6 +29,8 @@ import cpw.mods.fml.relauncher.Side;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFlowerPot;
 import net.minecraft.block.BlockJukebox;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.item.EntityItemFrame;
@@ -98,6 +104,10 @@ public class TrueSoulboundHandler {
 			 java.util.Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 	private static final Map<UUID, BlockPosRecord> LAST_INTERACTED_BLOCK =
 			new ConcurrentHashMap<UUID, BlockPosRecord>();
+	private static final Map<Class<?>, Field[]> ENTITY_INVENTORY_FIELDS =
+			new ConcurrentHashMap<Class<?>, Field[]>();
+	private static final Field[] NO_FIELDS = new Field[0];
+	private static final double NEARBY_ENTITY_PURGE_RADIUS = 16.0D;
 
 	public static void forgetTrackedUID(String uid) {
 		if (uid == null || uid.isEmpty()) {
@@ -418,14 +428,16 @@ public class TrueSoulboundHandler {
 		if (living.ticksExisted % 10 != 0) {
 			return;
 		}
-		for (int i = 0; i < 5; i++) {
-			ItemStack equipped = living.getEquipmentInSlot(i);
-			if (TrueSoulboundHelper.isTrueSoulbound(equipped) && !TrueSoulboundHelper.isOwner(equipped, living)) {
-				living.setCurrentItemOrArmor(i, null);
-				TrueSoulboundHelper.punishThief(living, living.worldObj);
-				TrueSoulboundHelper.rescueToOwnerOrVault(living.worldObj, equipped, -1, true);
-			}
+		purgeStolenSoulboundFromEntity(living, null, true, true);
+	}
+
+	@SubscribeEvent(priority = EventPriority.HIGHEST)
+	public void onNonPlayerLivingDeath(LivingDeathEvent event) {
+		EntityLivingBase living = event.entityLiving;
+		if (living == null || living instanceof EntityPlayer || living.worldObj == null || living.worldObj.isRemote) {
+			return;
 		}
+		purgeStolenSoulboundFromEntity(living, null, true, false);
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
@@ -704,6 +716,7 @@ public class TrueSoulboundHandler {
 
 				purgeFromAE2Container(player.openContainer, tracked.stack);
 				purgeFromLastInteractedTile(player, uid);
+				purgeFromNearbyEntities(player, uid);
 
 				TrueSoulboundHelper.notifyLocalized(player, "container_blocked", EnumChatFormatting.RED, "am2.truesoulbound.container_blocked");
 				if (!TrueSoulboundHelper.deliverToPlayerInventory(player, tracked.stack, tracked.preferredSlot)) {
@@ -845,6 +858,159 @@ public class TrueSoulboundHandler {
 				inv.markDirty();
 			}
 		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private static void purgeFromNearbyEntities(EntityPlayer player, String uid) {
+		if (player == null || player.worldObj == null || player.worldObj.isRemote || player.boundingBox == null || uid == null) {
+			return;
+		}
+		List<EntityLivingBase> nearby = player.worldObj.getEntitiesWithinAABB(
+				EntityLivingBase.class,
+				player.boundingBox.expand(NEARBY_ENTITY_PURGE_RADIUS, NEARBY_ENTITY_PURGE_RADIUS, NEARBY_ENTITY_PURGE_RADIUS));
+		if (nearby == null || nearby.isEmpty()) {
+			return;
+		}
+		for (EntityLivingBase living : nearby) {
+			if (living == null || living instanceof EntityPlayer) {
+				continue;
+			}
+			purgeStolenSoulboundFromEntity(living, uid, false, true);
+		}
+	}
+
+	static int purgeStolenSoulboundFromEntity(EntityLivingBase living, String onlyUid, boolean rescueToOwner, boolean punishThief) {
+		if (living == null || living instanceof EntityPlayer) {
+			return 0;
+		}
+		int purged = 0;
+
+		for (int i = 0; i < 5; i++) {
+			ItemStack equipped = living.getEquipmentInSlot(i);
+			if (matchesStolenSoulbound(equipped, living, onlyUid)) {
+				living.setCurrentItemOrArmor(i, null);
+				purged++;
+				handlePurgedMobStack(living, equipped, rescueToOwner, punishThief);
+			}
+		}
+
+		if (living instanceof IInventory) {
+			purged += purgeFromInventoryObject(living, (IInventory) living, onlyUid, rescueToOwner, punishThief);
+		}
+
+		Field[] fields = resolveEntityInventoryFields(living.getClass());
+		for (Field field : fields) {
+			try {
+				Object value = field.get(living);
+				if (value == null) {
+					continue;
+				}
+				if (value instanceof ItemStack[]) {
+					ItemStack[] array = (ItemStack[]) value;
+					for (int i = 0; i < array.length; i++) {
+						ItemStack stack = array[i];
+						if (matchesStolenSoulbound(stack, living, onlyUid)) {
+							array[i] = null;
+							purged++;
+							handlePurgedMobStack(living, stack, rescueToOwner, punishThief);
+						}
+					}
+				} else if (value instanceof IInventory) {
+					purged += purgeFromInventoryObject(living, (IInventory) value, onlyUid, rescueToOwner, punishThief);
+				} else if (value instanceof ItemStack) {
+					ItemStack stack = (ItemStack) value;
+					if (matchesStolenSoulbound(stack, living, onlyUid)) {
+						field.set(living, null);
+						purged++;
+						handlePurgedMobStack(living, stack, rescueToOwner, punishThief);
+					}
+				}
+			} catch (Throwable ignored) {
+			}
+		}
+
+		return purged;
+	}
+
+	private static int purgeFromInventoryObject(EntityLivingBase living, IInventory inv, String onlyUid, boolean rescueToOwner, boolean punishThief) {
+		if (inv == null) {
+			return 0;
+		}
+		int purged = 0;
+		int size = inv.getSizeInventory();
+		for (int i = 0; i < size; i++) {
+			ItemStack stack = inv.getStackInSlot(i);
+			if (matchesStolenSoulbound(stack, living, onlyUid)) {
+				inv.setInventorySlotContents(i, null);
+				purged++;
+				handlePurgedMobStack(living, stack, rescueToOwner, punishThief);
+			}
+		}
+		if (purged > 0) {
+			inv.markDirty();
+		}
+		return purged;
+	}
+
+	private static boolean matchesStolenSoulbound(ItemStack stack, EntityLivingBase holder, String onlyUid) {
+		if (!TrueSoulboundHelper.isTrueSoulbound(stack) || TrueSoulboundHelper.isOwner(stack, holder)) {
+			return false;
+		}
+		return onlyUid == null || onlyUid.equals(TrueSoulboundHelper.getItemUID(stack));
+	}
+
+	private static void handlePurgedMobStack(EntityLivingBase living, ItemStack stack, boolean rescueToOwner, boolean punishThief) {
+		if (living.worldObj == null || living.worldObj.isRemote) {
+			return;
+		}
+		if (punishThief) {
+			TrueSoulboundHelper.punishThief(living, living.worldObj);
+		}
+		if (rescueToOwner) {
+			TrueSoulboundHelper.rescueToOwnerOrVault(living.worldObj, stack, -1, true);
+		}
+	}
+
+	private static Field[] resolveEntityInventoryFields(Class<?> entityClass) {
+		if (entityClass == null) {
+			return NO_FIELDS;
+		}
+		Field[] cached = ENTITY_INVENTORY_FIELDS.get(entityClass);
+		if (cached != null) {
+			return cached;
+		}
+		List<Field> found = new ArrayList<Field>();
+		for (Class<?> c = entityClass;
+				c != null && c != EntityLiving.class && c != EntityLivingBase.class && c != Entity.class && c != Object.class;
+				c = c.getSuperclass()) {
+			Field[] declared;
+			try {
+				declared = c.getDeclaredFields();
+			} catch (Throwable ignored) {
+				continue;
+			}
+			for (Field f : declared) {
+				int mods = f.getModifiers();
+				if (Modifier.isStatic(mods)) {
+					continue;
+				}
+				Class<?> type = f.getType();
+				boolean isItemArray = type == ItemStack[].class;
+				boolean isInv = IInventory.class.isAssignableFrom(type);
+				boolean isMutableStack = type == ItemStack.class && !Modifier.isFinal(mods);
+				if (!isItemArray && !isInv && !isMutableStack) {
+					continue;
+				}
+				try {
+					f.setAccessible(true);
+					found.add(f);
+				} catch (Throwable ignored) {
+				}
+			}
+		}
+		Field[] result = found.isEmpty() ? NO_FIELDS : found.toArray(new Field[found.size()]);
+		ENTITY_INVENTORY_FIELDS.put(entityClass, result);
+		return result;
 	}
 
 	public static void capturePlayerSoulboundItems(EntityPlayer player, boolean removeFromInventory) {
