@@ -27,16 +27,37 @@ public final class AstralCompassService {
         Job(EntityPlayerMP p,ItemStack stack,StructureTargetInfo target){owner=p.getUniqueID();slot=p.inventory.currentItem;dimension=p.dimension;compass=stack;search=new AstralStructureLocator.Search(p.worldObj,p,target);}
     }
     public static synchronized void enqueue(EntityPlayerMP player,int slot,int action,String id) {
-        if(player==null || slot<0 || slot>8 || action<0 || action>2 || id==null || id.length()>128
+        if(player==null || slot<0 || slot>8 || action<0 || action>3 || id==null || id.length()>128
                 || action==ItemAstralCompass.ACT_SEARCH && !AstralStructureLocator.validId(id))return;
         UUID uuid=player.getUniqueID();
-        if(pending.size()>=64 || pending.containsKey(uuid))return;
+        if(action==ItemAstralCompass.ACT_CANCEL) {
+            // Replace this player's queued action; cancellation cannot evict another player.
+            if(pending.containsKey(uuid) || pending.size()<64) pending.put(uuid,new Request(player,slot,action,id));
+            return;
+        }
+        Request previous=pending.get(uuid);
+        if(previous!=null && previous.action==ItemAstralCompass.ACT_REQUEST_CATALOG && action==ItemAstralCompass.ACT_SEARCH) {
+            pending.put(uuid,new Request(player,slot,action,id));return;
+        }
+        if(pending.size()>=64 || previous!=null)return;
         pending.put(uuid,new Request(player,slot,action,id));
     }
     public static void start(EntityPlayerMP player,ItemStack stack,StructureTargetInfo target) {
-        if(jobs.containsKey(player.getUniqueID()) || jobs.size()>=32) return;
+        Job existing=jobs.get(player.getUniqueID());
+        if(existing!=null) {
+            ItemAstralCompass.sendSearchStatus(player,ItemAstralCompass.STATUS_SEARCHING,existing.search.target.id);return;
+        }
+        if(jobs.size()>=32) {
+            ItemAstralCompass.sendSearchStatus(player,ItemAstralCompass.STATUS_REJECTED,target.id); return;
+        }
         jobs.put(player.getUniqueID(),new Job(player,stack,target));
+        ItemAstralCompass.sendSearchStatus(player,ItemAstralCompass.STATUS_SEARCHING,target.id);
         player.addChatMessage(new net.minecraft.util.ChatComponentTranslation("am2.astral_compass.searching"));
+    }
+    public static void cancel(EntityPlayerMP player) {
+        Job removed=jobs.remove(player.getUniqueID());
+        // A late cancel cannot claim a refund after a completed search already spent mana.
+        ItemAstralCompass.sendSearchStatus(player,removed==null?ItemAstralCompass.STATUS_IDLE:ItemAstralCompass.STATUS_CANCELLED,"");
     }
     @SubscribeEvent public void tick(TickEvent.ServerTickEvent event) {
         if(event.phase!=TickEvent.Phase.END)return;
@@ -49,10 +70,9 @@ public final class AstralCompassService {
             synchronized(AstralCompassService.class){Iterator<Request> it=pending.values().iterator();if(!it.hasNext())break;request=it.next();it.remove();}
             EntityPlayerMP player=find(server,request.player);
             if(player==null || player.dimension!=request.dimension)continue;
-            if(request.action==ItemAstralCompass.ACT_CLEAR)jobs.remove(request.player);
             try {ItemAstralCompass.processServerAction(player,request.slot,request.action,request.id);}
-            catch(RuntimeException e){am2.LogHelper.warn("Astral Compass: request rejected: %s",e.toString());}
-            catch(LinkageError e){am2.LogHelper.warn("Astral Compass: optional integration unavailable: %s",e.toString());}
+            catch(RuntimeException e){ItemAstralCompass.sendSearchStatus(player,ItemAstralCompass.STATUS_FAILED,request.id);am2.LogHelper.warn("Astral Compass: request rejected: %s",e.toString());}
+            catch(LinkageError e){ItemAstralCompass.sendSearchStatus(player,ItemAstralCompass.STATUS_FAILED,request.id);am2.LogHelper.warn("Astral Compass: optional integration unavailable: %s",e.toString());}
         }
         // Round-robin one global sample budget, not a fresh budget per player.
         int budget=512;
@@ -61,11 +81,20 @@ public final class AstralCompassService {
         while(it.hasNext()) {
             Job job=it.next();EntityPlayerMP player=find(server,job.owner);
             if(player==null || player.isDead || player.dimension!=job.dimension || player.worldObj!=job.search.world
-                || player.inventory.currentItem!=job.slot || player.getCurrentEquippedItem()!=job.compass || ++job.age>2400) {it.remove();continue;}
+                || player.inventory.currentItem!=job.slot || player.getCurrentEquippedItem()!=job.compass || ++job.age>2400) {
+                it.remove(); if(player!=null)ItemAstralCompass.sendSearchStatus(player,ItemAstralCompass.STATUS_CANCELLED,job.search.target.id); continue;
+            }
             if(budget>0 && System.nanoTime()<deadline) {
                 int quota=Math.max(1,512/Math.max(1,jobs.size()));
                 try {job.search.step(Math.min(quota,budget),deadline);budget-=quota;}
-                catch(RuntimeException e){am2.LogHelper.warn("Astral Compass: search failed for %s: %s",job.search.target.id,e.toString());job.search.done=true;}
+                catch(RuntimeException e){
+                    it.remove();ItemAstralCompass.sendSearchStatus(player,ItemAstralCompass.STATUS_FAILED,job.search.target.id);
+                    am2.LogHelper.warn("Astral Compass: search failed for %s: %s",job.search.target.id,e.toString());continue;
+                }
+                catch(LinkageError e){
+                    it.remove();ItemAstralCompass.sendSearchStatus(player,ItemAstralCompass.STATUS_FAILED,job.search.target.id);
+                    am2.LogHelper.warn("Astral Compass: optional search integration unavailable: %s",e.toString());continue;
+                }
                 if(job.search.done) {it.remove();ItemAstralCompass.finishSearch(player,job.compass,job.search.result());}
                 else {it.remove();rotate.add(job);}
             }

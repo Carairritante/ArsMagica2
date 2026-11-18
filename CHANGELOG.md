@@ -1,5 +1,19 @@
 # Alterações de manutenção do AM2.5 LE
 
+### Melhorias da Bússola Astral na CR44 — 2026-11-17
+
+- Lista com nome legível, mod de origem, dimensão de busca e filtros por mod e
+  dimensão; traduções PT-BR/inglês para 56 estruturas opcionais.
+- Favoritos com ordenação prioritária e histórico local dos últimos 12 alvos por
+  mundo/servidor/jogador, limitado a 32 contextos. Histórico não concede alvos.
+- Estado da busca confirmado pelo servidor, cancelamento pela mesma fila validada
+  e interface que permanece aberta durante a consulta. Sem mudança no custo,
+  nível, orçamento compartilhado ou concessão de permissões.
+- Engrenagem para posição, tamanho e transparência da HUD, com arraste e prévia.
+  HUD mostra origem, dimensão com nome e altura quando conhecida.
+- Somente compilação nesta entrega, sem testes automatizados nem execução do
+  jogo, por solicitação explícita do usuário. Mantido o nome CR44.
+
 ### Correção adicional da CR44 — 2026-11-17
 
 - Bússola Astral: o serviço de pedidos passa a iniciar tanto no servidor integrado

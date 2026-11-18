@@ -1,101 +1,64 @@
 package am2.compass.client;
 
+import am2.compass.StructureTargetInfo;
+import am2.guis.GuiAstralCompass;
+import am2.guis.GuiAstralCompassHudSettings;
 import am2.guis.controls.ArcaneChalkStyle;
 import am2.items.ItemAstralCompass;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.relauncher.Side;
-import cpw.mods.fml.relauncher.SideOnly;
+import cpw.mods.fml.relauncher.*;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.gui.*;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.MathHelper;
-import net.minecraft.util.StatCollector;
+import net.minecraft.util.*;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import org.lwjgl.opengl.GL11;
 
-/**
- * Renders an Arcane Chalk style parchment overlay when holding a locked Astral Structure Compass,
- * showing live directional needle bearing, block distance, coordinates, and dimension match.
- */
 @SideOnly(Side.CLIENT)
 public final class AstralCompassHudRenderer extends Gui {
-
-	private final Minecraft mc = Minecraft.getMinecraft();
-
-	@SubscribeEvent
-	public void onRenderGameOverlay(RenderGameOverlayEvent.Post event) {
-		if (event.type != RenderGameOverlayEvent.ElementType.ALL) {
-			return;
-		}
-		if (mc == null || mc.thePlayer == null || mc.theWorld == null || mc.gameSettings.showDebugInfo) {
-			return;
-		}
-		EntityPlayer player = mc.thePlayer;
-		ItemStack held = player.getCurrentEquippedItem();
-		ItemAstralCompass.TargetData target = ItemAstralCompass.getTarget(held);
-		if (target == null) {
-			return;
-		}
-
-		ScaledResolution res = event.resolution;
-		int width = 204;
-		int height = 66;
-		int left = 12;
-		int top = 12;
-
-		GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
-		GL11.glPushMatrix();
-		try {
-			GL11.glDisable(GL11.GL_LIGHTING);
-			GL11.glDisable(GL11.GL_DEPTH_TEST);
-			GL11.glDepthMask(false);
-			GL11.glEnable(GL11.GL_BLEND);
-			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-
-			ArcaneChalkStyle.panel(left, top, width, height);
-			ArcaneChalkStyle.seal(mc, 11, left + 31, top + 33);
-
-			boolean sameDim = player.worldObj.provider.dimensionId == target.dimension;
-			double dx = (target.x + 0.5D) - player.posX;
-			double dz = (target.z + 0.5D) - player.posZ;
-			int distance = (int) Math.round(Math.hypot(dx, dz));
-			boolean arrived = sameDim && distance <= 24;
-
-			// Relative angle needle on seal
-			if (sameDim) {
-				double worldAngle = Math.atan2(dz, dx) - Math.PI / 2.0D;
-				double playerYaw = Math.toRadians(MathHelper.wrapAngleTo180_float(player.rotationYaw));
-				double rel = worldAngle - playerYaw;
-				drawDirectionNeedle(left + 31, top + 33, rel, arrived ? 0x78e2ba : 0x67ccff);
-			}
-
-			String header = StatCollector.translateToLocal("am2.astral_compass.hud.title");
-			mc.fontRenderer.drawStringWithShadow(header, left + 60, top + 10, 0x77caff);
-
-			String nameLine = mc.fontRenderer.trimStringToWidth(target.name, width - 72);
-			mc.fontRenderer.drawStringWithShadow(nameLine, left + 60, top + 22, 0xf0f6ff);
-
-			if (sameDim) {
-				String distLine = arrived
-						? StatCollector.translateToLocal("am2.astral_compass.hud.arrived")
-						: StatCollector.translateToLocalFormatted("am2.astral_compass.hud.distance", distance);
-				mc.fontRenderer.drawStringWithShadow(distLine, left + 60, top + 35, arrived ? 0x78e2ba : 0xa1e5ff);
-				String coordLine = StatCollector.translateToLocalFormatted("am2.astral_compass.hud.coords", target.x, target.z);
-				mc.fontRenderer.drawStringWithShadow(coordLine, left + 60, top + 47, 0x9ab8d9);
-			} else {
-				String wrongDim = StatCollector.translateToLocalFormatted("am2.astral_compass.hud.dimension", target.dimension);
-				mc.fontRenderer.drawStringWithShadow(wrongDim, left + 60, top + 35, 0xffce86);
-				String coordLine = StatCollector.translateToLocalFormatted("am2.astral_compass.hud.coords", target.x, target.z);
-				mc.fontRenderer.drawStringWithShadow(coordLine, left + 60, top + 47, 0x88a3c4);
-			}
-		} finally {
-			GL11.glPopMatrix();
-			GL11.glPopAttrib();
-		}
-	}
-
+    private static final Minecraft mc=Minecraft.getMinecraft();
+    public static final int WIDTH=264, HEIGHT=96;
+    @SubscribeEvent public void onRenderGameOverlay(RenderGameOverlayEvent.Post event) {
+        if(event.type==RenderGameOverlayEvent.ElementType.ALL && mc.currentScreen==null && !mc.gameSettings.showDebugInfo) drawHud(event.resolution,false);
+    }
+    public static int[] drawHud(ScaledResolution res,boolean preview) {
+        if(mc.thePlayer==null||mc.theWorld==null)return null;
+        EntityPlayer player=mc.thePlayer;
+        ItemAstralCompass.TargetData target=ItemAstralCompass.getTarget(player.getCurrentEquippedItem());
+        AstralCompassPreferences settings=AstralCompassPreferences.get();
+        if(target!=null) settings.remember(target);
+        else if(preview) target=new ItemAstralCompass.TargetData("wizardry:wizard_tower","Wizard Tower",player.dimension,128,80,256,true);
+        else return null;
+        double scale=Math.min(settings.size/100.0,Math.min((res.getScaledWidth()-16.0)/WIDTH,(res.getScaledHeight()-16.0)/HEIGHT));
+        scale=Math.max(0.1,scale);
+        int w=(int)Math.ceil(WIDTH*scale),h=(int)Math.ceil(HEIGHT*scale);
+        int left=8+(int)Math.round(Math.max(0,res.getScaledWidth()-w-16)*settings.x);
+        int top=8+(int)Math.round(Math.max(0,res.getScaledHeight()-h-16)*settings.y);
+        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);GL11.glPushMatrix();
+        try {
+            GL11.glDisable(GL11.GL_LIGHTING);GL11.glDisable(GL11.GL_DEPTH_TEST);GL11.glDepthMask(false);GL11.glEnable(GL11.GL_BLEND);GL11.glBlendFunc(GL11.GL_SRC_ALPHA,GL11.GL_ONE_MINUS_SRC_ALPHA);
+            GL11.glTranslatef(left,top,0);GL11.glScaled(scale,scale,1);
+            int alpha=(int)Math.round(255*(100-settings.transparency)/100.0);
+            Gui.drawRect(1,1,WIDTH-1,HEIGHT-1,(alpha<<24)|0x08182e);
+            Gui.drawRect(4,0,WIDTH-4,1,0xc04a9dde);Gui.drawRect(0,4,1,HEIGHT-4,0xa0386fa9);
+            Gui.drawRect(WIDTH-1,4,WIDTH,HEIGHT-4,0xa0284f83);Gui.drawRect(4,HEIGHT-1,WIDTH-4,HEIGHT,0xc0284f83);
+            ArcaneChalkStyle.seal(mc,11,28,45);
+            boolean same=player.dimension==target.dimension;double dx=target.x+0.5-player.posX,dz=target.z+0.5-player.posZ;
+            int distance=(int)Math.round(Math.hypot(dx,dz));boolean arrived=same&&distance<=24;
+            if(same)drawDirectionNeedle(28,45,Math.atan2(dz,dx)-Math.PI/2-Math.toRadians(MathHelper.wrapAngleTo180_float(player.rotationYaw)),arrived?0x78e2ba:0x67ccff);
+            String category=StructureTargetInfo.categoryForId(target.id);
+            StructureTargetInfo info=new StructureTargetInfo(target.id,target.name,category,target.dimension,true,0);
+            label(StatCollector.translateToLocal("am2.astral_compass.hud.title"),7,0x77caff);
+            label(info.getDisplayName(),20,0xf0f6ff);label(info.getModName(),32,0x94b8d4);
+            label(AstralCompassPreferences.dimensionName(target.dimension),44,same?0x94b8d4:0xffce86);
+            label(same?StatCollector.translateToLocalFormatted(arrived?"am2.astral_compass.hud.arrived":"am2.astral_compass.hud.distance",distance):GuiAstralCompass.text("other_dimension"),56,arrived?0x78e2ba:0xa1e5ff);
+            label("X: "+target.x+(target.hasY?" Y: "+target.y:"")+" Z: "+target.z,68,0x9ab8d9);
+            int status=ItemAstralCompass.getClientSearchStatus().status;
+            if(status!=0)label(GuiAstralCompass.text("status_"+status),81,0x77caff);
+        } finally {GL11.glPopMatrix();GL11.glPopAttrib();}
+        return new int[]{left,top,w,h};
+    }
+    private static void label(String text,int y,int color){mc.fontRenderer.drawStringWithShadow(mc.fontRenderer.trimStringToWidth(text,WIDTH-66),58,y,color);}
 	private static void drawDirectionNeedle(float cx, float cy, double angleRad, int color) {
 		GL11.glDisable(GL11.GL_TEXTURE_2D);
 		GL11.glPushMatrix();

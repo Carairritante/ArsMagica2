@@ -34,6 +34,14 @@ public class ItemAstralCompass extends ArsMagicaItem {
 	public static final int ACT_REQUEST_CATALOG = 0;
 	public static final int ACT_SEARCH = 1;
 	public static final int ACT_CLEAR = 2;
+	public static final int ACT_CANCEL = 3;
+	public static final int STATUS_IDLE=0, STATUS_SEARCHING=1, STATUS_FOUND=2,
+            STATUS_NOT_FOUND=3, STATUS_CANCELLED=4, STATUS_FAILED=5, STATUS_REJECTED=6;
+	public static final class ClientSearchStatus {
+        public final int status; public final String id;
+        ClientSearchStatus(int status,String id) { this.status=status; this.id=id; }
+    }
+	private static volatile ClientSearchStatus clientSearchStatus = new ClientSearchStatus(STATUS_IDLE, "");
 
 	private static final String TAG_ROOT = "am2AstralCompass";
 	private static final String TAG_HAS_TARGET = "hasTarget";
@@ -46,7 +54,7 @@ public class ItemAstralCompass extends ArsMagicaItem {
 	private static final String TAG_HAS_Y = "hasY";
 	private static final String TAG_COOLDOWN_UNTIL = "cooldownUntil";
 
-	private static List<StructureTargetInfo> clientCatalog = AstralStructureLocator.getBuiltinCatalog();
+	private static volatile List<StructureTargetInfo> clientCatalog = AstralStructureLocator.getBuiltinCatalog();
 
 	public ItemAstralCompass() {
 		super();
@@ -198,7 +206,13 @@ public class ItemAstralCompass extends ArsMagicaItem {
 			return;
 		}
 
+        if (action == ACT_CANCEL) {
+            am2.compass.AstralCompassService.cancel(player);
+            return;
+        }
+
 		if (action == ACT_CLEAR) {
+			am2.compass.AstralCompassService.cancel(player);
 			clearTarget(stack);
 			player.inventory.markDirty();
 			player.openContainer.detectAndSendChanges();
@@ -211,12 +225,14 @@ public class ItemAstralCompass extends ArsMagicaItem {
 			long now = clock;
 			long cooldownUntil = tag.getLong("am2AstralRequestUntil");
 			if (now < cooldownUntil) {
+				sendSearchStatus(player, STATUS_REJECTED, targetId);
 				player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_cooldown"));
 				return;
 			}
 
 			ExtendedProperties props = ExtendedProperties.For(player);
 			if (props == null || !AstralStructureLocator.hasRequiredLevel(props.getMagicLevel())) {
+				sendSearchStatus(player, STATUS_REJECTED, targetId);
 				player.addChatMessage(new ChatComponentTranslation(
 						"am2.astral_compass.err_level",
 						AstralStructureLocator.REQUIRED_MAGIC_LEVEL,
@@ -225,6 +241,7 @@ public class ItemAstralCompass extends ArsMagicaItem {
 			}
 
 			if (!AstralStructureLocator.hasEnoughMana(props.getCurrentMana(), props.getBonusCurrentMana())) {
+				sendSearchStatus(player, STATUS_REJECTED, targetId);
 				int available = (int) Math.floor(props.getCurrentMana() + props.getBonusCurrentMana());
 				player.addChatMessage(new ChatComponentTranslation(
 						"am2.astral_compass.err_mana",
@@ -235,8 +252,9 @@ public class ItemAstralCompass extends ArsMagicaItem {
 
             StructureTargetInfo selected=null;
             for(StructureTargetInfo info:AstralStructureLocator.discoverCatalog(player.worldObj)) if(info.id.equals(targetId)){selected=info;break;}
-            if(selected==null)return;
+            if(selected==null){sendSearchStatus(player,STATUS_REJECTED,targetId);return;}
             if(selected.dimensionRestricted && selected.preferredDimension!=player.dimension){
+                sendSearchStatus(player,STATUS_REJECTED,targetId);
                 player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_dimension",selected.preferredDimension));return;
             }
             tag.setLong("am2AstralRequestUntil",now+AstralStructureLocator.COOLDOWN_TICKS);
@@ -249,10 +267,12 @@ public class ItemAstralCompass extends ArsMagicaItem {
             // Mana may have changed while the incremental search ran.
             if(props==null || !AstralStructureLocator.hasRequiredLevel(props.getMagicLevel())
                     || !AstralStructureLocator.hasEnoughMana(props.getCurrentMana(),props.getBonusCurrentMana())){
+                sendSearchStatus(player, STATUS_REJECTED, "");
                 player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_resources_changed"));return;
             }
 
 			if (result == null) {
+				sendSearchStatus(player, STATUS_NOT_FOUND, "");
 				player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_not_found"));
 				return;
 			}
@@ -260,6 +280,7 @@ public class ItemAstralCompass extends ArsMagicaItem {
 			props.deductMana(AstralStructureLocator.MANA_COST);
 			props.forceSync();
 			setTarget(stack, result);
+			sendSearchStatus(player, STATUS_FOUND, result.targetId);
 			player.inventory.markDirty();
 			player.openContainer.detectAndSendChanges();
 
@@ -283,8 +304,21 @@ public class ItemAstralCompass extends ArsMagicaItem {
 			writer.add(info.dimensionRestricted);
 			writer.add(info.glyphIndex);
 		}
+		// Optional trailer: legacy clients finish after the catalog and ignore this.
+		writer.add(0x414d3244).add(player.dimension).add(player.worldObj.provider.getDimensionName());
 		AMNetHandler.INSTANCE.sendPacketToClientPlayer(player, AMPacketIDs.ASTRAL_COMPASS_ACTION, writer.generate());
 	}
+
+    public static void sendSearchStatus(EntityPlayerMP player,int status,String id) {
+        if(player != null) AMNetHandler.INSTANCE.sendPacketToClientPlayer(player, AMPacketIDs.ASTRAL_COMPASS_STATUS,
+                new AMDataWriter().add(status).add(id == null ? "" : id).generate());
+    }
+    @SideOnly(Side.CLIENT)
+    public static ClientSearchStatus getClientSearchStatus() { return clientSearchStatus; }
+    @SideOnly(Side.CLIENT)
+    public static void setClientSearchStatus(int status,String id) {
+        if(status >= STATUS_IDLE && status <= STATUS_REJECTED) clientSearchStatus = new ClientSearchStatus(status,id);
+    }
 
 	@SideOnly(Side.CLIENT)
 	public static void setClientCatalog(List<StructureTargetInfo> catalog) {

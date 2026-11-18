@@ -198,6 +198,14 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			case AMPacketIDs.ASTRAL_COMPASS_ACTION:
 				handleAstralCompassCatalogSync(remaining);
 				break;
+			case AMPacketIDs.ASTRAL_COMPASS_STATUS:
+                if (remaining.length >= 6 && remaining.length <= 396) {
+                    java.io.DataInputStream input = new java.io.DataInputStream(new java.io.ByteArrayInputStream(remaining));
+                    int state = input.readInt(); String id = input.readUTF();
+                    if (input.available() == 0 && id.length() <= 128)
+                        am2.items.ItemAstralCompass.setClientSearchStatus(state, id);
+                }
+                break;
 			}
 		}catch (Throwable t){
 			LogHelper.error("Client Packet Failed to Handle!");
@@ -895,6 +903,12 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			list.add(new am2.compass.StructureTargetInfo(id, rawName, category, prefDim, dimRestricted, glyph));
 		}
 		am2.items.ItemAstralCompass.setClientCatalog(list);
+		try {
+            if(rdr.dataStream.available() >= 10 && rdr.dataStream.readInt() == 0x414d3244) {
+                int dimension = rdr.dataStream.readInt(); String name = rdr.dataStream.readUTF();
+                if(name.length() <= 128) am2.compass.client.AstralCompassPreferences.dimensionNames.put(dimension, name);
+            }
+        } catch(java.io.IOException ignored) { /* Catalog remains usable with legacy servers. */ }
 	}
 
 	public WorldServer[] getWorldServers(){
