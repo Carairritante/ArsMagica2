@@ -1,5 +1,9 @@
 # Instruções persistentes de publicação deste projeto
 
+Preferência do usuário (2026-11-17): pequenas correções não exigem renomear o
+mod nem incrementar o CR. Preservar CR44 nesta correção da Bússola Astral;
+distinguir os builds pelo checksum e pelo registro das alterações.
+
 Estas regras registram o fluxo solicitado pelo usuário e por seu colaborador
 Akashiic. Consulte-as antes de preparar commits, publicar atualizações ou alterar
 os repositórios deste projeto. Novas instruções explícitas do usuário prevalecem.

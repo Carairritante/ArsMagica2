@@ -1,5 +1,15 @@
 # Alterações de manutenção do AM2.5 LE
 
+### Correção adicional da CR44 — 2026-11-17
+
+- Bússola Astral: o serviço de pedidos passa a iniciar tanto no servidor integrado
+  quanto no dedicado. Antes, no singleplayer a interface ficava com as oito entradas
+  básicas, mesmo quando o servidor conhecia estruturas dos mods.
+- Registro compartilhado em `CommonProxy.init`, sem duplicar handlers, canais ou
+  alterar os limites e requisitos das buscas. Nome e versão CR44 preservados.
+- Teste de regressão do ciclo de inicialização e reprodução da interface em cópia
+  descartável do Forbidden Series. Consulte `docs/BUSSOLA-CATALOGO-CR44.md`.
+
 ## 1.6.11-LE-CR44 — 2026-11-16
 
 - Arcane Striker & Manequim Arcano: corrigida a captura de dano para evitar perda de precisão IEEE-754 (`DUMMY_BASE_HEALTH = 1024.0F` com delta capturado diretamente em `setHealth` dentro de `damageEntity`), adicionado popup de dano no cliente e sincronização imediata com a máquina.
