@@ -11,6 +11,10 @@ campo vazio com ausência da estrutura, nem catálogo listado com localização
 validada. Exibir a precisão disponível; registrar claramente quando houve só
 compilação e o teste em jogo ficou para o usuário.
 
+Identidade visual da HUD (2026-11-17): a Bússola Astral usa mostrador circular,
+rosa dos ventos, cardeais e agulha de alvo próprios. Preservar posição, escala,
+transparência e os controles existentes quando o pedido for apenas visual.
+
 Estas regras registram o fluxo solicitado pelo usuário e por seu colaborador
 Akashiic. Consulte-as antes de preparar commits, publicar atualizações ou alterar
 os repositórios deste projeto. Novas instruções explícitas do usuário prevalecem.

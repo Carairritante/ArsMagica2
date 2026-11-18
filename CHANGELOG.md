@@ -1,5 +1,16 @@
 # Alterações de manutenção do AM2.5 LE
 
+### Desenho exclusivo da HUD da Bússola — CR44 — 2026-11-17
+
+- Substituída somente a renderização da HUD por mostrador circular de navegação:
+  rosa dos ventos e pontos cardeais orientados pelo jogador, agulha de duas faces,
+  contrapeso e marca externa do alvo. Paleta azul escura/ciano com metal dourado.
+- Mantidos os limites 264×96, posição/tamanho/transparência e seus controles.
+  Informações continuam presentes; origem/estado podem ocupar duas linhas.
+- Estado visual próprio para alvo em outra dimensão ou ponto já alcançado.
+  Sem mudanças em busca, mana, rituais, modelos ou outros mods.
+- Somente assemble, sem execução do jogo ou testes nesta etapa; mantido CR44.
+
 ### Localização ChromatiCraft na CR44 — 2026-11-17
 
 - Incluídos pylons de qualquer cor e por cor, consultando PylonGenerator.colorCache
