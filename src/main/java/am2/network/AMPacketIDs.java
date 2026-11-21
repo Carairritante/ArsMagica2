@@ -69,4 +69,5 @@ public class AMPacketIDs{
 	public static final byte ASTRAL_COMPASS_ACTION = 79;
 	public static final byte ASTRAL_COMPASS_STATUS = 80;
 	public static final byte ASTRAL_COMPASS_PROGRESS = 81;
+	public static final byte TORNADO_DEBRIS = 82;
 }

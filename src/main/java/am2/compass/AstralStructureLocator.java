@@ -64,8 +64,12 @@ public final class AstralStructureLocator {
                     entries.put(name,new StructureTargetInfo(name,name,StructureTargetInfo.CAT_MODDED,world.provider.dimensionId,true,name.hashCode()));
             }
             AstralModStructures.addCatalog(world,entries);
-            for(String id:AstralLandmarks.get(world).types()) if(!entries.containsKey(id))
-                entries.put(id,new StructureTargetInfo(id,StructureTargetInfo.prettify(id),StructureTargetInfo.CAT_MODDED,world.provider.dimensionId,true,id.hashCode()));
+            for(String id:AstralLandmarks.get(world).types()) {
+                StructureTargetInfo existing=entries.get(id);
+                // A dungeon spawner or custom world may place a structure outside its natural dimensions.
+                entries.put(id,existing==null?new StructureTargetInfo(id,StructureTargetInfo.prettify(id),StructureTargetInfo.categoryForId(id),world.provider.dimensionId,true,id.hashCode())
+                    :existing.withObservedDimension(world.provider.dimensionId));
+            }
         }
         List<StructureTargetInfo> result=new ArrayList<StructureTargetInfo>();
         for(StructureTargetInfo info:entries.values()) { if(result.size()==MAX_CATALOG) break; result.add(info); }

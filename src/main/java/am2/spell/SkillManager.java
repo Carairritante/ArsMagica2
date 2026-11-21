@@ -290,6 +290,7 @@ public class SkillManager implements ISpellPartManager{
 		registerSkillTreeEntry(new Saturation(), "Saturation");
 		registerSkillTreeEntry(new DigSpeed(), "DigSpeed");
 		registerSkillTreeEntry(new Fatigue(), "Fatigue");
+		registerSkillTreeEntry(new Tornado(), "Tornado");
 
 		//Modifiers
 		registerSkillTreeEntry(new Bounce(), "Bounce");

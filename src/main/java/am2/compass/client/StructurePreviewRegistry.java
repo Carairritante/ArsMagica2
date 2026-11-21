@@ -96,23 +96,10 @@ public final class StructurePreviewRegistry {
 
 	public static String resolvePreviewKey(String id) {
 		String clean = sanitizeKey(id);
+        // The studio capture contains only its stone support, not the Burrow.
+        if ("chromaticraft_burrow".equals(clean)) return null;
 		if (KNOWN_KEYS.contains(clean)) {
 			return clean;
-		}
-		if (clean.startsWith("chromaticraft_pylon")) {
-			return "chromaticraft_pylon";
-		}
-		if (clean.startsWith("chromaticraft_")) {
-			return "chromaticraft_biomefrag";
-		}
-		if (clean.startsWith("orespawn_")) {
-			return "orespawn_makedungeon";
-		}
-		if (clean.startsWith("twilightforest_")) {
-			return "twilightforest_lichtower";
-		}
-		if ("temple".equals(clean)) {
-			return "temple_desertpyramid";
 		}
 		return null;
 	}
@@ -169,6 +156,7 @@ public final class StructurePreviewRegistry {
 		if (entry == null) {
 			return "";
 		}
+		if ("chromaticraft:BURROW".equals(entry.id)) return StatCollector.translateToLocal("am2.astral_compass.desc.preview_pending");
 		String key = "am2.astral_compass.desc." + sanitizeKey(entry.id);
 		if (StatCollector.canTranslate(key)) {
 			return StatCollector.translateToLocal(key);

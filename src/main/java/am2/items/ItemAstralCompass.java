@@ -279,9 +279,9 @@ public class ItemAstralCompass extends ArsMagicaItem {
             StructureTargetInfo selected=null;
             for(StructureTargetInfo info:AstralStructureLocator.discoverCatalog(player.worldObj)) if(info.id.equals(targetId)){selected=info;break;}
             if(selected==null){sendSearchStatus(player,STATUS_REJECTED,targetId);return;}
-            if(selected.dimensionRestricted && selected.preferredDimension!=player.dimension){
+            if(!selected.canSearchIn(player.dimension)){
                 sendSearchStatus(player,STATUS_REJECTED,targetId);
-                player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_dimension",selected.preferredDimension));return;
+                player.addChatMessage(new ChatComponentTranslation("am2.astral_compass.err_dimension",java.util.Arrays.toString(selected.getSearchDimensions())));return;
             }
             TargetData excluded=next?getTarget(stack):null;
             if(next&&(excluded==null||!excluded.id.equals(selected.id)||excluded.dimension!=player.dimension
@@ -331,11 +331,12 @@ public class ItemAstralCompass extends ArsMagicaItem {
 			writer.add(info.rawName);
 			writer.add(info.category);
 			writer.add(info.preferredDimension);
-			writer.add(info.dimensionRestricted);
+			writer.add(info.dimensionRestricted && info.getSearchDimensions().length == 1);
 			writer.add(info.glyphIndex);
 		}
 		// Optional trailer: legacy clients finish after the catalog and ignore this.
 		writer.add(0x414d3244).add(player.dimension).add(player.worldObj.provider.getDimensionName()).add(2);
+		writer.add(am2.compass.AstralDimensionMetadata.encode(catalog, am2.compass.OptionalStructureDimensions.names(catalog)));
 		AMNetHandler.INSTANCE.sendPacketToClientPlayer(player, AMPacketIDs.ASTRAL_COMPASS_ACTION, writer.generate());
 	}
 

@@ -165,6 +165,9 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 			case AMPacketIDs.AOE_SHOCKWAVE:
 				handleAoEShockwave(remaining);
 				break;
+			case AMPacketIDs.TORNADO_DEBRIS:
+				handleTornadoDebris(remaining);
+				break;
 			case AMPacketIDs.HIDDEN_COMPONENT_UNLOCK:
 				Minecraft.getMinecraft().guiAchievement.func_146256_a(ArcaneCompendium.componentUnlock);
 				break;
@@ -485,6 +488,54 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 
 	private static long lastOrbitalThunderMs = 0L;
 	private static long lastOrbitalZapMs = 0L;
+	private static long lastTornadoRoarMs = 0L;
+
+	private void handleTornadoDebris(byte[] data){
+		AMDataReader rdr = new AMDataReader(data, false);
+		int entityId = rdr.getInt();
+		double cx = rdr.getDouble();
+		double cy = rdr.getDouble();
+		double cz = rdr.getDouble();
+		float radius = rdr.getFloat();
+		int remainingTicks = rdr.getInt();
+		int totalDuration = rdr.getInt();
+		int customColor = rdr.getInt();
+		byte element = rdr.getByte();
+		byte fujitaTier = rdr.getByte();
+		byte celestialMode = rdr.getByte();
+		int count = rdr.getByte() & 0xFF;
+
+		int[] blockIds = new int[count];
+		int[] metas = new int[count];
+		int[] bx = new int[count];
+		int[] by = new int[count];
+		int[] bz = new int[count];
+		for (int i = 0; i < count; i++){
+			blockIds[i] = rdr.getInt();
+			metas[i] = rdr.getByte() & 0xFF;
+			bx[i] = rdr.getInt();
+			by[i] = rdr.getInt();
+			bz[i] = rdr.getInt();
+		}
+
+		am2.client.vfx.TornadoVFX.handleTornadoPacket(
+				entityId, cx, cy, cz, radius, remainingTicks, totalDuration, customColor, element, fujitaTier, celestialMode,
+				blockIds, metas, bx, by, bz, count
+		);
+
+		Minecraft mc = Minecraft.getMinecraft();
+		if (mc != null && mc.theWorld != null){
+			long now = Minecraft.getSystemTime();
+			if (now - lastTornadoRoarMs > 850L){
+				lastTornadoRoarMs = now;
+				float pitch = 0.52f + mc.theWorld.rand.nextFloat() * 0.16f;
+				mc.theWorld.playSound(cx, cy + 4.0, cz, "ambient.weather.rain", 1.85f, pitch, false);
+			}
+			if (count > 0 && mc.theWorld.rand.nextFloat() < 0.45f){
+				mc.theWorld.playSound(bx[0] + 0.5, by[0] + 0.5, bz[0] + 0.5, "dig.gravel", 0.65f, 0.72f + mc.theWorld.rand.nextFloat() * 0.25f, false);
+			}
+		}
+	}
 
 	private void handleOrbitalStormStrike(byte[] data){
 		AMDataReader rdr = new AMDataReader(data, false);
@@ -913,9 +964,14 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 		try {
             if(rdr.dataStream.available() >= 10 && rdr.dataStream.readInt() == 0x414d3244) {
                 int dimension = rdr.dataStream.readInt(); String name = rdr.dataStream.readUTF();
-                if(name.length() <= 128) am2.compass.client.AstralCompassPreferences.dimensionNames.put(dimension, name);
+                if(name.length() <= 128) am2.compass.client.AstralCompassPreferences.acceptDimensionNames(java.util.Collections.singletonMap(dimension, name));
                 am2.items.ItemAstralCompass.setClientSearchProtocol(1);
                 if(rdr.dataStream.available()>=4&&rdr.dataStream.readInt()>=2)am2.items.ItemAstralCompass.setClientSearchProtocol(2);
+                if(rdr.dataStream.available()>=4) {
+                    am2.compass.AstralDimensionMetadata.Decoded dimensions=am2.compass.AstralDimensionMetadata.read(rdr.dataStream,list);
+                    am2.compass.client.AstralCompassPreferences.acceptDimensionNames(dimensions.names);
+                    am2.items.ItemAstralCompass.setClientCatalog(dimensions.catalog);
+                }
             }
         } catch(java.io.IOException ignored) { /* Catalog remains usable with legacy servers. */ }
 	}

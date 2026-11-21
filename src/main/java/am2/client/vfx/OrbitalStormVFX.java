@@ -20,19 +20,30 @@ import java.util.concurrent.ConcurrentHashMap;
 @SideOnly(Side.CLIENT)
 public class OrbitalStormVFX {
 
-	private static final ResourceLocation texStormCloud = new ResourceLocation("arsmagica2", "textures/misc/vfx/storm_cloud.png");
-	private static final ResourceLocation texLightningBolt = new ResourceLocation("arsmagica2", "textures/misc/vfx/lightning_bolt.png");
 	private static final ResourceLocation texLightningShockwave = new ResourceLocation("arsmagica2", "textures/misc/vfx/lightning_shockwave.png");
 	private static final ResourceLocation texStarfallCore = new ResourceLocation("arsmagica2", "textures/misc/vfx/starfall_core.png");
 
-	private static final int MAX_ACTIVE_BOLTS = 240;
-	private static final int MAX_ACTIVE_RINGS = 180;
-	private static final int MAX_ACTIVE_SPARKS = 650;
+	private static final int MAX_BOLTS_ALL = 64;
+	private static final int MAX_BOLTS_DECREASED = 36;
+	private static final int MAX_BOLTS_MINIMAL = 18;
+
+	private static final int MAX_RINGS_ALL = 44;
+	private static final int MAX_RINGS_DECREASED = 24;
+	private static final int MAX_RINGS_MINIMAL = 12;
+
+	private static final int MAX_SPARKS_ALL = 180;
+	private static final int MAX_SPARKS_DECREASED = 90;
+	private static final int MAX_SPARKS_MINIMAL = 36;
+
+	private static final double CULL_DIST_SQ = 190.0 * 190.0;
+	private static final double LOD_DETAIL_DIST_SQ = 75.0 * 75.0;
+	private static final double SPARK_CULL_DIST_SQ = 110.0 * 110.0;
 
 	private static final Map<Integer, ActiveStorm> activeStorms = new ConcurrentHashMap<Integer, ActiveStorm>();
 	private static final List<OrbitalBolt> activeBolts = new ArrayList<OrbitalBolt>();
 	private static final List<GroundShockRing> activeRings = new ArrayList<GroundShockRing>();
 	private static final List<DebrisSpark> activeSparks = new ArrayList<DebrisSpark>();
+	private static final float[] PALETTE = new float[12];
 
 	private static final class ActiveStorm {
 		int entityId;
@@ -49,10 +60,11 @@ public class OrbitalStormVFX {
 	private static final class OrbitalBolt {
 		double startX, startY, startZ;
 		double endX, endY, endZ;
+		LightningVFXHelper.BoltPath path;
 		boolean hitMob;
 		boolean overcharged;
+		float intensityScale;
 		int customColor;
-		long seed;
 		long spawnTimeMs;
 		long lifeMs;
 	}
@@ -60,9 +72,12 @@ public class OrbitalStormVFX {
 	private static final class GroundShockRing {
 		double x, y, z;
 		float maxRadius;
+		boolean hitMob;
 		boolean overcharged;
 		int customColor;
-		long seed;
+		double[][] crackX;
+		double[][] crackY;
+		double[][] crackZ;
 		long spawnTimeMs;
 		long lifeMs;
 	}
@@ -71,6 +86,7 @@ public class OrbitalStormVFX {
 		double x, y, z;
 		double vx, vy, vz;
 		float size;
+		float rollSpeed;
 		boolean darkDebris;
 		int customColor;
 		long spawnTimeMs;
@@ -82,6 +98,11 @@ public class OrbitalStormVFX {
 		activeBolts.clear();
 		activeRings.clear();
 		activeSparks.clear();
+	}
+
+	private static int getQuality() {
+		Minecraft mc = Minecraft.getMinecraft();
+		return (mc != null && mc.gameSettings != null) ? mc.gameSettings.particleSetting : 0;
 	}
 
 	public static synchronized void handleOrbitalStormPacket(
@@ -109,26 +130,65 @@ public class OrbitalStormVFX {
 		storm.overcharged = storm.overcharged || overcharged;
 		storm.lastSyncTimeMs = now;
 
-		Random rand = new Random(now ^ (stormId * 31337L));
+		int quality = getQuality();
+		int maxBolts = quality >= 2 ? MAX_BOLTS_MINIMAL : (quality == 1 ? MAX_BOLTS_DECREASED : MAX_BOLTS_ALL);
+		int maxRings = quality >= 2 ? MAX_RINGS_MINIMAL : (quality == 1 ? MAX_RINGS_DECREASED : MAX_RINGS_ALL);
+		int maxSparks = quality >= 2 ? MAX_SPARKS_MINIMAL : (quality == 1 ? MAX_SPARKS_DECREASED : MAX_SPARKS_ALL);
 
-		for (int i = 0; i < strikeX.length; i++) {
+		Minecraft mc = Minecraft.getMinecraft();
+		double refX = centerX, refZ = centerZ;
+		if (mc != null && mc.thePlayer != null) {
+			refX = mc.thePlayer.posX;
+			refZ = mc.thePlayer.posZ;
+		}
+
+		Random rand = new Random(now ^ (stormId * 31337L));
+		int packetSpawned = 0;
+		int packetCap = quality >= 2 ? 4 : (quality == 1 ? 8 : 14);
+
+		for (int i = 0; i < strikeX.length && packetSpawned < packetCap; i++) {
 			double tx = strikeX[i];
 			double ty = strikeY[i];
 			double tz = strikeZ[i];
 			boolean hitMob = strikeHitMob[i];
 
+			double playerDx = tx - refX;
+			double playerDz = tz - refZ;
+			double playerDistSq = playerDx * playerDx + playerDz * playerDz;
+			if (playerDistSq > CULL_DIST_SQ) {
+				continue;
+			}
+
+			// Coalesce tightly clustered redundant strikes into a single thicker hero bolt
+			// instead of stacking noisy overlapping lines on the same spot.
+			OrbitalBolt mergedWith = null;
+			for (int b = activeBolts.size() - 1; b >= 0; b--) {
+				OrbitalBolt existing = activeBolts.get(b);
+				if (now - existing.spawnTimeMs > 110L) break;
+				double mdx = existing.endX - tx;
+				double mdz = existing.endZ - tz;
+				if (mdx * mdx + mdz * mdz < 3.2 * 3.2) {
+					mergedWith = existing;
+					break;
+				}
+			}
+			if (mergedWith != null) {
+				mergedWith.intensityScale = Math.min(1.45f, mergedWith.intensityScale + 0.22f);
+				mergedWith.hitMob = mergedWith.hitMob || hitMob;
+				continue;
+			}
+
 			double dx = tx - centerX;
 			double dz = tz - centerZ;
 			double dist = Math.sqrt(dx * dx + dz * dz);
 
-			// Anchor start high inside the storm deck / funnel throat so bolts sweep diagonally
 			double funnelBaseY = Math.min(centerY + 42.0, 218.0);
 			double deckY = Math.min(centerY + 62.0, 238.0);
 
 			double startX, startY, startZ;
 			if (dist < 42.0) {
 				double ang = rand.nextDouble() * Math.PI * 2.0;
-				double r = 3.0 + rand.nextDouble() * 16.0;
+				double r = 3.0 + rand.nextDouble() * 15.0;
 				startX = centerX + Math.cos(ang) * r;
 				startY = funnelBaseY + rand.nextDouble() * 14.0;
 				startZ = centerZ + Math.sin(ang) * r;
@@ -138,15 +198,22 @@ public class OrbitalStormVFX {
 				double perpX = -dirZ;
 				double perpZ = dirX;
 				double deckRadius = Math.min(dist * 0.45, 62.0);
-				double lat = (rand.nextDouble() - 0.5) * 24.0;
+				double lat = (rand.nextDouble() - 0.5) * 20.0;
 				startX = centerX + dirX * deckRadius + perpX * lat;
-				startY = deckY - 6.0 + (rand.nextDouble() - 0.5) * 8.0;
+				startY = deckY - 6.0 + (rand.nextDouble() - 0.5) * 7.0;
 				startZ = centerZ + dirZ * deckRadius + perpZ * lat;
 			}
 
-			if (activeBolts.size() >= MAX_ACTIVE_BOLTS) {
+			while (activeBolts.size() >= maxBolts) {
 				activeBolts.remove(0);
 			}
+
+			double len = Math.sqrt((tx - startX) * (tx - startX) + (ty - startY) * (ty - startY) + (tz - startZ) * (tz - startZ));
+			boolean closeHero = hitMob || playerDistSq < LOD_DETAIL_DIST_SQ;
+			int segs = closeHero ? (quality == 0 ? 12 : 9) : 7;
+			int forks = quality >= 2 ? (hitMob ? 1 : 0) : (closeHero ? (hitMob ? 3 : 2) : 1);
+			double maxJitter = Math.min(7.5, 2.0 + len * 0.048);
+
 			OrbitalBolt bolt = new OrbitalBolt();
 			bolt.startX = startX;
 			bolt.startY = startY;
@@ -154,51 +221,85 @@ public class OrbitalStormVFX {
 			bolt.endX = tx;
 			bolt.endY = ty;
 			bolt.endZ = tz;
+			bolt.path = LightningVFXHelper.generateBolt(
+					startX, startY, startZ,
+					tx, ty, tz,
+					segs, maxJitter, forks,
+					hitMob && quality == 0,
+					rand
+			);
 			bolt.hitMob = hitMob;
 			bolt.overcharged = overcharged;
+			bolt.intensityScale = hitMob ? 1.15f : 0.92f;
 			bolt.customColor = customColor;
-			bolt.seed = rand.nextLong();
 			bolt.spawnTimeMs = now;
-			bolt.lifeMs = hitMob ? 360L : 290L;
+			bolt.lifeMs = hitMob ? 340L : 270L;
 			activeBolts.add(bolt);
+			packetSpawned++;
 
-			// Add ground shockwave & electric cracks
-			if (activeRings.size() >= MAX_ACTIVE_RINGS) {
+			// Ground shockwave ring + precomputed close-range surface electric arcs
+			while (activeRings.size() >= maxRings) {
 				activeRings.remove(0);
 			}
 			GroundShockRing ring = new GroundShockRing();
 			ring.x = tx;
 			ring.y = ty + 0.08;
 			ring.z = tz;
-			ring.maxRadius = hitMob ? (overcharged ? 4.8f : 3.6f) : 2.6f;
+			ring.maxRadius = hitMob ? (overcharged ? 4.4f : 3.4f) : 2.3f;
+			ring.hitMob = hitMob;
 			ring.overcharged = overcharged;
 			ring.customColor = customColor;
-			ring.seed = rand.nextLong();
 			ring.spawnTimeMs = now;
-			ring.lifeMs = hitMob ? 560L : 380L;
+			ring.lifeMs = hitMob ? 480L : 320L;
+
+			int crackCount = (closeHero && quality < 2) ? (hitMob ? (overcharged ? 4 : 3) : 2) : 0;
+			if (crackCount > 0) {
+				ring.crackX = new double[crackCount][5];
+				ring.crackY = new double[crackCount][5];
+				ring.crackZ = new double[crackCount][5];
+				for (int c = 0; c < crackCount; c++) {
+					double ang = (c * Math.PI * 2.0 / crackCount) + rand.nextDouble() * 0.9;
+					double crackLen = ring.maxRadius * (0.72 + rand.nextDouble() * 0.35);
+					double exC = tx + Math.cos(ang) * crackLen;
+					double ezC = tz + Math.sin(ang) * crackLen;
+					ring.crackX[c][0] = tx; ring.crackY[c][0] = ring.y + 0.04; ring.crackZ[c][0] = tz;
+					ring.crackX[c][4] = exC; ring.crackY[c][4] = ring.y + 0.06; ring.crackZ[c][4] = ezC;
+					for (int k = 1; k < 4; k++) {
+						double f = k / 4.0;
+						double env = Math.sin(f * Math.PI);
+						ring.crackX[c][k] = tx + (exC - tx) * f + (rand.nextDouble() - 0.5) * 0.65 * env;
+						ring.crackY[c][k] = ring.y + 0.05 + rand.nextDouble() * 0.14 * env;
+						ring.crackZ[c][k] = tz + (ezC - tz) * f + (rand.nextDouble() - 0.5) * 0.65 * env;
+					}
+				}
+			}
 			activeRings.add(ring);
 
-			// Spawn flying debris & electric sparks on mob strikes or close ambient hits
-			if (hitMob || dist < 110.0) {
-				int sparkCount = hitMob ? (overcharged ? 14 : 9) : 5;
+			// Spawn crisp sparks & dark scorched debris only within visible spark range
+			if (playerDistSq < SPARK_CULL_DIST_SQ) {
+				int sparkCount = hitMob ? (overcharged ? 7 : 5) : 3;
+				if (quality == 1) sparkCount = Math.max(1, sparkCount / 2);
+				else if (quality >= 2) sparkCount = hitMob ? 2 : 0;
+
 				for (int s = 0; s < sparkCount; s++) {
-					if (activeSparks.size() >= MAX_ACTIVE_SPARKS) {
+					while (activeSparks.size() >= maxSparks) {
 						activeSparks.remove(0);
 					}
 					DebrisSpark sp = new DebrisSpark();
 					double sang = rand.nextDouble() * Math.PI * 2.0;
-					double hspd = 1.8 + rand.nextDouble() * 5.2;
-					sp.x = tx + (rand.nextDouble() - 0.5) * 0.8;
-					sp.y = ty + 0.25;
-					sp.z = tz + (rand.nextDouble() - 0.5) * 0.8;
+					double hspd = 2.0 + rand.nextDouble() * 4.8;
+					sp.x = tx + (rand.nextDouble() - 0.5) * 0.6;
+					sp.y = ty + 0.22;
+					sp.z = tz + (rand.nextDouble() - 0.5) * 0.6;
 					sp.vx = Math.cos(sang) * hspd;
-					sp.vy = 4.2 + rand.nextDouble() * 6.8;
+					sp.vy = 4.2 + rand.nextDouble() * 6.0;
 					sp.vz = Math.sin(sang) * hspd;
 					sp.darkDebris = (s % 3 == 0);
-					sp.size = sp.darkDebris ? (0.14f + rand.nextFloat() * 0.14f) : (0.18f + rand.nextFloat() * 0.22f);
+					sp.size = sp.darkDebris ? (0.11f + rand.nextFloat() * 0.10f) : (0.14f + rand.nextFloat() * 0.16f);
+					sp.rollSpeed = (rand.nextBoolean() ? 1.0f : -1.0f) * (4.5f + rand.nextFloat() * 4.5f);
 					sp.customColor = customColor;
 					sp.spawnTimeMs = now;
-					sp.lifeMs = 420L + rand.nextInt(320);
+					sp.lifeMs = 360L + rand.nextInt(260);
 					activeSparks.add(sp);
 				}
 			}
@@ -220,6 +321,15 @@ public class OrbitalStormVFX {
 		double camY = camera.lastTickPosY + (camera.posY - camera.lastTickPosY) * partialTicks;
 		double camZ = camera.lastTickPosZ + (camera.posZ - camera.lastTickPosZ) * partialTicks;
 
+		// Camera right/up basis for 100% batched billboard quads (zero glPushMatrix/glRotatef)
+		double viewYaw = Math.toRadians(RenderManager.instance.playerViewY);
+		double viewPitch = Math.toRadians(RenderManager.instance.playerViewX);
+		double camRX = Math.cos(viewYaw);
+		double camRZ = Math.sin(viewYaw);
+		double camUX = -Math.sin(viewYaw) * Math.sin(viewPitch);
+		double camUY = Math.cos(viewPitch);
+		double camUZ = Math.cos(viewYaw) * Math.sin(viewPitch);
+
 		// Prune expired storms cleanly
 		Iterator<Map.Entry<Integer, ActiveStorm>> stormIt = activeStorms.entrySet().iterator();
 		while (stormIt.hasNext()) {
@@ -230,415 +340,378 @@ public class OrbitalStormVFX {
 			}
 		}
 
+		// Prune expired bolts, rings, and sparks once before batched passes
+		int nearBoltCount = 0;
+		for (Iterator<OrbitalBolt> it = activeBolts.iterator(); it.hasNext(); ) {
+			OrbitalBolt b = it.next();
+			if (now - b.spawnTimeMs >= b.lifeMs) {
+				it.remove();
+			} else {
+				double dx = b.endX - camX;
+				double dz = b.endZ - camZ;
+				if (dx * dx + dz * dz < 24.0 * 24.0) {
+					nearBoltCount++;
+				}
+			}
+		}
+		for (Iterator<GroundShockRing> it = activeRings.iterator(); it.hasNext(); ) {
+			GroundShockRing ring = it.next();
+			long ageMs = now - ring.spawnTimeMs;
+			if (ageMs < 0L || ageMs >= ring.lifeMs) {
+				it.remove();
+			}
+		}
+		for (Iterator<DebrisSpark> it = activeSparks.iterator(); it.hasNext(); ) {
+			DebrisSpark sp = it.next();
+			long ageMs = now - sp.spawnTimeMs;
+			if (ageMs < 0L || ageMs >= sp.lifeMs) {
+				it.remove();
+			}
+		}
+
+		// Anti-flashbang comfort factor when multiple bolts hit right beside the player
+		float comfortScale = nearBoltCount <= 2 ? 1.0f : Math.max(0.62f, 1.0f - (nearBoltCount - 2) * 0.06f);
+		int quality = getQuality();
 		Tessellator t = Tessellator.instance;
 
 		float prevBrightX = OpenGlHelper.lastBrightnessX;
 		float prevBrightY = OpenGlHelper.lastBrightnessY;
 		GL11.glPushMatrix();
-		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_LINE_BIT | GL11.GL_CURRENT_BIT | GL11.GL_POLYGON_BIT);
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_LINE_BIT | GL11.GL_CURRENT_BIT | GL11.GL_POLYGON_BIT | GL11.GL_TEXTURE_BIT);
 
-		GL11.glDisable(GL11.GL_LIGHTING);
-		RenderHelper.disableStandardItemLighting();
-		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0f, 240.0f);
-		GL11.glDisable(GL11.GL_FOG);
-		GL11.glDisable(GL11.GL_ALPHA_TEST);
-		GL11.glDepthMask(false);
-		GL11.glDisable(GL11.GL_CULL_FACE);
-		GL11.glEnable(GL11.GL_BLEND);
+		try {
+			GL11.glDisable(GL11.GL_LIGHTING);
+			RenderHelper.disableStandardItemLighting();
+			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0f, 240.0f);
+			GL11.glDisable(GL11.GL_FOG);
+			GL11.glDisable(GL11.GL_ALPHA_TEST);
+			GL11.glDepthMask(false);
+			GL11.glDisable(GL11.GL_CULL_FACE);
+			GL11.glEnable(GL11.GL_BLEND);
 
-		// 1. Render Giant Dark Swirling Sky Vortices (Option A Cloud Tornado & Canopy)
-		for (ActiveStorm storm : activeStorms.values()) {
-			renderSkyVortex(mc, t, storm, camX, camY, camZ, now);
-		}
-
-		// 2. Render Expanding Ground Impact Rings & Electric Surface Cracks
-		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
-		renderGroundShockRings(mc, t, camX, camY, camZ, now);
-
-		// 3. Render Diagonal Jagged Orbital Lightning Bolts across 15 Chunks
-		renderOrbitalBolts(mc, t, camX, camY, camZ, now);
-
-		// 4. Render Debris & Cyan Spark Bursts
-		renderDebrisSparks(mc, t, camX, camY, camZ, now);
-
-		GL11.glDepthMask(true);
-		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
-		GL11.glPopAttrib();
-		GL11.glPopMatrix();
-	}
-
-    private static void renderSkyVortex(Minecraft mc,Tessellator t,ActiveStorm storm,double camX,double camY,double camZ,long now){
-        float elapsed=(now-storm.lastSyncTimeMs)/1000.0f,time=(now-storm.spawnTimeMs)/1000.0f;
-        float remain=storm.remainingTicks*.05f-elapsed;
-        float alpha=Math.min(1,time/.7f)*Math.min(1,Math.max(0,remain/1.1f));
-        if(elapsed<.25f)alpha=Math.min(1,time/.7f);
-        if(alpha<=.01f)return;
-        CastingAtmosphereVFX.renderActiveStormCanopy(mc,t,storm.centerX,Math.min(storm.centerY+64,240),
-                storm.centerZ,camX,camY,camZ,alpha,time,storm.overcharged);
-    }
-
-    public static boolean hasActiveStorms(){return !activeStorms.isEmpty();}
-
-
-	private static void renderOrbitalBolts(Minecraft mc, Tessellator t, double camX, double camY, double camZ, long now) {
-		if (activeBolts.isEmpty()) return;
-
-		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
-
-		Iterator<OrbitalBolt> it = activeBolts.iterator();
-		while (it.hasNext()) {
-			OrbitalBolt bolt = it.next();
-			long ageMs = now - bolt.spawnTimeMs;
-			if (ageMs >= bolt.lifeMs) {
-				it.remove();
-				continue;
+			// PASS 1: Heavy Dark Storm Canopy & Funnel
+			for (ActiveStorm storm : activeStorms.values()) {
+				renderSkyVortex(mc, t, storm, camX, camY, camZ, now);
 			}
 
-			float progress = (float) ageMs / (float) bolt.lifeMs;
-			float flicker = (1.0f - progress) * (0.78f + 0.22f * (float) Math.sin(ageMs * 0.085));
+			// PASS 2: ALL Orbital Lightning Bolts, Tapered Forks, Ground Shockwave Rings & Surface Arcs
+			// Single untextured additive GL_TRIANGLES batch (zero GL_LINE_STRIP, zero GL_LINE_SMOOTH!)
+			if (!activeBolts.isEmpty() || !activeRings.isEmpty()) {
+				GL11.glDisable(GL11.GL_TEXTURE_2D);
+				GL11.glShadeModel(GL11.GL_SMOOTH);
+				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
 
-			float rLight = 0.10f, gLight = 0.42f, bLight = 1.0f;
-			float rCore = 0.85f, gCore = 0.96f, bCore = 1.0f;
-			if (bolt.customColor != -1) {
-				rLight = ((bolt.customColor >> 16) & 0xFF) / 255.0f;
-				gLight = ((bolt.customColor >> 8) & 0xFF) / 255.0f;
-				bLight = (bolt.customColor & 0xFF) / 255.0f;
-				rCore = Math.min(1.0f, rLight * 1.3f + 0.25f);
-				gCore = Math.min(1.0f, gLight * 1.3f + 0.25f);
-				bCore = Math.min(1.0f, bLight * 1.3f + 0.25f);
+				t.startDrawing(GL11.GL_TRIANGLES);
+				emitBatchedGroundRingsAndArcs(t, camX, camY, camZ, now, quality, comfortScale);
+				emitBatchedOrbitalBolts(t, camX, camY, camZ, now, quality, comfortScale);
+				t.draw();
 			}
 
-			double sx = bolt.startX - camX;
-			double sy = bolt.startY - camY;
-			double sz = bolt.startZ - camZ;
-			double ex = bolt.endX - camX;
-			double ey = bolt.endY - camY;
-			double ez = bolt.endZ - camZ;
+			// PASS 3: Soft Ionized Ground Pads on Hero/Mob Impacts (1 batched GL_QUADS call)
+			if (!activeRings.isEmpty() && quality < 2) {
+				GL11.glEnable(GL11.GL_TEXTURE_2D);
+				mc.renderEngine.bindTexture(texLightningShockwave);
+				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+				GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
+				GL11.glPolygonOffset(-2.0f, -2.0f);
 
-			double lenSq = (ex - sx) * (ex - sx) + (ey - sy) * (ey - sy) + (ez - sz) * (ez - sz);
-			double len = Math.sqrt(lenSq);
+				t.startDrawingQuads();
+				for (int i = 0; i < activeRings.size(); i++) {
+					GroundShockRing ring = activeRings.get(i);
+					if (!ring.hitMob) continue;
+					double rx = ring.x - camX;
+					double ry = ring.y - camY;
+					double rz = ring.z - camZ;
+					if (rx * rx + rz * rz > LOD_DETAIL_DIST_SQ) continue;
 
-			int segs = 14;
-			double[] px = new double[segs + 1];
-			double[] py = new double[segs + 1];
-			double[] pz = new double[segs + 1];
-			px[0] = sx; py[0] = sy; pz[0] = sz;
-			px[segs] = ex; py[segs] = ey; pz[segs] = ez;
+					long ageMs = now - ring.spawnTimeMs;
+					float progress = (float) ageMs / (float) ring.lifeMs;
+					float alpha = (1.0f - progress) * (1.0f - progress) * 0.45f * comfortScale;
+					if (alpha <= 0.01f) continue;
 
-			Random rnd = new Random(bolt.seed);
-			float maxJitter = (float) Math.min(9.5, 2.2 + len * 0.055);
-			for (int k = 1; k < segs; k++) {
-				float frac = (float) k / (float) segs;
-				float env = (float) Math.sin(frac * Math.PI);
-				float jit = maxJitter * env;
-
-				px[k] = sx + (ex - sx) * frac + (rnd.nextFloat() - 0.5f) * 2.0f * jit;
-				py[k] = sy + (ey - sy) * frac + (rnd.nextFloat() - 0.5f) * 0.9f * jit;
-				pz[k] = sz + (ez - sz) * frac + (rnd.nextFloat() - 0.5f) * 2.0f * jit;
+					LightningVFXHelper.resolvePalette(ring.customColor, PALETTE);
+					double rad = ring.maxRadius * (0.28 + 0.65 * Math.sqrt(progress));
+					double rot = ageMs * 0.0028;
+					LightningVFXHelper.emitHorizontalQuadUV(
+							t, rx, ry, rz, rad,
+							Math.cos(rot), Math.sin(rot),
+							PALETTE[0], PALETTE[1], PALETTE[2], alpha
+					);
+				}
+				t.draw();
+				GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
 			}
 
-			// 1. Textured Camera-Facing Plasma Ribbon (looks thick and gorgeous at ALL distances & GPUs!)
-			GL11.glEnable(GL11.GL_TEXTURE_2D);
-			mc.renderEngine.bindTexture(texLightningBolt);
-
-			float distScale = (float) Math.min(2.8, Math.max(1.0, Math.sqrt(px[segs] * px[segs] + py[segs] * py[segs] + pz[segs] * pz[segs]) * 0.05));
-			float auraHalfW = (bolt.hitMob ? (bolt.overcharged ? 1.55f : 1.15f) : 0.95f) * (0.7f + 0.3f * distScale);
-			float coreHalfW = auraHalfW * 0.32f;
-
-			// Outer glow ribbon
-			GL11.glColor4f(rLight, gLight, bLight, flicker * 0.78f);
-			drawBoltRibbon(t, px, py, pz, segs, auraHalfW);
-
-			// White-cyan core ribbon
-			GL11.glColor4f(rCore, gCore, bCore, flicker * 0.96f);
-			drawBoltRibbon(t, px, py, pz, segs, coreHalfW);
-
-			// 2. Crisp Vector Jagged Core & Mid-Air Forked Branches
-			GL11.glDisable(GL11.GL_TEXTURE_2D);
-			GL11.glEnable(GL11.GL_LINE_SMOOTH);
-			GL11.glHint(GL11.GL_LINE_SMOOTH_HINT, GL11.GL_NICEST);
-
-			GL11.glLineWidth(bolt.overcharged ? 5.5f : 4.0f);
-			GL11.glColor4f(rLight, gLight, bLight, flicker * 0.85f);
-			GL11.glBegin(GL11.GL_LINE_STRIP);
-			for (int k = 0; k <= segs; k++) GL11.glVertex3d(px[k], py[k], pz[k]);
-			GL11.glEnd();
-
-			GL11.glLineWidth(2.0f);
-			GL11.glColor4f(rCore, gCore, bCore, flicker);
-			GL11.glBegin(GL11.GL_LINE_STRIP);
-			for (int k = 0; k <= segs; k++) GL11.glVertex3d(px[k], py[k], pz[k]);
-			GL11.glEnd();
-
-			// Forked Sub-Branches splitting mid-flight
-			for (int forkIdx : new int[]{4, 7, 10}) {
-				double bx0 = px[forkIdx], by0 = py[forkIdx], bz0 = pz[forkIdx];
-				double spread = 4.0 + len * 0.04;
-				double drop = 5.0 + len * 0.06;
-				double bx1 = bx0 + (rnd.nextFloat() - 0.5f) * spread;
-				double by1 = by0 - drop * 0.45;
-				double bz1 = bz0 + (rnd.nextFloat() - 0.5f) * spread;
-				double bx2 = bx1 + (rnd.nextFloat() - 0.5f) * spread;
-				double by2 = by1 - drop * 0.45;
-				double bz2 = bz1 + (rnd.nextFloat() - 0.5f) * spread;
-				double bx3 = bx2 + (rnd.nextFloat() - 0.5f) * spread * 0.7;
-				double by3 = by2 - drop * 0.35;
-				double bz3 = bz2 + (rnd.nextFloat() - 0.5f) * spread * 0.7;
-
-				GL11.glLineWidth(bolt.overcharged ? 3.5f : 2.5f);
-				GL11.glColor4f(rLight, gLight, bLight, flicker * 0.75f);
-				GL11.glBegin(GL11.GL_LINE_STRIP);
-				GL11.glVertex3d(bx0, by0, bz0);
-				GL11.glVertex3d(bx1, by1, bz1);
-				GL11.glVertex3d(bx2, by2, bz2);
-				GL11.glVertex3d(bx3, by3, bz3);
-				GL11.glEnd();
-
-				GL11.glLineWidth(1.3f);
-				GL11.glColor4f(rCore, gCore, bCore, flicker * 0.85f);
-				GL11.glBegin(GL11.GL_LINE_STRIP);
-				GL11.glVertex3d(bx0, by0, bz0);
-				GL11.glVertex3d(bx1, by1, bz1);
-				GL11.glVertex3d(bx2, by2, bz2);
-				GL11.glVertex3d(bx3, by3, bz3);
-				GL11.glEnd();
-			}
-
-			// Impact flash bloom right where the bolt strikes!
-			if (progress < 0.45f) {
-				float fAlpha = 1.0f - (progress / 0.45f);
-				float fRad = (bolt.hitMob ? 2.4f : 1.5f) * (0.7f + 0.6f * progress);
+			// PASS 4: ALL Impact Flash Blooms + Synchronized Cloud Sheet-Lightning Flashes + Electric Sparks
+			// Single batched GL_QUADS call on texStarfallCore (zero glPushMatrix!)
+			if (!activeBolts.isEmpty() || !activeSparks.isEmpty()) {
 				GL11.glEnable(GL11.GL_TEXTURE_2D);
 				mc.renderEngine.bindTexture(texStarfallCore);
-				GL11.glColor4f(rCore, gCore, bCore, fAlpha * 0.95f);
-				drawBillboardQuad(t, ex, ey + 0.6, ez, fRad, ageMs * 0.6f);
-			}
-		}
+				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
 
-		GL11.glDisable(GL11.GL_LINE_SMOOTH);
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
+				t.startDrawingQuads();
+				emitBatchedBoltBlooms(t, camX, camY, camZ, camRX, camRZ, camUX, camUY, camUZ, now, comfortScale);
+				emitBatchedElectricSparks(t, camX, camY, camZ, camRX, camRZ, camUX, camUY, camUZ, now);
+				t.draw();
+			}
+
+			// PASS 5: Dark Scorched Debris Fragments (1 batched untextured alpha-blend GL_QUADS call)
+			if (!activeSparks.isEmpty()) {
+				GL11.glDisable(GL11.GL_TEXTURE_2D);
+				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+				t.startDrawingQuads();
+				emitBatchedDarkDebris(t, camX, camY, camZ, camRX, camRZ, camUX, camUY, camUZ, now);
+				t.draw();
+			}
+		} finally {
+			GL11.glEnable(GL11.GL_TEXTURE_2D);
+			GL11.glDepthMask(true);
+			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
+			GL11.glPopAttrib();
+			GL11.glPopMatrix();
+		}
 	}
 
-	private static void renderGroundShockRings(Minecraft mc, Tessellator t, double camX, double camY, double camZ, long now) {
-		if (activeRings.isEmpty()) return;
+	private static void renderSkyVortex(Minecraft mc, Tessellator t, ActiveStorm storm, double camX, double camY, double camZ, long now) {
+		float elapsed = (now - storm.lastSyncTimeMs) / 1000.0f;
+		float time = (now - storm.spawnTimeMs) / 1000.0f;
+		float remain = storm.remainingTicks * 0.05f - elapsed;
+		float alpha = Math.min(1.0f, time / 0.7f) * Math.min(1.0f, Math.max(0.0f, remain / 1.1f));
+		if (elapsed < 0.25f) alpha = Math.min(1.0f, time / 0.7f);
+		if (alpha <= 0.01f) return;
+		CastingAtmosphereVFX.renderActiveStormCanopy(
+				mc, t,
+				storm.centerX, Math.min(storm.centerY + 64.0, 240.0), storm.centerZ,
+				camX, camY, camZ,
+				alpha, time, storm.overcharged
+		);
+	}
 
-		GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
-		GL11.glPolygonOffset(-2.0f, -2.0f);
+	public static boolean hasActiveStorms() {
+		return !activeStorms.isEmpty();
+	}
 
-		Iterator<GroundShockRing> it = activeRings.iterator();
-		while (it.hasNext()) {
-			GroundShockRing ring = it.next();
+	private static void emitBatchedOrbitalBolts(
+			Tessellator t, double camX, double camY, double camZ,
+			long now, int quality, float comfortScale
+	) {
+		for (int i = 0; i < activeBolts.size(); i++) {
+			OrbitalBolt bolt = activeBolts.get(i);
+			long ageMs = now - bolt.spawnTimeMs;
+			if (ageMs < 0L || ageMs >= bolt.lifeMs) continue;
+
+			double edx = bolt.endX - camX;
+			double edy = bolt.endY - camY;
+			double edz = bolt.endZ - camZ;
+			double distSq = edx * edx + edy * edy + edz * edz;
+			if (distSq > CULL_DIST_SQ) continue;
+
+			float progress = (float) ageMs / (float) bolt.lifeMs;
+			// Rapid top-to-bottom strike descent over first 48ms
+			float headFraction = Math.min(1.0f, 0.16f + (ageMs / 48.0f) * 0.84f);
+			float flash = LightningVFXHelper.heavyStormFlashCurve(progress) * comfortScale;
+			if (flash <= 0.01f) continue;
+
+			LightningVFXHelper.resolvePalette(bolt.customColor, PALETTE);
+
+			// Scale width slightly with distance so far storm bolts stay crisp and readable
+			double dist = Math.sqrt(distSq);
+			double distScale = Math.min(2.2, Math.max(1.0, dist * 0.032));
+			double baseHalfW = (bolt.hitMob ? (bolt.overcharged ? 0.56 : 0.44) : 0.34) * bolt.intensityScale * distScale;
+
+			boolean nearDetail = distSq < LOD_DETAIL_DIST_SQ;
+			boolean drawForks = nearDetail && quality < 2;
+
+			LightningVFXHelper.emitHeavyStormBolt(
+					t, bolt.path,
+					camX, camY, camZ,
+					baseHalfW, PALETTE,
+					flash, headFraction,
+					drawForks, nearDetail
+			);
+		}
+	}
+
+	private static void emitBatchedGroundRingsAndArcs(
+			Tessellator t, double camX, double camY, double camZ,
+			long now, int quality, float comfortScale
+	) {
+		for (int i = 0; i < activeRings.size(); i++) {
+			GroundShockRing ring = activeRings.get(i);
 			long ageMs = now - ring.spawnTimeMs;
-			if (ageMs >= ring.lifeMs) {
-				it.remove();
-				continue;
-			}
-
-			float progress = (float) ageMs / (float) ring.lifeMs;
-			float alpha = (float) Math.sin((1.0f - progress) * Math.PI * 0.5);
-			float r = ring.maxRadius * (0.25f + 0.75f * (float) Math.sqrt(progress));
-
-			float rLight = 0.10f, gLight = 0.45f, bLight = 1.0f;
-			float rCore = 0.85f, gCore = 0.96f, bCore = 1.0f;
-			if (ring.customColor != -1) {
-				rLight = ((ring.customColor >> 16) & 0xFF) / 255.0f;
-				gLight = ((ring.customColor >> 8) & 0xFF) / 255.0f;
-				bLight = (ring.customColor & 0xFF) / 255.0f;
-				rCore = Math.min(1.0f, rLight * 1.3f + 0.2f);
-				gCore = Math.min(1.0f, gLight * 1.3f + 0.2f);
-				bCore = Math.min(1.0f, bLight * 1.3f + 0.2f);
-			}
+			if (ageMs < 0L || ageMs >= ring.lifeMs) continue;
 
 			double rx = ring.x - camX;
 			double ry = ring.y - camY;
 			double rz = ring.z - camZ;
+			double distSq = rx * rx + ry * ry + rz * rz;
+			if (distSq > CULL_DIST_SQ) continue;
 
-			// Expanding ionized ground ring
-			GL11.glEnable(GL11.GL_TEXTURE_2D);
-			mc.renderEngine.bindTexture(texLightningShockwave);
-			GL11.glPushMatrix();
-			GL11.glTranslated(rx, ry, rz);
-			GL11.glRotatef(ageMs * 0.18f, 0.0f, 1.0f, 0.0f);
-			GL11.glColor4f(rLight, gLight, bLight, alpha * 0.90f);
-			t.startDrawingQuads();
-			t.addVertexWithUV(-r, 0, r, 0, 1);
-			t.addVertexWithUV(r, 0, r, 1, 1);
-			t.addVertexWithUV(r, 0, -r, 1, 0);
-			t.addVertexWithUV(-r, 0, -r, 0, 0);
-			t.draw();
+			float progress = (float) ageMs / (float) ring.lifeMs;
+			float inv = 1.0f - progress;
+			float alpha = inv * inv * comfortScale;
+			if (alpha <= 0.01f) continue;
 
-			GL11.glColor4f(rCore, gCore, bCore, alpha * 0.75f);
-			float rIn = r * 0.60f;
-			t.startDrawingQuads();
-			t.addVertexWithUV(-rIn, 0.02, rIn, 0, 1);
-			t.addVertexWithUV(rIn, 0.02, rIn, 1, 1);
-			t.addVertexWithUV(rIn, 0.02, -rIn, 1, 0);
-			t.addVertexWithUV(-rIn, 0.02, -rIn, 0, 0);
-			t.draw();
-			GL11.glPopMatrix();
+			LightningVFXHelper.resolvePalette(ring.customColor, PALETTE);
+			boolean highDetail = distSq < LOD_DETAIL_DIST_SQ && quality == 0;
+			double r = ring.maxRadius * (0.18 + 0.82 * Math.sqrt(progress));
 
-			// Crackling horizontal ground surface electric arcs spreading around the strike
-			GL11.glDisable(GL11.GL_TEXTURE_2D);
-			GL11.glEnable(GL11.GL_LINE_SMOOTH);
-			Random cRnd = new Random(ring.seed);
-			int cracks = ring.overcharged ? 6 : 4;
-			for (int c = 0; c < cracks; c++) {
-				double ang = (c * Math.PI * 2.0 / cracks) + cRnd.nextDouble() * 0.8;
-				double crackLen = ring.maxRadius * (0.65 + 0.55 * progress);
-				drawJaggedLineStrip(
-						rx, ry + 0.06, rz,
-						rx + Math.cos(ang) * crackLen, ry + 0.08, rz + Math.sin(ang) * crackLen,
-						4, 0.45f, cRnd, rLight, gLight, bLight, rCore, gCore, bCore,
-						alpha * 0.85f, 3.2f, 1.5f
+			// Outer ice-blue shockwave ring
+			LightningVFXHelper.emitHorizontalShockRing(
+					t, rx, ry + 0.03, rz,
+					r, ring.hitMob ? 0.42 : 0.28,
+					highDetail,
+					PALETTE[3], PALETTE[4], PALETTE[5], alpha * 0.72f
+			);
+
+			// Sharp inner dry-white energy crest
+			if (progress < 0.65f) {
+				float crestAlpha = (1.0f - progress / 0.65f) * comfortScale;
+				LightningVFXHelper.emitHorizontalShockRing(
+						t, rx, ry + 0.05, rz,
+						r * 0.92, ring.hitMob ? 0.14 : 0.09,
+						highDetail,
+						PALETTE[6], PALETTE[7], PALETTE[8], crestAlpha * 0.85f
 				);
 			}
-			GL11.glDisable(GL11.GL_LINE_SMOOTH);
-		}
 
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
-		GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
+			// Pre-computed jagged surface electric cracks (close range only)
+			if (ring.crackX != null && distSq < LOD_DETAIL_DIST_SQ && progress < 0.72f) {
+				float crackHead = Math.min(1.0f, progress * 3.8f);
+				float crackAlpha = (1.0f - progress / 0.72f) * comfortScale;
+				for (int c = 0; c < ring.crackX.length; c++) {
+					LightningVFXHelper.emitPolylineRibbon(
+							t, ring.crackX[c], ring.crackY[c], ring.crackZ[c], ring.crackX[c].length,
+							camX, camY, camZ,
+							0.16, 0.03,
+							PALETTE[3], PALETTE[4], PALETTE[5],
+							crackAlpha * 0.65f, crackAlpha * 0.10f,
+							crackHead
+					);
+					LightningVFXHelper.emitPolylineRibbon(
+							t, ring.crackX[c], ring.crackY[c], ring.crackZ[c], ring.crackX[c].length,
+							camX, camY, camZ,
+							0.055, 0.015,
+							PALETTE[6], PALETTE[7], PALETTE[8],
+							crackAlpha * 0.88f, crackAlpha * 0.15f,
+							crackHead
+					);
+				}
+			}
+		}
 	}
 
-	private static void renderDebrisSparks(Minecraft mc, Tessellator t, double camX, double camY, double camZ, long now) {
-		if (activeSparks.isEmpty()) return;
+	private static void emitBatchedBoltBlooms(
+			Tessellator t,
+			double camX, double camY, double camZ,
+			double camRX, double camRZ, double camUX, double camUY, double camUZ,
+			long now, float comfortScale
+	) {
+		for (int i = 0; i < activeBolts.size(); i++) {
+			OrbitalBolt bolt = activeBolts.get(i);
+			long ageMs = now - bolt.spawnTimeMs;
+			if (ageMs < 0L || ageMs >= bolt.lifeMs) continue;
 
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
-		mc.renderEngine.bindTexture(texStarfallCore);
+			float progress = (float) ageMs / (float) bolt.lifeMs;
+			if (progress >= 0.55f) continue;
 
-		// Draw glow sparks additive, then dark debris fragments with alpha blend
-		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
-		Iterator<DebrisSpark> it = activeSparks.iterator();
-		while (it.hasNext()) {
-			DebrisSpark sp = it.next();
-			long ageMs = now - sp.spawnTimeMs;
-			if (ageMs >= sp.lifeMs) {
-				it.remove();
-				continue;
-			}
-			if (sp.darkDebris) continue;
+			double ex = bolt.endX - camX;
+			double ey = bolt.endY - camY;
+			double ez = bolt.endZ - camZ;
+			if (ex * ex + ey * ey + ez * ez > CULL_DIST_SQ) continue;
 
-			float tSec = ageMs / 1000.0f;
-			float fade = 1.0f - ((float) ageMs / (float) sp.lifeMs);
+			LightningVFXHelper.resolvePalette(bolt.customColor, PALETTE);
+			float fNorm = progress / 0.55f;
+			float fAlpha = (1.0f - fNorm) * (1.0f - fNorm) * comfortScale;
+			double roll = ageMs * 0.008;
+			double cr = Math.cos(roll), sr = Math.sin(roll);
 
-			double wx = sp.x + sp.vx * tSec;
-			double wy = sp.y + sp.vy * tSec - 7.5 * tSec * tSec;
-			double wz = sp.z + sp.vz * tSec;
+			// 1. Crisp ground impact flash bloom
+			double groundRad = (bolt.hitMob ? 2.1 : 1.35) * bolt.intensityScale * (0.75 + 0.45 * fNorm);
+			LightningVFXHelper.emitBillboardQuadUV(
+					t, ex, ey + 0.55, ez, groundRad,
+					camRX, camRZ, camUX, camUY, camUZ,
+					cr, sr,
+					PALETTE[3], PALETTE[4], PALETTE[5], fAlpha * 0.65f
+			);
+			LightningVFXHelper.emitBillboardQuadUV(
+					t, ex, ey + 0.55, ez, groundRad * 0.48,
+					camRX, camRZ, camUX, camUY, camUZ,
+					cr, -sr,
+					PALETTE[6], PALETTE[7], PALETTE[8], fAlpha * 0.90f
+			);
 
-			float rLight = 0.25f, gLight = 0.72f, bLight = 1.0f;
-			if (sp.customColor != -1) {
-				rLight = Math.min(1.0f, (((sp.customColor >> 16) & 0xFF) / 255.0f) * 1.2f + 0.1f);
-				gLight = Math.min(1.0f, (((sp.customColor >> 8) & 0xFF) / 255.0f) * 1.2f + 0.1f);
-				bLight = Math.min(1.0f, ((sp.customColor & 0xFF) / 255.0f) * 1.2f + 0.1f);
-			}
-
-			GL11.glColor4f(rLight, gLight, bLight, fade * 0.95f);
-			drawBillboardQuad(t, wx - camX, wy - camY, wz - camZ, sp.size * (0.6f + 0.4f * fade), tSec * 360.0f);
+			// 2. Synchronized internal sheet-lightning flash in the cloud throat where the bolt originated
+			double sx = bolt.startX - camX;
+			double sy = bolt.startY - camY;
+			double sz = bolt.startZ - camZ;
+			double cloudFlashRad = (bolt.overcharged ? 7.5 : 5.6) * (0.85 + 0.35 * fNorm);
+			LightningVFXHelper.emitBillboardQuadUV(
+					t, sx, sy, sz, cloudFlashRad,
+					camRX, camRZ, camUX, camUY, camUZ,
+					1.0, 0.0,
+					PALETTE[3], PALETTE[4], PALETTE[5], fAlpha * 0.32f
+			);
 		}
+	}
 
-		// Dark earth/cinder tumbling fragments
-		GL11.glDisable(GL11.GL_TEXTURE_2D);
-		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-		for (DebrisSpark sp : activeSparks) {
+	private static void emitBatchedElectricSparks(
+			Tessellator t,
+			double camX, double camY, double camZ,
+			double camRX, double camRZ, double camUX, double camUY, double camUZ,
+			long now
+	) {
+		for (int i = 0; i < activeSparks.size(); i++) {
+			DebrisSpark sp = activeSparks.get(i);
+			if (sp.darkDebris) continue;
+			long ageMs = now - sp.spawnTimeMs;
+			if (ageMs < 0L || ageMs >= sp.lifeMs) continue;
+
+			float tSec = ageMs * 0.001f;
+			double rx = sp.x + sp.vx * tSec - camX;
+			double ry = sp.y + sp.vy * tSec - 7.8 * tSec * tSec - camY;
+			double rz = sp.z + sp.vz * tSec - camZ;
+			if (rx * rx + ry * ry + rz * rz > SPARK_CULL_DIST_SQ) continue;
+
+			float fade = 1.0f - ((float) ageMs / (float) sp.lifeMs);
+			LightningVFXHelper.resolvePalette(sp.customColor, PALETTE);
+			double roll = tSec * sp.rollSpeed;
+			LightningVFXHelper.emitBillboardQuadUV(
+					t, rx, ry, rz, sp.size * (0.55f + 0.45f * fade),
+					camRX, camRZ, camUX, camUY, camUZ,
+					Math.cos(roll), Math.sin(roll),
+					PALETTE[6], PALETTE[7], PALETTE[8], fade * 0.90f
+			);
+		}
+	}
+
+	private static void emitBatchedDarkDebris(
+			Tessellator t,
+			double camX, double camY, double camZ,
+			double camRX, double camRZ, double camUX, double camUY, double camUZ,
+			long now
+	) {
+		for (int i = 0; i < activeSparks.size(); i++) {
+			DebrisSpark sp = activeSparks.get(i);
 			if (!sp.darkDebris) continue;
 			long ageMs = now - sp.spawnTimeMs;
-			if (ageMs >= sp.lifeMs) continue;
-			float tSec = ageMs / 1000.0f;
+			if (ageMs < 0L || ageMs >= sp.lifeMs) continue;
+
+			float tSec = ageMs * 0.001f;
+			double rx = sp.x + sp.vx * tSec - camX;
+			double ry = sp.y + sp.vy * tSec - 9.2 * tSec * tSec - camY;
+			double rz = sp.z + sp.vz * tSec - camZ;
+			if (rx * rx + ry * ry + rz * rz > SPARK_CULL_DIST_SQ) continue;
+
 			float fade = 1.0f - ((float) ageMs / (float) sp.lifeMs);
-
-			double wx = sp.x + sp.vx * tSec;
-			double wy = sp.y + sp.vy * tSec - 9.0 * tSec * tSec;
-			double wz = sp.z + sp.vz * tSec;
-
-			GL11.glColor4f(0.08f, 0.10f, 0.16f, fade * 0.90f);
-			drawBillboardQuad(t, wx - camX, wy - camY, wz - camZ, sp.size, tSec * 420.0f);
+			double roll = tSec * sp.rollSpeed;
+			LightningVFXHelper.emitBillboardQuadSolid(
+					t, rx, ry, rz, sp.size,
+					camRX, camRZ, camUX, camUY, camUZ,
+					Math.cos(roll), Math.sin(roll),
+					0.06f, 0.075f, 0.11f, fade * 0.85f
+			);
 		}
-		GL11.glEnable(GL11.GL_TEXTURE_2D);
-	}
-
-	private static void drawBillboardQuad(Tessellator t, double x, double y, double z, float halfSize, float rollDeg) {
-		GL11.glPushMatrix();
-		GL11.glTranslated(x, y, z);
-		GL11.glRotatef(180.0F - RenderManager.instance.playerViewY, 0.0F, 1.0F, 0.0F);
-		GL11.glRotatef(-RenderManager.instance.playerViewX, 1.0F, 0.0F, 0.0F);
-		if (rollDeg != 0.0f) {
-			GL11.glRotatef(rollDeg, 0.0F, 0.0F, 1.0F);
-		}
-
-		t.startDrawingQuads();
-		t.addVertexWithUV(-halfSize, -halfSize, 0.0, 0.0, 1.0);
-		t.addVertexWithUV(halfSize, -halfSize, 0.0, 1.0, 1.0);
-		t.addVertexWithUV(halfSize, halfSize, 0.0, 1.0, 0.0);
-		t.addVertexWithUV(-halfSize, halfSize, 0.0, 0.0, 0.0);
-		t.draw();
-
-		GL11.glPopMatrix();
-	}
-
-	private static void drawBoltRibbon(Tessellator t, double[] px, double[] py, double[] pz, int segs, float halfWidth) {
-		t.startDrawingQuads();
-		for (int k = 0; k < segs; k++) {
-			double dx = px[k + 1] - px[k];
-			double dy = py[k + 1] - py[k];
-			double dz = pz[k + 1] - pz[k];
-
-			double mx = (px[k] + px[k + 1]) * 0.5;
-			double my = (py[k] + py[k + 1]) * 0.5;
-			double mz = (pz[k] + pz[k + 1]) * 0.5;
-
-			// Vector from midpoint to camera is (-mx, -my, -mz) since we're in cam-relative coords!
-			double sx = dy * (-mz) - dz * (-my);
-			double sy = dz * (-mx) - dx * (-mz);
-			double sz = dx * (-my) - dy * (-mx);
-			double len = Math.sqrt(sx * sx + sy * sy + sz * sz);
-			if (len < 1e-5) {
-				sx = 1.0; sy = 0.0; sz = 0.0; len = 1.0;
-			}
-			double scale = halfWidth / len;
-			sx *= scale; sy *= scale; sz *= scale;
-
-			float v0 = (float) k / (float) segs;
-			float v1 = (float) (k + 1) / (float) segs;
-
-			t.addVertexWithUV(px[k] - sx, py[k] - sy, pz[k] - sz, 0.0, v0);
-			t.addVertexWithUV(px[k] + sx, py[k] + sy, pz[k] + sz, 1.0, v0);
-			t.addVertexWithUV(px[k + 1] + sx, py[k + 1] + sy, pz[k + 1] + sz, 1.0, v1);
-			t.addVertexWithUV(px[k + 1] - sx, py[k + 1] - sy, pz[k + 1] - sz, 0.0, v1);
-		}
-		t.draw();
-	}
-
-	private static void drawJaggedLineStrip(
-			double x1, double y1, double z1,
-			double x2, double y2, double z2,
-			int segs, float jitter, Random rnd,
-			float rL, float gL, float bL,
-			float rC, float gC, float bC,
-			float alpha, float wOut, float wCore
-	) {
-		double[] lx = new double[segs + 1];
-		double[] ly = new double[segs + 1];
-		double[] lz = new double[segs + 1];
-		lx[0] = x1; ly[0] = y1; lz[0] = z1;
-		lx[segs] = x2; ly[segs] = y2; lz[segs] = z2;
-
-		for (int k = 1; k < segs; k++) {
-			float f = (float) k / (float) segs;
-			float env = (float) Math.sin(f * Math.PI);
-			lx[k] = x1 + (x2 - x1) * f + (rnd.nextFloat() - 0.5f) * 2.0f * jitter * env;
-			ly[k] = y1 + (y2 - y1) * f + (rnd.nextFloat() - 0.5f) * 0.8f * jitter * env;
-			lz[k] = z1 + (z2 - z1) * f + (rnd.nextFloat() - 0.5f) * 2.0f * jitter * env;
-		}
-
-		GL11.glLineWidth(wOut);
-		GL11.glColor4f(rL, gL, bL, alpha * 0.85f);
-		GL11.glBegin(GL11.GL_LINE_STRIP);
-		for (int k = 0; k <= segs; k++) GL11.glVertex3d(lx[k], ly[k], lz[k]);
-		GL11.glEnd();
-
-		GL11.glLineWidth(wCore);
-		GL11.glColor4f(rC, gC, bC, alpha);
-		GL11.glBegin(GL11.GL_LINE_STRIP);
-		for (int k = 0; k <= segs; k++) GL11.glVertex3d(lx[k], ly[k], lz[k]);
-		GL11.glEnd();
 	}
 }

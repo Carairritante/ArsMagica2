@@ -669,7 +669,9 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 							this.entity.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, random.nextInt(160), 1));
 						}
 					}else if (roll == 1){
-						this.entity.worldObj.addWeatherEffect(new EntityLightningBolt(this.entity.worldObj, this.entity.posX, this.entity.posY, this.entity.posZ));
+						if (!this.entity.worldObj.isRemote){
+							this.entity.worldObj.addWeatherEffect(new EntityLightningBolt(this.entity.worldObj, this.entity.posX, this.entity.posY, this.entity.posZ));
+						}
 					}else if (roll == 2){
 						for (int i = 0; i < 100; i++){
 							double x = this.entity.posX + random.nextInt(10) - 5,
@@ -686,7 +688,7 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 						}
 					}
 				}
-				if (currentFatigue > 950){ // lvl 95+
+				if (currentFatigue > 950 && !this.entity.worldObj.isRemote){ // lvl 95+
 					int roll = random.nextInt(3);
 					if (roll == 2){
 						this.entity.setHealth(0);

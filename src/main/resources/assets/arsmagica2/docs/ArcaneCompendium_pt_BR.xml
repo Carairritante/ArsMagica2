@@ -568,6 +568,11 @@
       <desc>Este componente permite colocar blocos e pode ser muito poderoso com diferentes combinações de formas. Primeiro, defina qual bloco a magia deve colocar e tenha ao menos uma unidade dele no inventário: nada de criá-lo do nada! Para escolher o bloco, conjure sobre ele enquanto estiver agachado. Você precisa continuar agachado no instante em que a magia atingir o alvo, especialmente ao usar Projétil. Evite Área de Efeito nessa configuração: ela pode escolher algo inesperado, pois redefine o bloco a cada alvo na área. Para consultar a seleção, passe o mouse sobre a magia no inventário e segure SHIFT.</desc>
       <modifiedBy />
     </component>
+    <component id="Tornado">
+      <name>Tornado</name>
+      <desc>Uma Magia Dourada de magia aérea cataclísmica, um nível acima das Magias de Prata.  Invoca um furacão colossal e destrutivo que arranca blocos comuns do terreno e arremessa fisicamente blocos valiosos e inimigos pelos céus.  Exige imensa quantidade de mana e só pode ser despertada no fim de jogo (Nível Mágico 65+, ao menos 1 Silver Skill de Ofensa e derrotar os Guardiões do Ar e do Raio) ao conjurar Tempestade, Arremessar e Solar ou Lunar juntos.  Por padrão o tornado permanece fixo onde foi invocado; adicionar Teleguiado faz com que persiga inimigos próximos lentamente, enquanto Velocidade acelera seu avanço.  Combinar Tornado com componentes de Fogo, Raio, Gelo ou Água — ou passar sobre rios de lava ou oceanos — transforma o furacão em um Tornado de Fogo, Tornado Elétrico, Vórtice Glacial ou Tromba d'Água.</desc>
+      <modifiedBy>RADIUS,DAMAGE,DURATION,HOMING,SPEED,MINING_POWER</modifiedBy>
+    </component>
   </components>
   <modifiers zeroItemText="Você ainda não conhece modificadores nem atende aos requisitos para aprender algum!">
     <modifier id="Gravity">

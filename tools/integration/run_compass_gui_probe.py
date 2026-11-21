@@ -24,6 +24,13 @@ def main():
     game.mkdir(parents=True);mods=game/'mods';mods.mkdir()
     for name in ['config','coremods','falsepattern','scripts','resourcepacks','fonts','models','animations','particle','customnpcs']:
         if (a.instance/name).exists():fixture.copy_config(a.instance/name,game/name)
+    # The studio audit observed DH background generation in disposable worlds.
+    dh=game/'config/DistantHorizons.toml'
+    if dh.exists():
+        content=dh.read_text(encoding='utf-8')
+        for setting in ['enableDistantGeneration','enableServerGeneration']:
+            content=content.replace(setting+' = true',setting+' = false')
+        dh.write_text(content,encoding='utf-8')
     manifest=[]
     for source in (a.instance/'mods').rglob('*.jar'):
         if source.is_symlink() or source.name.startswith('AM2.5-'):continue

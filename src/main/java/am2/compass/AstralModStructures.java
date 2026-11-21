@@ -26,24 +26,38 @@ final class AstralModStructures {
                 }
             } catch(ClassNotFoundException e){warn("chromaticraft:pylon-colors",e);}catch(LinkageError e){warn("chromaticraft:pylon-colors",e);}
         }
-        if(available("electroblob.wizardry.WizardryWorldGenerator")) add(map,"wizardry:wizard_tower","Electroblob's Wizardry: Wizard Tower",world);
-        if(available("mglucas0123.utils.GenericDungeon")) for(String method:am2.preloader.AstralStructureTransformer.oreCatalog())
-            add(map,"orespawn:"+method,"OreSpawn: "+StructureTargetInfo.prettify(method.substring(4)),world);
+        if(available("electroblob.wizardry.WizardryWorldGenerator"))
+            add(map,"wizardry:wizard_tower","Electroblob's Wizardry: Wizard Tower",
+                OptionalStructureDimensions.configuredIds("electroblob.wizardry.Wizardry","towerDimensions"));
+        if(available("mglucas0123.utils.GenericDungeon")) {
+            Map<String,int[]> dimensions=OptionalStructureDimensions.oreCatalog();
+            for(String method:am2.preloader.AstralStructureTransformer.oreCatalog()) {
+                int[] allowed=dimensions.get(method);
+                // A confirmed disabled generator is reintroduced below only if a location was actually recorded.
+                if(allowed!=null&&allowed.length==0)continue;
+                add(map,"orespawn:"+method,"OreSpawn: "+StructureTargetInfo.prettify(method.substring(4)),allowed);
+            }
+        }
         if(available("thaumcraft.common.lib.world.WorldGenMound")) {
             add(map,"thaumcraft:mound","Thaumcraft: Mound",world);
             add(map,"thaumcraft:eldritch_ring","Thaumcraft: Eldritch Ring",world);
             add(map,"thaumcraft:hilltop_stones","Thaumcraft: Hilltop Stones",world);
         }
-        if(world.provider.getClass().getName().startsWith("twilightforest.") && available("twilightforest.TFFeature")) try {
+        if(available("twilightforest.TFFeature")) try {
+            int dimension=Class.forName("twilightforest.TwilightForestMod",false,AstralModStructures.class.getClassLoader()).getField("dimensionID").getInt(null);
             Class<?> feature=Class.forName("twilightforest.TFFeature");
             for(Object f:(Object[])feature.getField("featureList").get(null)) if(f!=null && feature.getField("isStructureEnabled").getBoolean(f)) {
                 String name=(String)feature.getField("name").get(f);
-                if(!"nothing".equals(name))add(map,"twilightforest:"+name,"Twilight Forest: "+StructureTargetInfo.prettify(name),world);
+                if(!"nothing".equals(name))add(map,"twilightforest:"+name,"Twilight Forest: "+StructureTargetInfo.prettify(name),new int[]{dimension});
             }
         } catch(ReflectiveOperationException e){warn("twilightforest",e);}catch(LinkageError e){warn("twilightforest",e);}
     }
     private static void add(Map<String,StructureTargetInfo> map,String id,String name,World world) {
-        if(!map.containsKey(id))map.put(id,new StructureTargetInfo(id,name,StructureTargetInfo.CAT_MODDED,world.provider.dimensionId,true,id.hashCode()));
+        // An optional integration with variable rules must not inherit the player's current dimension.
+        add(map,id,name,new int[0]);
+    }
+    private static void add(Map<String,StructureTargetInfo> map,String id,String name,int[] dimensions) {
+        if(!map.containsKey(id))map.put(id,new StructureTargetInfo(id,name,StructureTargetInfo.CAT_MODDED,dimensions,id.hashCode()));
     }
     static Iterator<AstralLandmarks.Point> known(final World world,StructureTargetInfo target,final int originX,final int originZ) {
         return known(world,target,originX,originZ,AstralStructureLocator.DEFAULT_RADIUS);
@@ -55,18 +69,19 @@ final class AstralModStructures {
             final Method center=feature.getMethod("getNearestCenterXYZ",int.class,int.class,World.class);
             final Field name=feature.getField("name");
             final String id=target.id;
+            final int extent=radius/256+2,width=extent*2+1;
             return new Iterator<AstralLandmarks.Point>() {
                 int i;
-                public boolean hasNext(){return i<33*33;}
+                public boolean hasNext(){return i<width*width;}
                 public AstralLandmarks.Point next(){
-                    int cx=(Math.round((originX>>4)/16F)+i%33-16)*16;
-                    int cz=(Math.round((originZ>>4)/16F)+i/33-16)*16;i++;
+                    int cx=(Math.round((originX>>4)/16F)+i%width-extent)*16;
+                    int cz=(Math.round((originZ>>4)/16F)+i/width-extent)*16;i++;
                     try {
                         Object f=find.invoke(null,cx,cz,world);
                         if(!id.equals("twilightforest:"+name.get(f)))return null;
                         net.minecraft.util.ChunkCoordinates p=(net.minecraft.util.ChunkCoordinates)center.invoke(null,cx,cz,world);
                         return new AstralLandmarks.Point(id,p.posX,p.posY,p.posZ);
-                    }catch(ReflectiveOperationException e){warn(id,e);i=33*33;return null;}
+                    }catch(ReflectiveOperationException e){warn(id,e);i=width*width;return null;}
                 }
                 public void remove(){throw new UnsupportedOperationException();}
             };

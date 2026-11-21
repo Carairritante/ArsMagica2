@@ -110,3 +110,11 @@ os repositórios deste projeto. Novas instruções explícitas do usuário preva
   dos testes, sem afirmar compatibilidade não verificada.
 - Ao investigar arquivos de colaboradores, comparar os hashes com os artefatos
   reais do CI. Distinguir JAR jogável do arquivo de ferramentas do fork público.
+
+## Integração e correções do Tornado (19/11/2026)
+
+- Antes de recompilar, integrar a fonte canônica mais recente com todas as alterações locais dos agentes; CR44 sozinho não identifica o conteúdo. A base de trabalho integrada desta etapa está em tornado-fixes-cr44-20261119/worktree. Não reconstruir uma árvore antiga e substituir as correções mais recentes.
+- Formas consomem etapas: o componente recebe a etapa em execução como índice zero. Tier, elemento e custo devem usar esse mesmo escopo.
+- Preservar subclasses elementais de DamageSource, pois guardiões verificam instanceof. Manter construtores existentes compatíveis ao ajustar fontes locais.
+- Dedicado: registrar o conjurador simulado no mundo e carregar os chunks; usar capacidade de burnout coerente com o nível. Distinguir erro de fixture, recusa de mana e bug real.
+- Autorizar antes de efeitos colaterais e remoção; eventos de spawn podem cancelar ou matar a entidade. Só remover o bloco após confirmar aceitação e vida.

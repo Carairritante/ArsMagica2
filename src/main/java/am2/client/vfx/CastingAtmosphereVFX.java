@@ -563,8 +563,9 @@ public final class CastingAtmosphereVFX {
         endRender();
         Minecraft mc = Minecraft.getMinecraft();
         boolean liveStorm=OrbitalStormVFX.hasActiveStorms();
+        boolean liveTornado=TornadoVFX.hasCataclysmicTornado();
         boolean charging=mc.theWorld==activeWorld&&currentIntensity>0;
-        if(mc.theWorld==null||(!charging&&!liveStorm))return;
+        if(mc.theWorld==null||(!charging&&!liveStorm&&!liveTornado))return;
         renderedWorld = mc.theWorld;
         naturalFlash = renderedWorld.lastLightningBolt;
         renderedSettings = mc.gameSettings; naturalClouds = renderedSettings.clouds;
@@ -574,6 +575,7 @@ public final class CastingAtmosphereVFX {
             for (int i = 0; i < WEATHER_FIELDS.length; i++) {
                 float strength = (i % 2 == 0) ? previousIntensity : currentIntensity;
                 if (!charging || cleanWeather && i < 2) strength = 0;
+                if (liveTornado) strength = Math.max(strength, 0.72f);
                 WEATHER_FIELDS[i].setFloat(renderedWorld, Math.max(naturalWeather[i], strength));
             }
             if (clientTick <= flashUntilTick) renderedWorld.lastLightningBolt = Math.max(naturalFlash, 1);
@@ -704,6 +706,20 @@ public final class CastingAtmosphereVFX {
     private static final int[] stormLobeOrder=new int[12];
     private static final double[] stormLobeX=new double[12],stormLobeZ=new double[12],stormLobeDistance=new double[12];
 
+    // Reusable vertex grid cache for cloudMass / stormEllipsoid so each (row, slice) vertex is
+    // evaluated once instead of 6x per quad (~85% fewer trig/pow calls and zero GC allocations).
+    private static final int CLOUD_GRID_CAP = 32 * 16;
+    private static final double[] cloudVX = new double[CLOUD_GRID_CAP];
+    private static final double[] cloudVY = new double[CLOUD_GRID_CAP];
+    private static final double[] cloudVZ = new double[CLOUD_GRID_CAP];
+    private static final float[] cloudVR = new float[CLOUD_GRID_CAP];
+    private static final float[] cloudVG = new float[CLOUD_GRID_CAP];
+    private static final float[] cloudVB = new float[CLOUD_GRID_CAP];
+    private static final float[] cloudVA = new float[CLOUD_GRID_CAP];
+
+    private static final float[] STORM_HEAVY_BLUE = {.36f, .76f, 1.0f};
+    private static final float[] STORM_HEAVY_WHITE = {.95f, .99f, 1.0f};
+
     private static double fastPow22(double x) {
         if (x <= 0) return 0;
         double x2 = x * x;
@@ -717,10 +733,11 @@ public final class CastingAtmosphereVFX {
     private static void cloudMass(Tessellator t,double cx,double deck,double cz,float alpha,double time,
             int puffs,double scale,double tipY){
         int quality=Minecraft.getMinecraft().gameSettings.particleSetting;
-        int slices=quality==0?36:quality==1?24:16,rows=quality==0?14:quality==1?10:8;
-        int lobeSlices=quality==0?16:12,lobeRows=quality==0?8:6;
-        stormEllipsoid(t,cx,deck+2,cz,43*scale,9*scale,38*scale,time,0,alpha*.94f,lobeSlices*2,lobeRows*2);
-        int count=Math.min(8,quality>=2?3:puffs);
+        int slices=quality==0?24:quality==1?18:12,rows=quality==0?10:quality==1?8:6;
+        int mainSlices=quality==0?24:quality==1?18:14,mainRows=quality==0?10:quality==1?8:6;
+        int lobeSlices=quality==0?12:10,lobeRows=quality==0?6:5;
+        stormEllipsoid(t,cx,deck+2,cz,43*scale,9*scale,38*scale,time,0,alpha*.95f,mainSlices,mainRows);
+        int count=Math.min(quality==0?6:quality==1?4:3,puffs);
         for(int i=0;i<count;i++){
             double a=i*Math.PI*2/count+time*.16,r=(33+Math.sin(i*2.7)*4)*scale;
             stormLobeX[i]=cx+Math.cos(a)*r;stormLobeZ[i]=cz+Math.sin(a)*r;
@@ -733,94 +750,123 @@ public final class CastingAtmosphereVFX {
             stormLobeOrder[j+1]=item;
         }
         for(int draw=0;draw<count;draw++){
-            int i=stormLobeOrder[draw];double size=(10+Math.sin(i*1.7)*2)*scale;
+            int i=stormLobeOrder[draw];double size=(11+Math.sin(i*1.7)*2)*scale;
             stormEllipsoid(t,stormLobeX[i],deck+Math.sin(i*2.4+time*.2)*2,stormLobeZ[i],
-                    size,7*scale,size*.92,time,i+1,alpha*.90f,lobeSlices,lobeRows);
+                    size,7.2*scale,size*.92,time,i+1,alpha*.92f,lobeSlices,lobeRows);
         }
-        for(int row=0;row<rows;row++)for(int i=0;i<slices;i++){
-            double f=row/(double)rows,g=(row+1)/(double)rows,a=i*Math.PI*2/slices,b=(i+1)*Math.PI*2/slices;
-            funnelVertex(t,cx,tipY,deck,cz,f,a,time,scale,alpha,false);
-            funnelVertex(t,cx,tipY,deck,cz,g,a,time,scale,alpha,false);
-            funnelVertex(t,cx,tipY,deck,cz,g,b,time,scale,alpha,false);
-            funnelVertex(t,cx,tipY,deck,cz,f,a,time,scale,alpha,false);
-            funnelVertex(t,cx,tipY,deck,cz,g,b,time,scale,alpha,false);
-            funnelVertex(t,cx,tipY,deck,cz,f,b,time,scale,alpha,false);
-        }
-        // A thin, less dense outer layer carries revolving trails of vapour.
-        for(int row=0;row<rows;row++)for(int i=0;i<slices;i++){
-            double f=row/(double)rows,g=(row+1)/(double)rows,a=i*Math.PI*2/slices,b=(i+1)*Math.PI*2/slices;
-            funnelVertex(t,cx,tipY,deck,cz,f,a,time,scale,alpha,true);
-            funnelVertex(t,cx,tipY,deck,cz,g,a,time,scale,alpha,true);
-            funnelVertex(t,cx,tipY,deck,cz,g,b,time,scale,alpha,true);
-            funnelVertex(t,cx,tipY,deck,cz,f,a,time,scale,alpha,true);
-            funnelVertex(t,cx,tipY,deck,cz,g,b,time,scale,alpha,true);
-            funnelVertex(t,cx,tipY,deck,cz,f,b,time,scale,alpha,true);
+        emitFunnelMesh(t,cx,tipY,deck,cz,time,scale,alpha,slices,rows,false);
+        if(quality<2){
+            // Thin outer vapour skirt with lighter tessellation for organic heavy-storm edges.
+            emitFunnelMesh(t,cx,tipY,deck,cz,time,scale,alpha,Math.max(12,slices-4),Math.max(6,rows-2),true);
         }
     }
 
     private static double funnelRadius(double f,double a,double time,double scale){
         double r=1.35+(30*scale-1.35)*Math.pow(f,1.75);
-        return r*(1+.07*Math.sin(a*6+f*13-time*1.2)+.025*Math.sin(a*11-f*8+time*.6));
+        return r*(1+.065*Math.sin(a*6+f*13-time*1.2)+.025*Math.sin(a*11-f*8+time*.6));
     }
 
-    private static void funnelVertex(Tessellator t,double cx,double tip,double deck,double cz,
-            double f,double angle,double time,double scale,float alpha,boolean vapour){
-        double r=funnelRadius(f,angle,time,scale)*(vapour?1.08:1);
-        double slope=(30*scale-1.35)*1.75*Math.pow(f,.75)/Math.max(1,deck-tip);
-        double normal=Math.sqrt(1+slope*slope);
-        double nx=Math.cos(angle)/normal,ny=-slope/normal,nz=Math.sin(angle)/normal;
-        float density=vapour?(float)(.23*Math.pow(Math.max(0,Math.sin(angle*5+f*14-time*1.15)),2)):.78f;
-        stormShade(t,nx,ny,nz,angle+f*4,time,alpha*density);
-        double bend=Math.sin(f*Math.PI)*Math.sin(time*.18)*1.1;
-        t.addVertex(cx+Math.cos(angle)*r+bend,tip+(deck-tip)*f,cz+Math.sin(angle)*r);
+    private static void emitFunnelMesh(Tessellator t,double cx,double tip,double deck,double cz,
+            double time,double scale,float alpha,int slices,int rows,boolean vapour){
+        int stride=slices+1;
+        double height=Math.max(1,deck-tip);
+        double bendTime=Math.sin(time*.18)*1.1;
+        for(int row=0;row<=rows;row++){
+            double f=row/(double)rows;
+            double y=tip+height*f;
+            double rBase=1.35+(30*scale-1.35)*Math.pow(f,1.75);
+            double slope=(30*scale-1.35)*1.75*Math.pow(Math.max(1e-4,f),.75)/height;
+            double invNormal=1.0/Math.sqrt(1+slope*slope);
+            double ny=-slope*invNormal;
+            double bend=Math.sin(f*Math.PI)*bendTime;
+            int rowBase=row*stride;
+            for(int i=0;i<=slices;i++){
+                double angle=i*Math.PI*2/slices;
+                double ca=Math.cos(angle),sa=Math.sin(angle);
+                double r=rBase*(1+.065*Math.sin(angle*6+f*13-time*1.2)+.025*Math.sin(angle*11-f*8+time*.6))*(vapour?1.08:1.0);
+                double nx=ca*invNormal,nz=sa*invNormal;
+                float density;
+                if(vapour){
+                    double s=Math.max(0,Math.sin(angle*5+f*14-time*1.15));
+                    density=(float)(.21*s*s);
+                }else{
+                    // Soft fade near the narrow tip and dense brooding wall near the cloud deck
+                    density=(float)(.52+.30*f);
+                }
+                int idx=rowBase+i;
+                cloudVX[idx]=cx+ca*r+bend;
+                cloudVY[idx]=y;
+                cloudVZ[idx]=cz+sa*r;
+                writeStormShade(idx,nx,ny,nz,angle+f*4,time,alpha*density);
+            }
+        }
+        emitCloudGridTriangles(t,rows,slices,stride);
     }
 
     private static void stormEllipsoid(Tessellator t,double x,double y,double z,double rx,double ry,double rz,
             double time,int seed,float alpha,int slices,int rows){
-        for(int j=0;j<rows;j++)for(int i=0;i<slices;i++){
-            double a=i*Math.PI*2/slices,b=(i+1)*Math.PI*2/slices;
-            double f=-Math.PI/2+j*Math.PI/rows,g=-Math.PI/2+(j+1)*Math.PI/rows;
-            stormEllipsoidVertex(t,x,y,z,rx,ry,rz,a,f,time,seed,alpha);
-            stormEllipsoidVertex(t,x,y,z,rx,ry,rz,a,g,time,seed,alpha);
-            stormEllipsoidVertex(t,x,y,z,rx,ry,rz,b,g,time,seed,alpha);
-            stormEllipsoidVertex(t,x,y,z,rx,ry,rz,a,f,time,seed,alpha);
-            stormEllipsoidVertex(t,x,y,z,rx,ry,rz,b,g,time,seed,alpha);
-            stormEllipsoidVertex(t,x,y,z,rx,ry,rz,b,f,time,seed,alpha);
+        int stride=slices+1;
+        for(int j=0;j<=rows;j++){
+            double p=-Math.PI/2+j*Math.PI/rows;
+            double cp=Math.cos(p),sp=Math.sin(p);
+            int rowBase=j*stride;
+            for(int i=0;i<=slices;i++){
+                double a=i*Math.PI*2/slices;
+                double ca=Math.cos(a),sa=Math.sin(a);
+                double nx=cp*ca,ny=sp,nz=cp*sa;
+                double billow=1+.045*Math.sin(a*5+p*4+seed)+.025*Math.sin(a*9-p*6-time*.35+seed);
+                int idx=rowBase+i;
+                cloudVX[idx]=x+nx*rx*billow;
+                cloudVY[idx]=y+ny*ry*billow;
+                cloudVZ[idx]=z+nz*rz*billow;
+                writeStormShade(idx,nx,ny,nz,a+seed,time,alpha);
+            }
+        }
+        emitCloudGridTriangles(t,rows,slices,stride);
+    }
+
+    private static void emitCloudGridTriangles(Tessellator t,int rows,int slices,int stride){
+        for(int row=0;row<rows;row++){
+            int r0=row*stride;
+            int r1=(row+1)*stride;
+            for(int i=0;i<slices;i++){
+                int a=r0+i,b=r1+i,c=r1+i+1,d=r0+i+1;
+                t.setColorRGBA_F(cloudVR[a],cloudVG[a],cloudVB[a],cloudVA[a]); t.addVertex(cloudVX[a],cloudVY[a],cloudVZ[a]);
+                t.setColorRGBA_F(cloudVR[b],cloudVG[b],cloudVB[b],cloudVA[b]); t.addVertex(cloudVX[b],cloudVY[b],cloudVZ[b]);
+                t.setColorRGBA_F(cloudVR[c],cloudVG[c],cloudVB[c],cloudVA[c]); t.addVertex(cloudVX[c],cloudVY[c],cloudVZ[c]);
+                t.setColorRGBA_F(cloudVR[a],cloudVG[a],cloudVB[a],cloudVA[a]); t.addVertex(cloudVX[a],cloudVY[a],cloudVZ[a]);
+                t.setColorRGBA_F(cloudVR[c],cloudVG[c],cloudVB[c],cloudVA[c]); t.addVertex(cloudVX[c],cloudVY[c],cloudVZ[c]);
+                t.setColorRGBA_F(cloudVR[d],cloudVG[d],cloudVB[d],cloudVA[d]); t.addVertex(cloudVX[d],cloudVY[d],cloudVZ[d]);
+            }
         }
     }
 
-    private static void stormEllipsoidVertex(Tessellator t,double x,double y,double z,double rx,double ry,double rz,
-            double a,double p,double time,int seed,float alpha){
-        double nx=Math.cos(p)*Math.cos(a),ny=Math.sin(p),nz=Math.cos(p)*Math.sin(a);
-        double billow=1+.045*Math.sin(a*5+p*4+seed)+.025*Math.sin(a*9-p*6-time*.35+seed);
-        stormShade(t,nx,ny,nz,a+seed,time,alpha);
-        t.addVertex(x+nx*rx*billow,y+ny*ry*billow,z+nz*rz*billow);
-    }
-
-    private static void stormShade(Tessellator t,double nx,double ny,double nz,double phase,double time,float alpha){
-        double shade=.28+.72*Math.max(0,-nx*.4+ny*.65+nz*.55);
-        double flash=fastPow22(Math.max(0,Math.sin(time*2.1+phase*1.3)))*.11;
-        t.setColorRGBA_F((float)(.025+shade*.075+flash*.3),
-                (float)(.04+shade*.105+flash*.6),(float)(.065+shade*.15+flash),alpha);
+    private static void writeStormShade(int idx,double nx,double ny,double nz,double phase,double time,float alpha){
+        double shade=.22+.78*Math.max(0,-nx*.4+ny*.65+nz*.55);
+        double flash=fastPow22(Math.max(0,Math.sin(time*2.3+phase*1.3)))*.16;
+        cloudVR[idx]=(float)Math.min(1.0,.022+shade*.068+flash*.52);
+        cloudVG[idx]=(float)Math.min(1.0,.032+shade*.092+flash*.78);
+        cloudVB[idx]=(float)Math.min(1.0,.052+shade*.135+flash);
+        cloudVA[idx]=alpha;
     }
 
     private static void stormFunnelLight(Tessellator t,double x,double tip,double deck,double z,
             double time,float alpha,double scale){
         // The neck touches the original 20-block casting pillar exactly.
         double bottom=tip-20.035;
-        lightTrail(t,x,bottom+.1,z,x,deck-2,z,.95,ANIME_BLUE,alpha*.16f);
-        lightTrail(t,x,bottom+.1,z,x,deck-2,z,.25,ANIME_BLUE,alpha*.35f);
-        lightTrail(t,x,bottom+.1,z,x,deck-2,z,.065,ANIME_WHITE,alpha*.55f);
-        int steps = 28;
+        lightTrail(t,x,bottom+.1,z,x,deck-2,z,.88,STORM_HEAVY_BLUE,alpha*.14f);
+        lightTrail(t,x,bottom+.1,z,x,deck-2,z,.22,STORM_HEAVY_BLUE,alpha*.34f);
+        lightTrail(t,x,bottom+.1,z,x,deck-2,z,.06,STORM_HEAVY_WHITE,alpha*.58f);
+        int steps = 20;
         for(int arm=0;arm<3;arm++)for(int i=0;i<steps;i++){
             double f=i/(double)steps,g=(i+1)/(double)steps,a=arm*Math.PI*2/3+f*Math.PI*4-time*1.15,b=arm*Math.PI*2/3+g*Math.PI*4-time*1.15;
             double r0=funnelRadius(f,a,time,scale)*1.035,r1=funnelRadius(g,b,time,scale)*1.035;
             double ax=x+Math.cos(a)*r0,az=z+Math.sin(a)*r0,bx=x+Math.cos(b)*r1,bz=z+Math.sin(b)*r1;
-            float glow=alpha*(float)(.12+.12*f);
-            lightTrail(t,ax,tip+(deck-tip)*f,az,bx,tip+(deck-tip)*g,bz,.65,ANIME_BLUE,glow);
-            lightTrail(t,ax,tip+(deck-tip)*f,az,bx,tip+(deck-tip)*g,bz,.07,ANIME_WHITE,glow*.65f);
+            float glow=alpha*(float)(.10+.12*f);
+            lightTrail(t,ax,tip+(deck-tip)*f,az,bx,tip+(deck-tip)*g,bz,.55,STORM_HEAVY_BLUE,glow);
+            lightTrail(t,ax,tip+(deck-tip)*f,az,bx,tip+(deck-tip)*g,bz,.065,STORM_HEAVY_WHITE,glow*.72f);
         }
-        glowEllipse(t,x,tip+.1,z,2.6,2.6,ANIME_BLUE,alpha*.25f);
+        glowEllipse(t,x,tip+.1,z,2.4,2.4,STORM_HEAVY_BLUE,alpha*.22f);
     }
 
 
@@ -840,13 +886,13 @@ public final class CastingAtmosphereVFX {
             GL11.glDisable(GL11.GL_TEXTURE_2D);GL11.glEnable(GL11.GL_CULL_FACE);
             GL11.glBlendFunc(GL11.GL_SRC_ALPHA,GL11.GL_ONE_MINUS_SRC_ALPHA);
             t.startDrawing(GL11.GL_TRIANGLES);
-            cloudMass(t,x,deck,z,alpha,time,mc.gameSettings.particleSetting==0?9:6,overcharged?1.5:1.25,deck-43.965);
+            cloudMass(t,x,deck,z,alpha,time,mc.gameSettings.particleSetting==0?6:4,overcharged?1.45:1.22,deck-43.965);
             t.draw();GL11.glDisable(GL11.GL_CULL_FACE);GL11.glBlendFunc(GL11.GL_SRC_ALPHA,GL11.GL_ONE);
             t.startDrawing(GL11.GL_TRIANGLES);
-            stormFunnelLight(t,x,deck-43.965,deck,z,time,alpha,overcharged?1.5:1.25);
+            stormFunnelLight(t,x,deck-43.965,deck,z,time,alpha,overcharged?1.45:1.22);
             double cycle=time*2,phase=cycle-Math.floor(cycle),seed=Math.floor(cycle);
             float pulse=alpha*(float)Math.sin(phase*Math.PI);
-            int arcs=mc.gameSettings.particleSetting>=2?1:overcharged?4:3;
+            int arcs=mc.gameSettings.particleSetting>=2?1:overcharged?3:2;
             for(int arc=0;arc<arcs;arc++){
                 double a=arc*2.1+seed*.71,b=a+1.8;
                 double ax=x+Math.cos(a)*34,az=z+Math.sin(a)*29,bx=x+Math.cos(b)*34,bz=z+Math.sin(b)*29;

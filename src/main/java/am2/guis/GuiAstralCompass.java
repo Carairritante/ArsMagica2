@@ -26,6 +26,7 @@ public class GuiAstralCompass extends GuiScreen {
     private GuiTextField searchField;
     private String category="all", selectedId=AstralStructureLocator.ID_STRONGHOLD, modFilter="";
     private Integer dimensionFilter;
+    private boolean variableDimensions;
     private List<StructureTargetInfo> filtered=new ArrayList<StructureTargetInfo>();
     private List<Visit> historyRows=new ArrayList<Visit>();
     private Visit selectedVisit;
@@ -46,6 +47,7 @@ public class GuiAstralCompass extends GuiScreen {
     }
     public static String text(String key,Object... args) { return StatCollector.translateToLocalFormatted("am2.astral_compass.gui."+key,args); }
     private static String dim(int id) { return AstralCompassPreferences.dimensionName(id); }
+    private static String dims(StructureTargetInfo entry) { return AstralCompassPreferences.structureDimensions(entry); }
     @Override public void initGui() {
         Keyboard.enableRepeatEvents(true);
         rows=Math.max(1,Math.min(6,(height-211)/32));
@@ -101,7 +103,7 @@ public class GuiAstralCompass extends GuiScreen {
         if(reset)page=0;page=Math.max(0,Math.min(page,Math.max(0,(filtered.size()-1)/rows)));refreshButtons();
     }
     private boolean matches(StructureTargetInfo info,String q,String compact) {
-        return (modFilter.isEmpty()||modFilter.equals(info.getModId())) && (dimensionFilter==null||dimensionFilter==info.preferredDimension)
+        return (modFilter.isEmpty()||modFilter.equals(info.getModId())) && (variableDimensions?!info.hasKnownDimensions():dimensionFilter==null||info.listsDimension(dimensionFilter))
                 && info.matchesQuery(q,compact);
     }
     private StructureTargetInfo selected() {
@@ -120,7 +122,7 @@ public class GuiAstralCompass extends GuiScreen {
         int half=(panelWidth-36)/2;
         String mod="";for(StructureTargetInfo info:ItemAstralCompass.getClientCatalog())if(info.getModId().equals(modFilter)){mod=info.getModName();break;}
         button(8,left+16,top+66,half,18,text("mod_filter",modFilter.isEmpty()?text("all"):mod),true);
-        button(9,left+20+half,top+66,half,18,text("dimension_filter",dimensionFilter==null?text("all"):dim(dimensionFilter)),true);
+        button(9,left+20+half,top+66,half,18,text("dimension_filter",variableDimensions?text("variable_dimensions_short"):dimensionFilter==null?text("all"):dim(dimensionFilter)),true);
         button(10,left+panelWidth-140,top+88,124,20,ItemAstralCompass.getClientSearchProtocol()>=2?text("radius",prefs.searchRadius/1000):text("server_range"),!busy()&&ItemAstralCompass.getClientSearchProtocol()>=2);
         for(int i=0;i<rows;i++) {int idx=page*rows+i;if(idx>=filtered.size())break;
             StructureTargetInfo entry=filtered.get(idx);buttonList.add(new StructureRow(100+idx,left+16,listTop+i*32,listWidth,entry,
@@ -135,7 +137,7 @@ public class GuiAstralCompass extends GuiScreen {
         buttonList.add(new GuiInstrumentButton(6,left+panelWidth-126,footer,24,18,"",GuiInstrumentButton.GEAR,false));
         button(3,left+panelWidth-98,footer,82,18,text("done"),true);
         int actionW=(panelWidth-40)/3; StructureTargetInfo entry=selected();
-        boolean rightDimension=entry!=null&&(!entry.dimensionRestricted||entry.preferredDimension==player.dimension);
+        boolean rightDimension=entry!=null&&entry.canSearchIn(player.dimension);
         button(4,left+16,footer+23,actionW,22,busy()?text("cancel"):text("divinate",20),toolReady()&&(busy()||entry!=null&&rightDimension&&canAffordSearch()));
         ItemAstralCompass.TargetData current=ItemAstralCompass.getTarget(player.getCurrentEquippedItem());
         boolean canNext=ItemAstralCompass.getClientSearchProtocol()>=2&&current!=null&&current.dimension==player.dimension&&current.id.equals(selectedId)&&!AstralStructureLocator.ID_WITCHWOOD_FOREST.equals(selectedId);
@@ -145,7 +147,7 @@ public class GuiAstralCompass extends GuiScreen {
     private boolean canAffordSearch() {ExtendedProperties p=ExtendedProperties.For(player);return p!=null&&AstralStructureLocator.hasRequiredLevel(p.getMagicLevel())&&AstralStructureLocator.hasEnoughMana(p.getCurrentMana(),p.getBonusCurrentMana());}
     private boolean toolReady() {ItemStack stack=player.getCurrentEquippedItem();return player.inventory.currentItem==heldSlot&&stack!=null&&stack.getItem() instanceof ItemAstralCompass;}
     @Override protected void actionPerformed(GuiButton button) {
-        if(button.id>=20&&button.id<26){category=CATEGORIES[button.id-20];selectedVisit=null;rebuildFilter(true);return;}
+        if(button.id>=20&&button.id<20+CATEGORIES.length){category=CATEGORIES[button.id-20];selectedVisit=null;rebuildFilter(true);return;}
         if(button.id>=100){
             int idx=button.id-100;
             if(idx<filtered.size()){
@@ -181,12 +183,22 @@ public class GuiAstralCompass extends GuiScreen {
         List<String> ids=new ArrayList<String>();ids.add("");ids.addAll(mods.values());int at=ids.indexOf(modFilter);modFilter=ids.get((at+1)%ids.size());rebuildFilter(true);
     }
     private void cycleDimension() {
-        TreeSet<Integer> ids=new TreeSet<Integer>();for(StructureTargetInfo e:ItemAstralCompass.getClientCatalog())ids.add(e.preferredDimension);
-        List<Integer> dimensions=new ArrayList<Integer>();dimensions.add(null);dimensions.addAll(ids);int at=dimensions.indexOf(dimensionFilter);dimensionFilter=dimensions.get((at+1)%dimensions.size());rebuildFilter(true);
+        TreeSet<Integer> ids=new TreeSet<Integer>();boolean variable=false;
+        for(StructureTargetInfo e:ItemAstralCompass.getClientCatalog()) {
+            variable|=!e.hasKnownDimensions();for(int dimension:e.getSearchDimensions())ids.add(dimension);
+        }
+        if(variableDimensions){variableDimensions=false;dimensionFilter=null;}
+        else {
+            List<Integer> dimensions=new ArrayList<Integer>(ids);
+            int at=dimensionFilter==null?-1:dimensions.indexOf(dimensionFilter);
+            if(at+1<dimensions.size())dimensionFilter=dimensions.get(at+1);
+            else {dimensionFilter=null;variableDimensions=variable;}
+        }
+        rebuildFilter(true);
     }
     private void beginSearch() {beginSearch(false);}
     private void beginSearch(boolean next) {
-        StructureTargetInfo entry=selected();if(!toolReady()||busy()||!canAffordSearch()||entry==null||entry.dimensionRestricted&&entry.preferredDimension!=player.dimension)return;
+        StructureTargetInfo entry=selected();if(!toolReady()||busy()||!canAffordSearch()||entry==null||!entry.canSearchIn(player.dimension))return;
         if(ItemAstralCompass.getClientSearchProtocol()<2) {
             if(next)return;
             if(ItemAstralCompass.getClientSearchProtocol()>=1)ItemAstralCompass.setClientSearchStatus(ItemAstralCompass.STATUS_SEARCHING,selectedId);
@@ -248,7 +260,7 @@ public class GuiAstralCompass extends GuiScreen {
         ItemAstralCompass.TargetData target=ItemAstralCompass.getTarget(player.getCurrentEquippedItem());
         String active=target==null?text("no_active_target"):text("active_short",new StructureTargetInfo(target.id,target.name,"modded",target.dimension,true,0).getDisplayName()+" ["+text("source_"+target.source)+"]",dim(target.dimension));
         line(active,footer+62,0xa1e5ff);
-        StructureTargetInfo entry=selected();String hint=selectedVisit!=null?text("history_coords",selectedVisit.coordinates(),dim(selectedVisit.dimension)):entry==null?text("select_hint"):text("search_dimension",entry.getModName(),dim(entry.preferredDimension));
+        StructureTargetInfo entry=selected();String hint=selectedVisit!=null?text("history_coords",selectedVisit.coordinates(),dim(selectedVisit.dimension)):entry==null?text("select_hint"):text("search_dimension",entry.getModName(),dims(entry));
         line(hint,footer+74,0x88a3c4);
         super.drawScreen(x,y,partial);
         drawPreviewCard(entry,x,y);
@@ -265,7 +277,7 @@ public class GuiAstralCompass extends GuiScreen {
         }
         for(Object raw:buttonList){GuiButton b=(GuiButton)raw;if(x>=b.xPosition&&x<b.xPosition+b.width&&y>=b.yPosition&&y<b.yPosition+b.height){
             List<String> tip=new ArrayList<String>();
-            if(b instanceof StructureRow){StructureRow row=(StructureRow)b;tip.add(row.entry.getDisplayName());tip.add(row.entry.getModName());tip.add(text("search_dimension_only",dim(row.entry.preferredDimension)));if(row.visit!=null){tip.add(row.visit.coordinates());tip.add(text("source_"+row.visit.source));}tip.add(text("favorite_hint"));tip.add(text("row_zoom_hint"));}
+            if(b instanceof StructureRow){StructureRow row=(StructureRow)b;tip.add(row.entry.getDisplayName());tip.add(row.entry.getModName());tip.add(text("search_dimension_only",dims(row.entry)));tip.add(text("current_search_dimension",dim(player.dimension)));if(row.visit!=null){tip.add(row.visit.coordinates());tip.add(text("source_"+row.visit.source));}tip.add(text("favorite_hint"));tip.add(text("row_zoom_hint"));}
             else if(b.id==6)tip.add(text("hud_settings"));else if(b.id==10)tip.add(text(ItemAstralCompass.getClientSearchProtocol()>=2?"radius_hint":"update_server"));else if(b.id==11)tip.add(text(ItemAstralCompass.getClientSearchProtocol()>=2?"next_hint":"update_server"));else if(b.id==12)tip.add(text("preview_expand_hint"));else if(b.id==8||b.id==9)tip.add(b.displayString);
             if(!tip.isEmpty())drawHoveringText(tip,x,y,fontRendererObj);break;
         }}
@@ -300,9 +312,12 @@ public class GuiAstralCompass extends GuiScreen {
         int maxTextW=previewW-14;
         fontRendererObj.drawStringWithShadow(fontRendererObj.trimStringToWidth(entry.getDisplayName(),maxTextW),previewX+7,textY,0xecf7ff);
         textY+=10;
-        String meta=entry.getModName()+" | "+dim(entry.preferredDimension);
-        fontRendererObj.drawStringWithShadow(fontRendererObj.trimStringToWidth(meta,maxTextW),previewX+7,textY,0x67ccff);
+        fontRendererObj.drawStringWithShadow(fontRendererObj.trimStringToWidth(entry.getModName(),maxTextW),previewX+7,textY,0x67ccff);
         textY+=10;
+        @SuppressWarnings("unchecked") List<String> dimensionLines=fontRendererObj.listFormattedStringToWidth(dims(entry),maxTextW);
+        for(int i=0;i<dimensionLines.size()&&i<3&&textY<=listTop+previewH-9;i++) {
+            fontRendererObj.drawStringWithShadow(dimensionLines.get(i),previewX+7,textY,0x67ccff);textY+=9;
+        }
         String desc=StructurePreviewRegistry.getVisualDescription(entry);
         @SuppressWarnings("unchecked")
         List<String> lines=fontRendererObj.listFormattedStringToWidth(desc,maxTextW);
@@ -318,7 +333,8 @@ public class GuiAstralCompass extends GuiScreen {
         String desc=StructurePreviewRegistry.getVisualDescription(entry);
         @SuppressWarnings("unchecked")
         List<String> descLines=fontRendererObj.listFormattedStringToWidth(desc,modalW-24);
-        int textBlockH=42+Math.min(4,descLines.size())*10;
+        @SuppressWarnings("unchecked") List<String> dimensionLines=fontRendererObj.listFormattedStringToWidth(dims(entry),modalW-24);
+        int textBlockH=42+Math.min(3,dimensionLines.size())*10+Math.min(4,descLines.size())*10;
         int imgSize=Math.max(96,Math.min(256,Math.min(modalW-24,height-textBlockH-40)));
         int modalH=imgSize+textBlockH+24;
         int mx=(width-modalW)/2;
@@ -333,8 +349,11 @@ public class GuiAstralCompass extends GuiScreen {
         int ty=iy+imgSize+8;
         fontRendererObj.drawStringWithShadow(fontRendererObj.trimStringToWidth(entry.getDisplayName(),modalW-24),mx+12,ty,0xf0f6ff);
         ty+=11;
-        fontRendererObj.drawStringWithShadow(fontRendererObj.trimStringToWidth(entry.getModName()+" | "+dim(entry.preferredDimension),modalW-24),mx+12,ty,0x67ccff);
+        fontRendererObj.drawStringWithShadow(fontRendererObj.trimStringToWidth(entry.getModName(),modalW-24),mx+12,ty,0x67ccff);
         ty+=12;
+        for(int i=0;i<dimensionLines.size()&&i<3;i++) {
+            fontRendererObj.drawStringWithShadow(dimensionLines.get(i),mx+12,ty,0x67ccff);ty+=10;
+        }
         for(int i=0;i<descLines.size()&&i<4;i++){
             fontRendererObj.drawStringWithShadow(descLines.get(i),mx+12,ty,0xb6cde0);
             ty+=10;
@@ -356,7 +375,7 @@ public class GuiAstralCompass extends GuiScreen {
             Gui.drawRect(xPosition+3,yPosition+2,xPosition+29,yPosition+28,selected?0xff67ccff:0xff2e5980);
             StructurePreviewRegistry.drawPreview(mc,entry.id,xPosition+4,yPosition+3,24,24);
             mc.fontRenderer.drawStringWithShadow(mc.fontRenderer.trimStringToWidth(entry.getDisplayName(),width-48),xPosition+33,yPosition+5,0xecf7ff);
-            String subtitle=entry.getModName()+" | "+dim(entry.preferredDimension);
+            String subtitle=entry.getModName()+" | "+dims(entry);
             mc.fontRenderer.drawStringWithShadow(mc.fontRenderer.trimStringToWidth(subtitle,width-40),xPosition+33,yPosition+17,0x8daac3);
             if(favorite)mc.fontRenderer.drawStringWithShadow("*",xPosition+width-12,yPosition+5,0xffd77a);
         }

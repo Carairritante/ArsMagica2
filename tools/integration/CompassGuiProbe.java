@@ -35,7 +35,24 @@ public class CompassGuiProbe {
  Set<String> ids=new HashSet<String>();for(Object entry:mods)ids.add((String)get(entry,"id"));
  boolean ore=false,chroma=false;for(String id:ids){ore|=id.startsWith("orespawn:");chroma|=id.startsWith("chromaticraft:");}
  record("ORESPAWN="+ore+" CHROMATICRAFT="+chroma+" WIZARDRY="+ids.contains("wizardry:wizard_tower"));
- if(list.size()<=8||mods.isEmpty()||!ore||!chroma||!ids.contains("wizardry:wizard_tower"))throw new AssertionError("Missing mod structures");}
+ if(list.size()<=8||mods.isEmpty()||!ore||!chroma||!ids.contains("wizardry:wizard_tower"))throw new AssertionError("Missing mod structures");
+ Map<String,Object> entries=new HashMap<String,Object>();for(Object entry:list)entries.put((String)get(entry,"id"),entry);
+ int utopia=((Number)field("mglucas0123.worlds.utopia.WorldProviderDIM80","DimensionID")).intValue();
+ int crystal=((Number)field("mglucas0123.worlds.crystal.WorldProviderDIM84","DimensionID5")).intValue();
+ int islands=((Number)field("mglucas0123.worlds.islands.WorldProviderDIM83","DimensionID4")).intValue();
+ if(!Arrays.equals((int[])call(entries.get("orespawn:makeKingAltar"),"getSearchDimensions"),new int[]{utopia}))throw new AssertionError("King dimensions not synchronized");
+ if(!Arrays.equals((int[])call(entries.get("orespawn:makeCrystalBattleTower"),"getSearchDimensions"),new int[]{crystal}))throw new AssertionError("Crystal dimensions not synchronized");
+ if(!(Boolean)call(entries.get("orespawn:makeEnderCastle"),"listsDimension",1)||!(Boolean)call(entries.get("orespawn:makeEnderCastle"),"listsDimension",islands))throw new AssertionError("Multiple dimensions lost on client");
+ if((Boolean)call(entries.get("chromaticraft:PYLON"),"hasKnownDimensions"))throw new AssertionError("Variable entry inherited current dimension");
+ set(gui,"dimensionFilter",islands);call(gui,"rebuildFilter",true);
+ if(((List<?>)get(gui,"filtered")).isEmpty())throw new AssertionError("Dimension filter lost all Island structures");
+ for(Object entry:(List<?>)get(gui,"filtered"))if(!(Boolean)call(entry,"listsDimension",islands))throw new AssertionError("Dimension filter leaked entries");
+ set(gui,"variableDimensions",true);set(gui,"dimensionFilter",null);call(gui,"rebuildFilter",true);
+ if(((List<?>)get(gui,"filtered")).isEmpty())throw new AssertionError("Variable dimensions filter empty");
+ for(Object entry:(List<?>)get(gui,"filtered"))if((Boolean)call(entry,"hasKnownDimensions"))throw new AssertionError("Variable dimensions filter leaked known structure");
+ set(gui,"variableDimensions",false);
+ set(gui,"dimensionFilter",null);call(gui,"rebuildFilter",true);set(gui,"selectedId","orespawn:makeEnderCastle");call(gui,"refreshButtons");
+ record("CLIENT_DIMENSIONS_AND_FILTER=PASS");}
  if(age==185)stat("net.minecraft.util.ScreenShotHelper","func_148259_a",new java.io.File("."),"compass-mods.png",((Number)get(mc,"field_71443_c")).intValue(),((Number)get(mc,"field_71440_d")).intValue(),call(mc,"func_147110_a"));
  if(age==200){Object gui=get(mc,"field_71462_r");set(gui,"selectedId","wizardry:wizard_tower");call(gui,"refreshButtons");searchRequested=true;click(gui,4);record("GUI_SEARCH_SENT=PASS");}
  if(age==300){if(!searchVerified)throw new AssertionError("Server queue failed to execute GUI search");record("COMPASS_GUI_REGRESSION=PASS");end(0);}

@@ -1,5 +1,28 @@
 # Alterações de manutenção do AM2.5 LE
 
+### Correções do Tornado e reintegração da Bússola — CR44 — 2026-11-19
+
+- Tornado considera somente os componentes e modificadores da etapa executada;
+  Speed não conta mais como Radius no cálculo F1–F5. Prévia e servidor seguem a mesma etapa.
+- Conjurações de donos diferentes não se fundem; atualizações do mesmo dono
+  preservam a duração vigente. Falha de criação de efeito é propagada ao componente.
+- Movimento, homing, fogo, poções e arcos verificam PvP e equipe antes de atingir jogadores.
+  Colisão de blocos arremessados não contorna PvP desligado ou proteção de equipe.
+- Tentativas recusadas de alteração/spawn também consomem o orçamento por ciclo,
+  evitando amplificação de callbacks em áreas protegidas ou sob veto de entidades.
+- Alterações de terreno, gelo e fogo verificam proteção de spawn e BreakEvent.
+  Blocos valiosos só são removidos após a entidade correspondente ser aceita e estar viva.
+- Tromba d'água mantém orçamento de ar por alvo enquanto ele permanece afetado;
+  a reposição normal de ar em terra não elimina o progresso. Imunidades respiratórias,
+  mortos-vivos e golens são respeitados; dados temporários são descartados.
+- Parcela principal respeita armadura, com penetração mágica de25%/40% nos níveis altos.
+  Tipos elementais e construtores antigos preservam resistências dos guardiões
+  e o comportamento das outras magias. Mana, receitas e multiplicação por AoE preservadas.
+- Reintegradas as correções das dimensões/metadata, filtros e prévias da Bússola
+  validadas em18/11, sem perder o Tornado e seus efeitos visuais.
+- Nome CR44 preservado; identificar esta compilação pelo SHA-256 da entrega.
+
+
 ### True Soulbound anti-dupe contra mobs ladrões — CR44 — 2026-11-18
 
 - `TrueSoulboundHandler`: adicionada purga genérica (cacheada por classe) de itens

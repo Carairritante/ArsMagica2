@@ -9,6 +9,7 @@ import am2.api.spell.enums.SpellModifiers;
 import am2.buffs.BuffEffectFrostSlowed;
 import am2.damage.DamageSources;
 import net.minecraft.util.DamageSource;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import am2.network.AMNetHandler;
@@ -75,6 +76,7 @@ public class EntitySpellEffect extends Entity{
 	public static final int TYPE_LIGHTNING_IMPACT = 10;
 	public static final int TYPE_ORBITAL_STORM = 11;
 	public static final int TYPE_AOE_SHOCKWAVE = 12;
+	public static final int TYPE_TORNADO = 13;
 
 	private int explicitColor = -1;
 
@@ -246,6 +248,9 @@ public class EntitySpellEffect extends Entity{
 			break;
 		case TYPE_ORBITAL_STORM:
 			orbitalStormUpdate();
+			break;
+		case TYPE_TORNADO:
+			tornadoUpdate();
 			break;
 		}
 
@@ -1286,6 +1291,737 @@ public class EntitySpellEffect extends Entity{
 				(float) r, remTicks, this.orbitalDuration,
 				customColor, this.orbitalOvercharged,
 				sx, sy, sz, hitMob, strikeCount
+		);
+	}
+
+	private float tornadoRadius = 7.0f;
+	private float tornadoDamage = 4.0f;
+	private int tornadoDuration = 180;
+	private int tornadoHoming = 0;
+	private int tornadoSpeed = 0;
+	private float tornadoMaxHardness = 2.2f;
+	private double tornadoDirX = 0.0;
+	private double tornadoDirZ = 0.0;
+	private byte tornadoElement = 0;
+	private byte tornadoActiveElement = 0;
+	private int tornadoTier = 1;
+	private byte tornadoCelestial = 0;
+	private boolean tornadoPlayerOwned = true;
+	private double tornadoSweepCursor = 0.0;
+	private int tornadoBlocksLifted = 0;
+	// Per-effect IDs only: never retain entities/worlds in a global collection.
+	private final Map<Integer, int[]> tornadoAir = new HashMap<Integer, int[]>();
+
+	public void setTornado(
+			EntityLivingBase caster, ItemStack stack,
+			double x, double y, double z,
+			float radius, int durationTicks, float damage,
+			int homingMods, int speedMods, float maxHardness,
+			double dirX, double dirZ
+	){
+		setTornado(caster, stack, x, y, z, radius, durationTicks, damage, homingMods, speedMods, maxHardness, dirX, dirZ, am2.spell.components.Tornado.ELEMENT_AIR, 1, am2.spell.components.Tornado.CELESTIAL_NONE);
+	}
+
+	public void setTornado(
+			EntityLivingBase caster, ItemStack stack,
+			double x, double y, double z,
+			float radius, int durationTicks, float damage,
+			int homingMods, int speedMods, float maxHardness,
+			double dirX, double dirZ, byte element
+	){
+		setTornado(caster, stack, x, y, z, radius, durationTicks, damage, homingMods, speedMods, maxHardness, dirX, dirZ, element, 1, am2.spell.components.Tornado.CELESTIAL_NONE);
+	}
+
+	public void setTornado(
+			EntityLivingBase caster, ItemStack stack,
+			double x, double y, double z,
+			float radius, int durationTicks, float damage,
+			int homingMods, int speedMods, float maxHardness,
+			double dirX, double dirZ, byte element, int fujitaTier, byte celestialMode
+	){
+		this.dataWatcher.updateObject(WATCHER_TYPE, TYPE_TORNADO);
+		if (caster != null || this.worldObj != null){
+			this.SetCasterAndStack(caster, stack);
+		}
+		this.tornadoPlayerOwned = (caster == null) || (caster instanceof EntityPlayer);
+		this.tornadoRadius = Math.max(4.5f, Math.min(40.0f, radius));
+		this.tornadoDuration = Math.max(60, durationTicks);
+		this.tornadoDamage = Math.max(1.0f, damage);
+		this.tornadoHoming = Math.max(0, homingMods);
+		this.tornadoSpeed = Math.max(0, speedMods);
+		this.tornadoMaxHardness = Math.max(0.5f, maxHardness);
+		this.tornadoDirX = dirX;
+		this.tornadoDirZ = dirZ;
+		this.tornadoElement = element;
+		this.tornadoActiveElement = element;
+		this.tornadoTier = Math.max(1, Math.min(5, fujitaTier));
+		this.tornadoCelestial = celestialMode;
+		this.tornadoSweepCursor = 0.0;
+		this.tornadoBlocksLifted = 0;
+		this.tornadoAir.clear();
+		int totalDur = this.tornadoDuration;
+		if (totalDur == 100) totalDur = 101;
+		this.setTicksToExist(totalDur);
+		this.setRadius(this.tornadoRadius);
+		this.ignoreFrustumCheck = true;
+		this.renderDistanceWeight = 16.0D;
+		this.setPosition(x, y, z);
+		if (this.worldObj != null && !this.worldObj.isRemote){
+			syncTornadoState(new int[0], new int[0], new int[0], new int[0], new int[0], 0);
+		}
+	}
+
+	public void refreshTornado(float radius, float damage, int homingMods, int speedMods, float maxHardness, byte element){
+		refreshTornado(radius, damage, homingMods, speedMods, maxHardness, element, this.tornadoTier, this.tornadoCelestial);
+	}
+
+	public void refreshTornado(float radius, float damage, int homingMods, int speedMods, float maxHardness, byte element, int fujitaTier, byte celestialMode){
+		this.tornadoRadius = Math.max(this.tornadoRadius, Math.max(4.5f, Math.min(40.0f, radius)));
+		this.tornadoDamage = Math.max(this.tornadoDamage, Math.max(1.0f, damage));
+		this.tornadoHoming = Math.max(this.tornadoHoming, homingMods);
+		this.tornadoSpeed = Math.max(this.tornadoSpeed, speedMods);
+		this.tornadoMaxHardness = Math.max(this.tornadoMaxHardness, maxHardness);
+		this.tornadoTier = Math.max(this.tornadoTier, Math.max(1, Math.min(5, fujitaTier)));
+		if (element != am2.spell.components.Tornado.ELEMENT_AIR){
+			this.tornadoElement = element;
+			this.tornadoActiveElement = element;
+		}
+		if (celestialMode != am2.spell.components.Tornado.CELESTIAL_NONE){
+			this.tornadoCelestial = celestialMode;
+		}
+		int pulseEnd = this.ticksExisted + 55;
+		int nextEnd = Math.max(this.getTicksToExist(), pulseEnd);
+		if (nextEnd == 100) nextEnd = 101;
+		this.setTicksToExist(nextEnd);
+		this.setRadius(this.tornadoRadius);
+		if (this.worldObj != null && !this.worldObj.isRemote){
+			syncTornadoState(new int[0], new int[0], new int[0], new int[0], new int[0], 0);
+		}
+	}
+
+	public byte getTornadoElement(){
+		return this.tornadoActiveElement;
+	}
+
+	public int getTornadoTier(){
+		return this.tornadoTier;
+	}
+
+	public byte getTornadoCelestial(){
+		return this.tornadoCelestial;
+	}
+
+	public boolean isTornado(){
+		return this.dataWatcher.getWatchableObjectInt(WATCHER_TYPE) == TYPE_TORNADO;
+	}
+
+	private byte resolveTerrainTornadoElement(double radius){
+		if (this.tornadoElement != am2.spell.components.Tornado.ELEMENT_AIR){
+			return this.tornadoElement;
+		}
+		int waterHits = 0;
+		int lavaHits = 0;
+		int sampleR = Math.max(2, Math.min(8, (int) Math.round(radius * 0.35)));
+		int[][] offsets = new int[][]{
+				{0, 0}, {sampleR, 0}, {-sampleR, 0}, {0, sampleR}, {0, -sampleR},
+				{sampleR / 2, sampleR / 2}, {-sampleR / 2, -sampleR / 2}
+		};
+		for (int i = 0; i < offsets.length; i++){
+			int sx = MathHelper.floor_double(this.posX) + offsets[i][0];
+			int sz = MathHelper.floor_double(this.posZ) + offsets[i][1];
+			if (!this.worldObj.blockExists(sx, 64, sz)) continue;
+			int sy = this.worldObj.getTopSolidOrLiquidBlock(sx, sz) - 1;
+			for (int dy = 0; dy <= 1; dy++){
+				int cy = Math.max(1, sy + dy);
+				net.minecraft.block.Block blk = this.worldObj.getBlock(sx, cy, sz);
+				if (blk == net.minecraft.init.Blocks.lava || blk == net.minecraft.init.Blocks.flowing_lava
+						|| blk.getMaterial() == net.minecraft.block.material.Material.lava){
+					lavaHits++;
+					break;
+				}
+				if (blk == net.minecraft.init.Blocks.water || blk == net.minecraft.init.Blocks.flowing_water
+						|| blk.getMaterial() == net.minecraft.block.material.Material.water){
+					waterHits++;
+					break;
+				}
+			}
+		}
+		if (lavaHits >= 2) return am2.spell.components.Tornado.ELEMENT_FIRE;
+		if (waterHits >= 3) return am2.spell.components.Tornado.ELEMENT_WATER;
+		return am2.spell.components.Tornado.ELEMENT_AIR;
+	}
+
+	private boolean canTornadoAffect(Entity entity, EntityLivingBase source){
+		if (entity == null || entity.isDead) return false;
+		if (!(entity instanceof EntityPlayer)) return true;
+		EntityPlayer player = (EntityPlayer) entity;
+		if (player.capabilities.isCreativeMode || player.capabilities.disableDamage) return false;
+		if (tornadoPlayerOwned || source instanceof EntityPlayer){
+			MinecraftServer server = MinecraftServer.getServer();
+			if (server == null || !server.isPVPEnabled()) return false;
+			if (source instanceof EntityPlayer && !((EntityPlayer) source).canAttackPlayer(player)) return false;
+		}
+		return true;
+	}
+
+	private boolean canTornadoChangeBlock(EntityLivingBase source, int x, int y, int z){
+		if (worldObj.isRemote || !worldObj.blockExists(x, y, z) || source == null) return false;
+		EntityPlayer player = DummyEntityPlayer.fromEntityLiving(source);
+		MinecraftServer server = MinecraftServer.getServer();
+		if (!worldObj.canMineBlock(player, x, y, z)
+				|| server == null || server.isBlockProtected(worldObj, x, y, z, player)) return false;
+		Block block = worldObj.getBlock(x, y, z);
+		int meta = worldObj.getBlockMetadata(x, y, z);
+		return !SpellDropConsolidator.fireBlockBreakEvent(worldObj, player, block, meta, x, y, z).isCanceled()
+				&& worldObj.getBlock(x, y, z) == block && worldObj.getBlockMetadata(x, y, z) == meta;
+	}
+
+	private boolean tornadoThrownBlocksMayHurt(EntityLivingBase source){
+		if (!tornadoPlayerOwned) return true;
+		MinecraftServer server = MinecraftServer.getServer();
+		if (server == null || !server.isPVPEnabled() || casterEntityID == -1 || !(source instanceof EntityPlayer)) return false;
+		EntityPlayer player = (EntityPlayer) source;
+		return player.getTeam() == null || player.getTeam().getAllowFriendlyFire();
+	}
+
+	private static DamageSource tornadoDamageSource(EntityLivingBase source, byte element){
+		// Preserve elemental subclasses used by guardian resistances and other handlers.
+		DamageSource damage = element == am2.spell.components.Tornado.ELEMENT_FIRE ? new am2.damage.DamageSourceFire(source, false)
+				: element == am2.spell.components.Tornado.ELEMENT_LIGHTNING ? new am2.damage.DamageSourceLightning(source, false)
+				: element == am2.spell.components.Tornado.ELEMENT_ICE ? new am2.damage.DamageSourceFrost(source, false)
+				: new am2.damage.DamageSourceWind(source, false);
+		return damage.setDifficultyScaled();
+	}
+
+	private void drainTornadoAir(EntityLivingBase victim, EntityLivingBase source){
+		int id = victim.getEntityId();
+		if (victim.canBreatheUnderwater() || victim.isPotionActive(Potion.waterBreathing)
+				|| victim instanceof net.minecraft.entity.monster.EntityIronGolem
+				|| victim.getCreatureAttribute() == net.minecraft.entity.EnumCreatureAttribute.UNDEAD){
+			tornadoAir.remove(id);
+			return;
+		}
+		int[] state = tornadoAir.get(id);
+		if (state == null || ticksExisted - state[1] > 20){
+			state = new int[]{300, ticksExisted};
+			tornadoAir.put(id, state);
+		}
+		state[0] = Math.max(0, state[0] - 35);
+		state[1] = ticksExisted;
+		victim.setAir(Math.min(victim.getAir(), state[0]));
+		if (state[0] == 0){
+			victim.hurtResistantTime = 0;
+			SpellHelper.instance.attackTargetSpecial(spellStack, victim,
+					DamageSources.causeEntityDrownDamage(source), 2.0f + tornadoTier * 1.2f);
+		}
+	}
+
+	private void tornadoUpdate(){
+		if (this.worldObj.isRemote) return;
+
+		EntityLivingBase liveCaster = null;
+		if (this.casterEntityID != -1){
+			Entity cEnt = this.worldObj.getEntityByID(this.casterEntityID);
+			if (cEnt instanceof EntityLivingBase){
+				liveCaster = (EntityLivingBase) cEnt;
+			}
+		}
+		EntityLivingBase sourceCaster = liveCaster != null ? liveCaster : this.dummycaster;
+
+		double radius = Math.max(4.5, this.tornadoRadius);
+		double height = 26.0 + this.tornadoTier * 7.5 + radius * 1.25;
+		boolean isSolar = (this.tornadoCelestial == am2.spell.components.Tornado.CELESTIAL_SOLAR);
+		boolean isLunar = (this.tornadoCelestial == am2.spell.components.Tornado.CELESTIAL_LUNAR);
+
+		if (this.ticksExisted % 5 == 0){
+			this.tornadoActiveElement = resolveTerrainTornadoElement(radius);
+		}
+
+		// 1. Movement: stationary by default; slowly chases enemies with Homing; accelerated by Speed/VelocityAdded
+		if (this.tornadoHoming > 0){
+			double seekRange = radius * 2.8 + 14.0;
+			AxisAlignedBB seekBox = AxisAlignedBB.getBoundingBox(
+					this.posX - seekRange, Math.max(0.0, this.posY - 24.0), this.posZ - seekRange,
+					this.posX + seekRange, Math.min(256.0, this.posY + 32.0), this.posZ + seekRange
+			);
+			@SuppressWarnings("unchecked")
+			List<Entity> candidates = this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, seekBox);
+			EntityLivingBase nearest = null;
+			double bestDistSq = Double.MAX_VALUE;
+			for (Entity ent : candidates){
+				if (!(ent instanceof EntityLivingBase) || ent == liveCaster || ent == sourceCaster || ent.isDead) continue;
+				EntityLivingBase living = (EntityLivingBase) ent;
+				if (living.getHealth() <= 0.0f || !canTornadoAffect(living, sourceCaster)) continue;
+				double dx = living.posX - this.posX;
+				double dz = living.posZ - this.posZ;
+				double dSq = dx * dx + dz * dz;
+				if (dSq < bestDistSq && dSq > 1.5){
+					bestDistSq = dSq;
+					nearest = living;
+				}
+			}
+			if (nearest != null){
+				double dx = nearest.posX - this.posX;
+				double dz = nearest.posZ - this.posZ;
+				double d = Math.sqrt(dx * dx + dz * dz);
+				if (d > 0.2){
+					double step = Math.min(0.24, 0.065 + this.tornadoHoming * 0.015 + this.tornadoSpeed * 0.035);
+					double nx = this.posX + (dx / d) * step;
+					double nz = this.posZ + (dz / d) * step;
+					int ix = MathHelper.floor_double(nx);
+					int iz = MathHelper.floor_double(nz);
+					double ny = this.posY;
+					if (this.worldObj.blockExists(ix, 64, iz)){
+						int groundY = this.worldObj.getTopSolidOrLiquidBlock(ix, iz);
+						ny = this.posY + Math.max(-0.5, Math.min(0.5, groundY - this.posY));
+					}
+					this.setPosition(nx, ny, nz);
+				}
+			}
+		}else if (this.tornadoSpeed > 0){
+			double len = Math.sqrt(this.tornadoDirX * this.tornadoDirX + this.tornadoDirZ * this.tornadoDirZ);
+			if (len > 0.001){
+				double step = Math.min(0.22, 0.055 + this.tornadoSpeed * 0.032);
+				double nx = this.posX + (this.tornadoDirX / len) * step;
+				double nz = this.posZ + (this.tornadoDirZ / len) * step;
+				int ix = MathHelper.floor_double(nx);
+				int iz = MathHelper.floor_double(nz);
+				double ny = this.posY;
+				if (this.worldObj.blockExists(ix, 64, iz)){
+					int groundY = this.worldObj.getTopSolidOrLiquidBlock(ix, iz);
+					ny = this.posY + Math.max(-0.5, Math.min(0.5, groundY - this.posY));
+				}
+				this.setPosition(nx, ny, nz);
+			}
+		}
+
+		// 2. Vortex Suction, Tangential Swirl, Lift & Elemental/Celestial Synergy Damage on nearby entities
+		double pullMult = 1.38 + (this.tornadoTier - 1) * 0.14 + (isLunar ? 0.35 : 0.0);
+		double pullRadius = radius * pullMult;
+		AxisAlignedBB vortexBox = AxisAlignedBB.getBoundingBox(
+				this.posX - pullRadius, this.posY - 3.0, this.posZ - pullRadius,
+				this.posX + pullRadius, Math.min(256.0, this.posY + height + 4.0), this.posZ + pullRadius
+		);
+		@SuppressWarnings("unchecked")
+		List<Entity> affected = this.worldObj.getEntitiesWithinAABB(Entity.class, vortexBox);
+		boolean endingFling = (this.ticksExisted >= this.getTicksToExist() - 3);
+		int dmgInterval = this.tornadoTier >= 5 ? 5 : (this.tornadoTier == 4 ? 7 : (this.tornadoTier == 3 ? 8 : 9));
+		if (this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_LIGHTNING){
+			dmgInterval = Math.max(4, dmgInterval - 1);
+		}
+		int activeThrownBlocks = 0;
+
+		for (Entity ent : affected){
+			if (ent == this || ent == liveCaster || ent == sourceCaster || !canTornadoAffect(ent, sourceCaster)) continue;
+			boolean isFallingBlock = (ent instanceof net.minecraft.entity.item.EntityFallingBlock);
+			if (!(ent instanceof EntityLivingBase) && !(ent instanceof net.minecraft.entity.item.EntityItem) && !isFallingBlock) continue;
+
+			if (isFallingBlock){
+				net.minecraft.entity.item.EntityFallingBlock fb = (net.minecraft.entity.item.EntityFallingBlock) ent;
+				if (!tornadoThrownBlocksMayHurt(sourceCaster)) fb.func_145806_a(false);
+				activeThrownBlocks++;
+				// Already flung outward: let natural gravity carry it away to land and re-place cleanly
+				if (fb.field_145812_b > 42) continue;
+			}
+
+			double dx = ent.posX - this.posX;
+			double dz = ent.posZ - this.posZ;
+			double distXZ = Math.sqrt(dx * dx + dz * dz);
+			if (distXZ > pullRadius) continue;
+
+			double relY = Math.max(0.0, ent.posY - this.posY);
+			double heightFrac = Math.min(1.0, relY / Math.max(6.0, height));
+			double idealRing = Math.max(1.5, radius * (0.28 + heightFrac * 0.72));
+
+			double dirX = distXZ > 0.05 ? dx / distXZ : 1.0;
+			double dirZ = distXZ > 0.05 ? dz / distXZ : 0.0;
+			double tangX = -dirZ;
+			double tangZ = dirX;
+
+			if (isFallingBlock){
+				net.minecraft.entity.item.EntityFallingBlock fb = (net.minecraft.entity.item.EntityFallingBlock) ent;
+				if (endingFling || heightFrac > 0.65 || fb.field_145812_b >= 36){
+					double flingMult = isSolar ? 1.50 : (1.22 + this.tornadoTier * 0.07);
+					fb.motionX = dirX * flingMult + tangX * 0.65;
+					fb.motionY = Math.max(fb.motionY, 0.58 + this.tornadoTier * 0.05);
+					fb.motionZ = dirZ * flingMult + tangZ * 0.65;
+					fb.field_145812_b = Math.max(fb.field_145812_b, 43);
+					fb.velocityChanged = true;
+					fb.fallDistance = 0.0f;
+					continue;
+				}
+			}
+
+			boolean flingingOut = (endingFling || heightFrac > 0.85);
+			if (flingingOut){
+				double flingMult = isSolar ? 1.42 : (1.15 + this.tornadoTier * 0.07);
+				ent.motionX = dirX * flingMult + tangX * 0.72;
+				ent.motionY = Math.max(ent.motionY, 0.58 + this.tornadoTier * 0.05);
+				ent.motionZ = dirZ * flingMult + tangZ * 0.72;
+				// Preserve & seed fall distance on ejection so high-altitude throws inflict real landing damage
+				ent.fallDistance = Math.max(ent.fallDistance, 4.0f + this.tornadoTier * 1.5f);
+			}else{
+				double lunarPullBoost = isLunar ? 1.32 : 1.0;
+				double pullStrength = ((1.0 - distXZ / pullRadius) * 0.22 + 0.08) * lunarPullBoost;
+				double radialError = idealRing - distXZ;
+				double radialForce = Math.max(-0.30, Math.min(0.30, radialError * 0.14));
+				double swirlSpeed = 0.40 + this.tornadoTier * 0.03 + (1.0 - Math.min(1.0, distXZ / pullRadius)) * 0.34;
+				double liftBoost = isFallingBlock ? 0.30 : (this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_LIGHTNING ? 0.28 : 0.24);
+
+				ent.motionX = ent.motionX * 0.55 + (tangX * swirlSpeed + dirX * radialForce - dirX * pullStrength * 0.38);
+				ent.motionZ = ent.motionZ * 0.55 + (tangZ * swirlSpeed + dirZ * radialForce - dirZ * pullStrength * 0.38);
+				ent.motionY = Math.min(0.68, ent.motionY * 0.65 + (distXZ < radius * 1.05 ? liftBoost : 0.10));
+				ent.fallDistance = 0.0f;
+			}
+			ent.velocityChanged = true;
+
+			if (ent instanceof EntityLivingBase && this.ticksExisted % dmgInterval == 0 && distXZ <= radius * (isLunar ? 1.30 : 1.15)){
+				EntityLivingBase victim = (EntityLivingBase) ent;
+				DamageSource dmgSrc;
+				float tierMult = am2.spell.components.Tornado.getTierDamageMultiplier(this.tornadoTier);
+				float proxMult = am2.spell.components.Tornado.getProximityDamageMultiplier(distXZ, radius);
+				float hitDmg = this.tornadoDamage * tierMult * proxMult;
+
+				// Bonus slam damage when hurled into walls or catapulted at high tier
+				if (victim.isCollidedHorizontally || (flingingOut && this.tornadoTier >= 3)){
+					hitDmg *= 1.25f;
+				}
+
+				if (this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_FIRE){
+					boolean alreadyBurning = victim.isBurning();
+					victim.setFire(6 + this.tornadoTier);
+					dmgSrc = tornadoDamageSource(sourceCaster, am2.spell.components.Tornado.ELEMENT_FIRE);
+					hitDmg *= alreadyBurning ? 1.50f : 1.25f;
+				}else if (this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_LIGHTNING){
+					dmgSrc = tornadoDamageSource(sourceCaster, am2.spell.components.Tornado.ELEMENT_LIGHTNING);
+					hitDmg *= 1.22f;
+				}else if (this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_ICE){
+					boolean alreadySlowed = victim.isPotionActive(Potion.moveSlowdown);
+					int slowAmp = this.tornadoTier >= 4 ? 2 : 1;
+					victim.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 80, slowAmp));
+					dmgSrc = tornadoDamageSource(sourceCaster, am2.spell.components.Tornado.ELEMENT_ICE);
+					hitDmg *= alreadySlowed ? 1.32f : 1.12f;
+				}else if (this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_WATER){
+					victim.extinguish();
+					victim.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, 60, 1));
+					drainTornadoAir(victim, sourceCaster);
+					dmgSrc = tornadoDamageSource(sourceCaster, am2.spell.components.Tornado.ELEMENT_AIR);
+				}else{
+					dmgSrc = tornadoDamageSource(sourceCaster, am2.spell.components.Tornado.ELEMENT_AIR);
+				}
+
+				// High-tier Celestial specializations (F4-F5)
+				if (this.tornadoTier >= 4){
+					if (isSolar){
+						victim.setFire(4);
+					}else if (isLunar){
+						victim.addPotionEffect(new PotionEffect(Potion.weakness.id, 80, 1));
+					}
+				}
+
+				// Controlled i-frame bypass so rapid F4/F5 & Lightning hits connect reliably
+				victim.hurtResistantTime = 0;
+
+				// Partial armor penetration in high calamity tiers (F4: 25%, F5: 40%)
+				float pierceFrac = this.tornadoTier >= 5 ? 0.40f : (this.tornadoTier == 4 ? 0.25f : 0.0f);
+				float mainDmg = hitDmg * (1.0f - pierceFrac);
+				if (this.spellStack != null && sourceCaster != null){
+					SpellHelper.instance.attackTargetSpecial(this.spellStack, victim, dmgSrc, mainDmg);
+				}else{
+					victim.attackEntityFrom(dmgSrc, mainDmg);
+				}
+				if (pierceFrac > 0.0f && !victim.isDead && victim.getHealth() > 0.0f){
+					victim.hurtResistantTime = 0;
+					DamageSource pierceSrc = DamageSources.causeEntityMagicDamage(sourceCaster);
+					float pierceDmg = hitDmg * pierceFrac;
+					if (this.spellStack != null && sourceCaster != null){
+						SpellHelper.instance.attackTargetSpecial(this.spellStack, victim, pierceSrc, pierceDmg);
+					}else{
+						victim.attackEntityFrom(pierceSrc, pierceDmg);
+					}
+				}
+
+				// Lightning Tornado micro-chain arc to 1 nearby target inside the funnel
+				if (this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_LIGHTNING
+						&& (this.ticksExisted / dmgInterval) % 2 == 0){
+					for (Entity other : affected){
+						if (other == victim || other == this || other == liveCaster || other == sourceCaster || other.isDead) continue;
+						if (!(other instanceof EntityLivingBase) || !canTornadoAffect(other, sourceCaster)) continue;
+						if (other.getDistanceSqToEntity(victim) <= 49.0D){
+							EntityLivingBase arcTarget = (EntityLivingBase) other;
+							arcTarget.hurtResistantTime = 0;
+							DamageSource arcSrc = tornadoDamageSource(sourceCaster, am2.spell.components.Tornado.ELEMENT_LIGHTNING);
+							float arcDmg = hitDmg * 0.45f;
+							if (this.spellStack != null && sourceCaster != null){
+								SpellHelper.instance.attackTargetSpecial(this.spellStack, arcTarget, arcSrc, arcDmg);
+							}else{
+								arcTarget.attackEntityFrom(arcSrc, arcDmg);
+							}
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		for (Iterator<int[]> it = tornadoAir.values().iterator(); it.hasNext();){
+			int[] state = it.next();
+			if (tornadoActiveElement != am2.spell.components.Tornado.ELEMENT_WATER
+					|| ticksExisted - state[1] > 20){
+				it.remove();
+			}
+		}
+
+		boolean canBreakBlocks = AMCore.config.TornadoBreaksBlocks()
+				&& (this.tornadoPlayerOwned ? AMCore.config.PlayerSpellsDamageTerrain() : AMCore.config.NPCSpellsDamageTerrain());
+
+		// Glacial Tornado synergy: freeze surface water along the touchdown footprint
+		if (canBreakBlocks && this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_ICE && this.ticksExisted % 4 == 0){
+			for (int f = 0; f < 4; f++){
+				double ang = this.rand.nextDouble() * Math.PI * 2.0;
+				double dist = Math.sqrt(this.rand.nextDouble()) * (radius * 0.85);
+				int fx = MathHelper.floor_double(this.posX + Math.cos(ang) * dist);
+				int fz = MathHelper.floor_double(this.posZ + Math.sin(ang) * dist);
+				if (!this.worldObj.blockExists(fx, 64, fz)) continue;
+				int fy = this.worldObj.getTopSolidOrLiquidBlock(fx, fz) - 1;
+				if (fy >= 1 && fy < 252 && Math.abs(fy - this.posY) <= 6.0){
+					net.minecraft.block.Block wBlk = this.worldObj.getBlock(fx, fy, fz);
+					if ((wBlk == net.minecraft.init.Blocks.water || wBlk == net.minecraft.init.Blocks.flowing_water)
+							&& this.worldObj.getBlockMetadata(fx, fy, fz) == 0
+							&& canTornadoChangeBlock(sourceCaster, fx, fy, fz)){
+						this.worldObj.setBlock(fx, fy, fz, net.minecraft.init.Blocks.ice);
+					}
+				}
+			}
+		}
+
+		// Waterspout Tornado synergy: extinguish fires in its path
+		if (canBreakBlocks && this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_WATER && this.ticksExisted % 4 == 0){
+			for (int f = 0; f < 8; f++){
+				double ang = this.rand.nextDouble() * Math.PI * 2.0;
+				double dist = Math.sqrt(this.rand.nextDouble()) * (radius * 1.15);
+				int fx = MathHelper.floor_double(this.posX + Math.cos(ang) * dist);
+				int fz = MathHelper.floor_double(this.posZ + Math.sin(ang) * dist);
+				if (!this.worldObj.blockExists(fx, 64, fz)) continue;
+				int fy = this.worldObj.getTopSolidOrLiquidBlock(fx, fz);
+				if (fy >= 1 && fy < 254 && this.worldObj.getBlock(fx, fy, fz) == net.minecraft.init.Blocks.fire
+						&& canTornadoChangeBlock(sourceCaster, fx, fy, fz)){
+					this.worldObj.setBlockToAir(fx, fy, fz);
+				}
+			}
+		}
+
+		// 3. Calamity Destruction: Sweeping Spiral Ground Stripping + Deep Core Trench + Tree Canopy Devouring
+		int[] bIds = new int[12];
+		int[] bMetas = new int[12];
+		int[] bXs = new int[12];
+		int[] bYs = new int[12];
+		int[] bZs = new int[12];
+		int sampledNow = 0;
+
+		if (this.ticksExisted % 2 == 0 && this.ticksExisted < this.getTicksToExist() - 6){
+			int tickBudget = this.tornadoTier >= 5 ? 160 : (this.tornadoTier == 4 ? 110 : (this.tornadoTier == 3 ? 72 : (this.tornadoTier == 2 ? 44 : 26)));
+			int maxScanY = Math.min(252, MathHelper.floor_double(this.posY + height * 0.85));
+			int brokenThisCycle = 0;
+			int mutationAttempts = 0;
+			int dropsThisCycle = 0;
+			int thrownThisCycle = 0;
+			int maxDropsPerCycle = 18;
+			int maxThrownPerCycle = this.tornadoTier >= 4 ? 4 : 2;
+			int maxActiveThrown = 36;
+			boolean dropItems = AMCore.config.TornadoDropsItems();
+
+			double groundSwathR = Math.max(3.5, radius * 0.56);
+			int swathAttempts = 22 + this.tornadoTier * 14;
+			double sweepBase = this.tornadoSweepCursor;
+			this.tornadoSweepCursor += 1.85;
+
+			for (int a = 0; a < swathAttempts && brokenThisCycle < tickBudget && mutationAttempts < tickBudget; a++){
+				// Golden-angle spiral sweep guarantees even, thorough swath clearing instead of isolated pinholes
+				double frac = (double) a / (double) swathAttempts;
+				double ang = sweepBase + a * 2.399963229728653;
+				double scanR;
+				int mode; // 0 = touchdown ground furrow (shallow 1-2 layer wide clear), 1 = upper canopy/roofs, 2 = outer fragile wind pressure
+				if (a % 4 == 3){
+					mode = 2;
+					scanR = radius * (0.55 + 0.85 * Math.sqrt(frac));
+				}else if (a % 4 == 1){
+					mode = 1;
+					scanR = radius * (0.15 + 0.90 * Math.sqrt(frac));
+				}else{
+					mode = 0;
+					scanR = groundSwathR * Math.sqrt((a % Math.max(1, swathAttempts)) / (double) swathAttempts) * 1.15;
+					scanR = Math.max(0.5, Math.min(groundSwathR, scanR + this.rand.nextDouble() * 1.5));
+				}
+
+				int bx = MathHelper.floor_double(this.posX + Math.cos(ang) * scanR);
+				int bz = MathHelper.floor_double(this.posZ + Math.sin(ang) * scanR);
+				if (!this.worldObj.blockExists(bx, 64, bz)) continue;
+
+				int startY = -1;
+				if (mode == 1){
+					int precipY = Math.min(maxScanY, this.worldObj.getHeightValue(bx, bz) - 1);
+					int minCanopyY = Math.max(1, MathHelper.floor_double(this.posY - 6.0));
+					for (int sy = precipY; sy >= minCanopyY && sy >= precipY - 10; sy--){
+						net.minecraft.block.Block test = this.worldObj.getBlock(bx, sy, bz);
+						if (test != null && test != net.minecraft.init.Blocks.air && !test.getMaterial().isLiquid()){
+							startY = sy;
+							break;
+						}
+					}
+				}else{
+					int groundTop = this.worldObj.getTopSolidOrLiquidBlock(bx, bz) - 1;
+					if (groundTop >= 1 && groundTop <= maxScanY && Math.abs(groundTop - this.posY) <= 24.0){
+						startY = groundTop;
+					}
+				}
+				if (startY < 1 || startY > maxScanY) continue;
+
+				// Clear any top cover (tallgrass, flowers, crops, snow, rails, fences) at startY + 1 so nothing floats
+				int scanTopY = Math.min(253, startY + 1);
+				int depthLimit = (mode == 2) ? 2 : (mode == 1 ? 3 : (scanR < groundSwathR * 0.55 && this.tornadoTier >= 3 ? 4 : 3));
+
+				for (int dy = 0; dy < depthLimit && brokenThisCycle < tickBudget && mutationAttempts < tickBudget; dy++){
+					int cy = scanTopY - dy;
+					if (cy <= 0) break;
+
+					net.minecraft.block.Block block = this.worldObj.getBlock(bx, cy, bz);
+					if (block == null || block == net.minecraft.init.Blocks.air) continue;
+					if (block.getMaterial().isLiquid()){
+						// Waterspout/Firenado still scoops visual spray/splashes from ocean/lava pools
+						if (!canBreakBlocks || dy > 0){
+							if (sampledNow < bIds.length && this.rand.nextInt(3) == 0){
+								int lid = net.minecraft.block.Block.getIdFromBlock(block);
+								if (lid > 0){
+									bIds[sampledNow] = lid;
+									bMetas[sampledNow] = this.worldObj.getBlockMetadata(bx, cy, bz);
+									bXs[sampledNow] = bx;
+									bYs[sampledNow] = cy;
+									bZs[sampledNow] = bz;
+									sampledNow++;
+								}
+							}
+						}
+						break;
+					}
+
+					int meta = this.worldObj.getBlockMetadata(bx, cy, bz);
+					if (block.hasTileEntity(meta) || this.worldObj.getTileEntity(bx, cy, bz) != null) continue;
+
+					float hardness = block.getBlockHardness(this.worldObj, bx, cy, bz);
+					if (hardness < 0.0f) break;
+					float allowedHardness = (mode == 2) ? 0.75f : this.tornadoMaxHardness;
+					if (hardness > allowedHardness) continue;
+
+					int blockId = net.minecraft.block.Block.getIdFromBlock(block);
+					if (blockId <= 0) continue;
+
+					boolean isDisposable = am2.spell.components.Tornado.isDisposableTerrainBlock(block, meta);
+					if (!isDisposable){
+						// Valuable / modded non-TileEntity blocks are NEVER destroyed: fling them intact as real EntityFallingBlock
+						if (!canBreakBlocks){
+							continue;
+						}
+						if (thrownThisCycle < maxThrownPerCycle
+								&& activeThrownBlocks < maxActiveThrown
+								&& am2.spell.components.Tornado.isThrowableValuableBlock(block, meta)){
+							// Failed permission/spawn attempts consume the same finite budget.
+							thrownThisCycle++;
+							mutationAttempts++;
+							if (!canTornadoChangeBlock(sourceCaster, bx, cy, bz)) continue;
+							{
+								double vdx = (bx + 0.5) - this.posX;
+								double vdz = (bz + 0.5) - this.posZ;
+								double vd = Math.sqrt(vdx * vdx + vdz * vdz);
+								double rDirX = vd > 0.05 ? vdx / vd : 1.0;
+								double rDirZ = vd > 0.05 ? vdz / vd : 0.0;
+								double rTangX = -rDirZ;
+								double rTangZ = rDirX;
+
+								net.minecraft.entity.item.EntityFallingBlock falling = new net.minecraft.entity.item.EntityFallingBlock(
+										this.worldObj, bx + 0.5, cy + 0.5, bz + 0.5, block, meta
+								);
+								falling.field_145812_b = 1; // source is cleared synchronously only after spawn acceptance
+								falling.field_145813_c = true; // guaranteed drop as item if landing cell is obstructed
+								if (block != net.minecraft.init.Blocks.anvil
+										&& tornadoThrownBlocksMayHurt(sourceCaster)){
+									falling.func_145806_a(true); // thrown heavy blocks crush mobs/entities they fall on
+								}
+								falling.motionX = rTangX * 0.45 + rDirX * 0.16;
+								falling.motionY = 0.68 + this.rand.nextDouble() * 0.24;
+								falling.motionZ = rTangZ * 0.45 + rDirZ * 0.16;
+								falling.velocityChanged = true;
+								if (!this.worldObj.spawnEntityInWorld(falling) || falling.isDead) continue;
+								if (this.worldObj.getBlock(bx, cy, bz) != block
+										|| this.worldObj.getBlockMetadata(bx, cy, bz) != meta
+										|| !this.worldObj.setBlockToAir(bx, cy, bz)){
+									falling.setDead();
+									continue;
+								}
+
+								activeThrownBlocks++;
+								brokenThisCycle++;
+								this.tornadoBlocksLifted++;
+							}
+						}
+						continue;
+					}
+
+					boolean captured = true;
+					if (canBreakBlocks){
+						mutationAttempts++;
+						if (!canTornadoChangeBlock(sourceCaster, bx, cy, bz)) continue;
+						captured = this.worldObj.setBlockToAir(bx, cy, bz);
+						if (captured && dropItems && dropsThisCycle < maxDropsPerCycle){
+							float dropChance = this.tornadoTier >= 4 ? 0.14f : 0.28f;
+							if (this.rand.nextFloat() < dropChance){
+								block.dropBlockAsItem(this.worldObj, bx, cy, bz, meta, 0);
+								dropsThisCycle++;
+							}
+						}
+						if (captured && this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_FIRE
+								&& this.tornadoTier >= 4 && dy == depthLimit - 1
+								&& this.rand.nextFloat() < 0.12f
+								&& this.worldObj.isAirBlock(bx, cy, bz)
+								&& this.worldObj.doesBlockHaveSolidTopSurface(this.worldObj, bx, cy - 1, bz)
+								&& canTornadoChangeBlock(sourceCaster, bx, cy, bz)){
+							this.worldObj.setBlock(bx, cy, bz, net.minecraft.init.Blocks.fire);
+						}
+					}
+
+					if (captured){
+						brokenThisCycle++;
+						this.tornadoBlocksLifted++;
+						if (sampledNow < bIds.length && (brokenThisCycle <= 5 || this.rand.nextInt(6) == 0)){
+							bIds[sampledNow] = blockId;
+							bMetas[sampledNow] = meta;
+							bXs[sampledNow] = bx;
+							bYs[sampledNow] = cy;
+							bZs[sampledNow] = bz;
+							sampledNow++;
+						}
+						if (!canBreakBlocks){
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		if (sampledNow > 0 || this.ticksExisted % 3 == 0){
+			syncTornadoState(bIds, bMetas, bXs, bYs, bZs, sampledNow);
+		}
+	}
+
+	private void syncTornadoState(int[] bIds, int[] bMetas, int[] bXs, int[] bYs, int[] bZs, int count){
+		int remTicks = Math.max(0, this.getTicksToExist() - this.ticksExisted);
+		AMNetHandler.INSTANCE.sendTornadoDebrisToClients(
+				this.worldObj, this.getEntityId(),
+				this.posX, this.posY, this.posZ,
+				this.tornadoRadius, remTicks, this.tornadoDuration,
+				this.getSpellColor(), this.tornadoActiveElement,
+				(byte) this.tornadoTier, this.tornadoCelestial,
+				bIds, bMetas, bXs, bYs, bZs, count
 		);
 	}
 

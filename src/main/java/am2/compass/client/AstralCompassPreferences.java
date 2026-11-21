@@ -57,11 +57,28 @@ public final class AstralCompassPreferences {
             Files.move(temp, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) { am2.LogHelper.warn("Astral Compass preferences: %s", e.toString()); }
     }
+    public static void acceptDimensionNames(Map<Integer,String> names) {
+        // Resolve a changed server/world scope before inserting the newly received names.
+        get().scope();dimensionNames.putAll(names);
+    }
+    public static String structureDimensions(StructureTargetInfo info) {
+        if(!info.hasKnownDimensions())return StatCollector.translateToLocal("am2.astral_compass.gui.variable_dimensions");
+        StringBuilder label=new StringBuilder();
+        for(int dimension:info.getSearchDimensions()) {
+            if(label.length()>0)label.append(" / ");label.append(dimensionName(dimension));
+        }
+        return label.toString();
+    }
     public static String dimensionName(int dim) {
         String key = dim == 0 ? "overworld" : dim == -1 ? "nether" : dim == 1 ? "end" : "";
         String name = key.isEmpty() ? dimensionNames.get(dim) : StatCollector.translateToLocal("am2.astral_compass.dim." + key);
         Minecraft mc = Minecraft.getMinecraft();
         if (name == null && mc.theWorld != null && mc.theWorld.provider.dimensionId == dim) name = mc.theWorld.provider.getDimensionName();
+        if(name!=null)for(String suffix:new String[]{"Utopia","Extreme","VillageMania","Islands","Crystal","Chaos"})
+            if(name.equals("Dimension-"+suffix)||name.equals("OreSpawn: "+suffix)) {
+                String translation="am2.astral_compass.dim.ore_"+suffix.toLowerCase(Locale.ROOT);
+                if(StatCollector.canTranslate(translation))name=StatCollector.translateToLocal(translation);break;
+            }
         return name == null || name.isEmpty() ? StatCollector.translateToLocalFormatted("am2.astral_compass.gui.dimension_id", dim) : name + " (" + dim + ")";
     }
     private String scope() {

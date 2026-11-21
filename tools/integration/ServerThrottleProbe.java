@@ -54,7 +54,8 @@ public final class ServerThrottleProbe {
         try {
             if(phase==0){setup();immediate();phase=1;}
             else if(phase==1 && time()-initialTick>=5){afterFive();phase=2;}
-            else if(phase==2 && time()-initialTick>=20){afterTwenty();log("SERVER_THROTTLES=PASS");stop();}
+            else if(phase==2 && time()-initialTick>=20){afterTwenty();phase=3;}
+            else if(phase==3 && time()-initialTick>=40){dimensionChecks();log("SERVER_THROTTLES=PASS");stop();}
         }catch(Throwable e){try{log("SERVER_THROTTLES=FAIL "+e);e.printStackTrace();stop();}catch(Exception ignored){e.printStackTrace();}}
     }
     void stop()throws Exception{phase=99;call(server,"func_71263_m");}
@@ -111,6 +112,18 @@ public final class ServerThrottleProbe {
         Set<String> ids=new HashSet<String>();for(Object t:catalog)ids.add((String)get(t,"id"));
         need(ids.contains("chromaticraft:PYLON")&&ids.contains("orespawn:makeKingAltar")&&ids.contains("wizardry:wizard_tower"),"Forbidden optional integrations absent");
         log("FORBIDDEN_CATALOG=PASS size="+catalog.size());
+        Map<String,Object> entries=new HashMap<String,Object>();for(Object entry:catalog)entries.put((String)get(entry,"id"),entry);
+        int utopia=((Number)field("mglucas0123.worlds.utopia.WorldProviderDIM80","DimensionID")).intValue();
+        int crystal=((Number)field("mglucas0123.worlds.crystal.WorldProviderDIM84","DimensionID5")).intValue();
+        int islands=((Number)field("mglucas0123.worlds.islands.WorldProviderDIM83","DimensionID4")).intValue();
+        int twilight=((Number)field("twilightforest.TwilightForestMod","dimensionID")).intValue();
+        need(Arrays.equals((int[])call(entries.get("orespawn:makeKingAltar"),"getSearchDimensions"),new int[]{utopia}),"King altar mislabeled");
+        need(Arrays.equals((int[])call(entries.get("orespawn:makeCrystalBattleTower"),"getSearchDimensions"),new int[]{crystal}),"Crystal tower mislabeled");
+        Object castle=entries.get("orespawn:makeEnderCastle");need((Boolean)call(castle,"listsDimension",1)&&(Boolean)call(castle,"listsDimension",islands)&&!(Boolean)call(castle,"listsDimension",0),"multiple natural dimensions lost");
+        need(!(Boolean)call(entries.get("chromaticraft:PYLON"),"hasKnownDimensions"),"variable Chroma rules incorrectly inherited current dimension");
+        boolean tf=false;for(String id:entries.keySet())if(id.startsWith("twilightforest:")){tf=true;need((Boolean)call(entries.get(id),"listsDimension",twilight),"Twilight wrong dimension");}
+        need(tf,"Twilight catalog missing outside Twilight dimension");
+        log("NATIVE_DIMENSION_METADATA=PASS king="+utopia+" crystal="+crystal+" islands="+islands+" twilight="+twilight);
     }
     void immediate()throws Exception{
         action(p1,8,3);need(active(a),"first start denied");need(call(a,"findActiveDummy")!=null,"first dummy missing");
@@ -170,4 +183,23 @@ public final class ServerThrottleProbe {
         }
         log("NO_REMOTE_CLIENT_CONNECTED; two Forge FakePlayers exercised server handlers, queue and world entities, not real network transport or graphical UI");
     }
+    void dimensionChecks()throws Exception {
+        float before=mana(props1);search(p1,"orespawn:makeKingAltar");
+        need(jobs().isEmpty()&&mana(props1)==before,"wrong dimension started job or charged mana");
+        int utopia=((Number)field("mglucas0123.worlds.utopia.WorldProviderDIM80","DimensionID")).intValue();
+        Object nativeWorld=stat("net.minecraftforge.common.DimensionManager","getWorld",utopia);
+        need(nativeWorld!=null,"fixture requires already-loaded Utopia; must never load worlds for metadata");
+        Object previous=world;world=nativeWorld;Object nativePlayer;
+        try{nativePlayer=player("UtopiaProbe",53);}finally{world=previous;}
+        equip(nativePlayer);Object nativeProps=properties(nativePlayer);search(nativePlayer,"orespawn:makeKingAltar");
+        need(jobs().size()==1&&mana(nativeProps)==50000F,"correct dimension rejected native search");
+        stat("am2.compass.AstralCompassService","cancel",nativePlayer);
+        // Observed spawner-built landmarks stay searchable outside natural worldgen dimensions.
+        stat("am2.compass.AstralLandmarks","record",world,60,8,60,"orespawn:makeKingAltar");
+        boolean found=false;for(Object e:(List<?>)stat("am2.compass.AstralStructureLocator","discoverCatalog",world))if(get(e,"id").equals("orespawn:makeKingAltar")){
+            found=true;need((Boolean)call(e,"listsDimension",0)&&(Boolean)call(e,"listsDimension",utopia),"observed location lost natural dimension");
+        }
+        need(found,"observed catalog entry absent");log("WRONG_DIMENSION_REJECTION_NATIVE_ACCEPTANCE_OBSERVED_OVERRIDE=PASS");
+    }
+
 }

@@ -568,6 +568,11 @@
       <desc>You can use this spell part to place blocks!  Can be extremely powerful when combined with different shape combinations.  In order to place a block, you need to set the spell to place it, and you need to have at least one of said block in your inventory.  No creating them out of thin air, sorry!  To set the block to be placed, cast the spell on a block while sneaking.  You need to be sneaking when the spell actually applies, so keep that in mind when using something like Projectile.  It's recommended to not use AoE to set the block, as it can sometimes set it to something you don't expect (as it will apply to everything in a radius, setting the block over and over).  To see what block the spell will place, hover your mouse over it in your inventory and press SHIFT.</desc>
       <modifiedBy></modifiedBy>
     </component>
+    <component id="Tornado">
+      <name>Tornado</name>
+      <desc>A Golden Spell of cataclysmic air magic, transcending even Silver Spells.  Summons a towering, destructive hurricane that rips disposable terrain blocks from the earth and physically flings valuable blocks and enemies across the sky.  Requires immense mana and unlocks only at endgame (Magic Level 65+, at least 1 Offense Silver Skill, and defeating both the Air and Lightning Guardians) by channeling Storm, Fling, and Solar or Lunar together.  By default the tornado stays anchored where summoned; adding Homing makes it slowly hunt nearby enemies, while Speed or Velocity Added accelerates its movement.  Combining Tornado with Fire, Lightning, Frost, or Water components — or sweeping over lava or ocean water — transforms it into a Firenado, Lightning Storm Tornado, Glacial Vortex, or Waterspout.</desc>
+      <modifiedBy>RADIUS,DAMAGE,DURATION,HOMING,SPEED,MINING_POWER</modifiedBy>
+    </component>
   </components>
   <modifiers zeroItemText="You don't know any modifiers yet, and aren't eligible to learn any!">
     <modifier id="Gravity">

@@ -215,6 +215,19 @@ public class GuiSkillTrees extends GuiScreen{
 			//else fr = Minecraft.getMinecraft().standardGalacticFontRenderer;
 			text.add(s);
 			SkillPointTypes type = SkillTreeManager.instance.getSkillPointTypeForPart(hoveredItem.registeredItem);
+			boolean isGolden = SkillTreeManager.instance.isGoldenSkill(hoveredItem.registeredItem);
+			if (isGolden){
+				text.add("\u00a76\u2605 " + StatCollector.translateToLocal("am2.gui.goldenSkill"));
+				String skillKey = SkillManager.instance.getSkillName(hoveredItem.registeredItem);
+				if ("Tornado".equalsIgnoreCase(skillKey)){
+					if (state != LearnStates.LEARNED){
+						text.add("\u00a7e\u00a7o" + StatCollector.translateToLocal("am2.gui.goldenTornadoHint"));
+						text.add("\u00a7c" + StatCollector.translateToLocal("am2.gui.goldenTornadoReq"));
+					}else{
+						text.add("\u00a7e" + StatCollector.translateToLocal("am2.gui.goldenTornadoScale"));
+					}
+				}
+			}
 
 			if (hoveredItem.registeredItem instanceof ISpellComponent){
 				EnumSet<Affinity> aff = ((ISpellComponent)hoveredItem.registeredItem).getAffinity();
@@ -231,10 +244,11 @@ public class GuiSkillTrees extends GuiScreen{
 			}
 
 			if (!AMCore.config.colourblindMode()){
-				drawHoveringText(text, lastMouseX, lastMouseY, fr, state == LearnStates.LEARNED ? 0xFFFFFF : type == SkillPointTypes.SILVER ? 0x888888 : type == SkillPointTypes.BLUE ? 0x4444FF : type == SkillPointTypes.GREEN ? 0x44FF44 : 0xFF4444);
+				int tooltipColor = isGolden ? 0xFFD700 : (state == LearnStates.LEARNED ? 0xFFFFFF : type == SkillPointTypes.SILVER ? 0x888888 : type == SkillPointTypes.BLUE ? 0x4444FF : type == SkillPointTypes.GREEN ? 0x44FF44 : 0xFF4444);
+				drawHoveringText(text, lastMouseX, lastMouseY, fr, tooltipColor);
 			}else{
-				text.add(StatCollector.translateToLocal("am2.gui." + type.toString().toLowerCase() + "Point"));
-				drawHoveringText(text, lastMouseX, lastMouseY, fr, 0xFFFFFF);
+				text.add(StatCollector.translateToLocal(isGolden ? "am2.gui.goldenSkill" : ("am2.gui." + type.toString().toLowerCase() + "Point")));
+				drawHoveringText(text, lastMouseX, lastMouseY, fr, isGolden ? 0xFFD700 : 0xFFFFFF);
 			}
 		}
 
@@ -292,6 +306,20 @@ public class GuiSkillTrees extends GuiScreen{
 			IIcon IIcon = SpellIconManager.instance.getIcon(name);
 
 			LearnStates state = sk.getLearnState(entry, Minecraft.getMinecraft().thePlayer);
+			boolean isGolden = SkillTreeManager.instance.isGoldenSkill(entry.registeredItem);
+
+			if (isGolden){
+				int gx = l + entry.x - offsetX * 2;
+				int gy = i1 + entry.y - offsetY * 2;
+				boolean activeGold = (state == LearnStates.LEARNED || state == LearnStates.CAN_LEARN);
+				int gBorder = activeGold
+						? ((AMGuiHelper.instance.getFastTicker() % 20 < 10) ? 0xFFE564 : 0xD49418)
+						: 0x6E5110;
+				drawOctagonOutline(gx - 1, gy - 1, IIcondims + 2, 10, gBorder);
+				if (activeGold){
+					drawOctagonOutline(gx - 2, gy - 2, IIcondims + 4, 11, 0x996B0A);
+				}
+			}
 
 			if (state == LearnStates.LEARNED){
 				GL11.glColor3f(1.0f, 1.0f, 1.0f);
@@ -300,7 +328,11 @@ public class GuiSkillTrees extends GuiScreen{
 				float delta = 0.45f * (1f - (Math.abs(AMGuiHelper.instance.getFastTicker() - 20f) / 20f));
 				float colorShift = 0.25f;
 				SkillPointTypes type = SkillTreeManager.instance.getSkillPointTypeForPart(entry.registeredItem);
-				if (type == SkillPointTypes.SILVER){
+				if (isGolden){
+					GL11.glColor3f(min + delta + 0.35f,
+							min + delta + 0.22f,
+							min + delta * 0.4f);
+				}else if (type == SkillPointTypes.SILVER){
 					GL11.glColor3f(min + delta + colorShift,
 							min + delta + colorShift,
 							min + delta + colorShift);
@@ -552,6 +584,23 @@ public class GuiSkillTrees extends GuiScreen{
 		}
 		GL11.glPopMatrix();
 		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+	}
+
+	private void drawOctagonOutline(int x, int y, int size, int chamfer, int color){
+		int x1 = x + chamfer;
+		int x2 = x + size - chamfer;
+		int x3 = x + size;
+		int y1 = y + chamfer;
+		int y2 = y + size - chamfer;
+		int y3 = y + size;
+		line2d(x1, y, x2, y, color);
+		line2d(x2, y, x3, y1, color);
+		line2d(x3, y1, x3, y2, color);
+		line2d(x3, y2, x2, y3, color);
+		line2d(x2, y3, x1, y3, color);
+		line2d(x1, y3, x, y2, color);
+		line2d(x, y2, x, y1, color);
+		line2d(x, y1, x1, y, color);
 	}
 
 	private void line2d(int src_x, int src_y, int dst_x, int dst_y, int color){

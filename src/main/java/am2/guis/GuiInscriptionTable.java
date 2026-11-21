@@ -9,6 +9,7 @@ import am2.playerextensions.SkillData;
 import am2.spell.SkillManager;
 import am2.spell.SkillTreeManager;
 import am2.spell.SpellValidator.ValidationResult;
+import am2.spell.components.Tornado;
 import am2.texture.ResourceManager;
 import am2.texture.SpellIconManager;
 import net.minecraft.client.Minecraft;
@@ -419,7 +420,7 @@ public class GuiInscriptionTable extends GuiContainer{
 			String name = SkillManager.instance.getDisplayName(part);
 
 			if (drawIcon(part, false)){
-				labelText.add(name);
+				appendPartTooltip(part, name, labelText, true, index);
 				hovering = true;
 				lowerHoverIndex = index;
 				lowerHoverShapeGroup = -1;
@@ -488,7 +489,7 @@ public class GuiInscriptionTable extends GuiContainer{
 			if (iconY < 0 || iconY > 42) return hovering;
 			if (drawIcon(part)){
 				hovering = true;
-				labelText.add(name);
+				appendPartTooltip(part, name, labelText, false, -1);
 			}
 		}
 		return hovering;
@@ -547,6 +548,10 @@ public class GuiInscriptionTable extends GuiContainer{
 		}
 
 		AMGuiHelper.DrawIconAtXY(shapeIcon, iconX, iconY, this.zLevel, 16, 16, false);
+		if (SkillTreeManager.instance.isGoldenSkill(part)){
+			int gColor = (AMGuiHelper.instance.getFastTicker() % 20 < 10) ? 0xFFE564 : 0xD49418;
+			drawOctagonOutline(iconX, iconY, 16, 4, gColor);
+		}
 
 		if (!dragging){
 			if (lastMouseX > iconX && lastMouseX < iconX + 16){
@@ -636,6 +641,68 @@ public class GuiInscriptionTable extends GuiContainer{
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
 			RenderHelper.enableStandardItemLighting();
 			GL11.glEnable(GL12.GL_RESCALE_NORMAL);
+		}
+	}
+
+	private void drawOctagonOutline(int x, int y, int size, int chamfer, int color){
+		int x1 = x + chamfer;
+		int x2 = x + size - chamfer;
+		int x3 = x + size;
+		int y1 = y + chamfer;
+		int y2 = y + size - chamfer;
+		int y3 = y + size;
+		AMGuiHelper.line2d(x1, y, x2, y, this.zLevel, color);
+		AMGuiHelper.line2d(x2, y, x3, y1, this.zLevel, color);
+		AMGuiHelper.line2d(x3, y1, x3, y2, this.zLevel, color);
+		AMGuiHelper.line2d(x3, y2, x2, y3, this.zLevel, color);
+		AMGuiHelper.line2d(x2, y3, x1, y3, this.zLevel, color);
+		AMGuiHelper.line2d(x1, y3, x, y2, this.zLevel, color);
+		AMGuiHelper.line2d(x, y2, x, y1, this.zLevel, color);
+		AMGuiHelper.line2d(x, y1, x1, y, this.zLevel, color);
+	}
+
+	private void appendPartTooltip(ISkillTreeEntry part, String displayName, ArrayList<String> labelText, boolean inRecipe, int recipeIndex){
+		boolean isGolden = SkillTreeManager.instance.isGoldenSkill(part);
+		if (!isGolden){
+			labelText.add(displayName);
+			return;
+		}
+		labelText.add("\u00a76\u2605 " + displayName);
+		labelText.add("\u00a76" + StatCollector.translateToLocal("am2.gui.goldenSkill"));
+		if (part instanceof Tornado){
+			if (inRecipe){
+				ContainerInscriptionTable container = (ContainerInscriptionTable) this.inventorySlots;
+				int total = container.getCurrentRecipeSize();
+				int start = 0;
+				for (int k = recipeIndex; k >= 0; k--){
+					if (container.getRecipeItemAt(k) instanceof ISpellShape){
+						start = k;
+						break;
+					}
+				}
+				int end = total;
+				for (int k = recipeIndex + 1; k < total; k++){
+					if (container.getRecipeItemAt(k) instanceof ISpellShape){
+						end = k;
+						break;
+					}
+				}
+				ArrayList<ISpellPart> stageParts = new ArrayList<ISpellPart>();
+				for (int k = start; k < end; k++){
+					stageParts.add(container.getRecipeItemAt(k));
+				}
+				int[] counts = Tornado.inspectTierModifiersFromParts(stageParts);
+				int tier = Tornado.computeFujitaTier(counts[0], counts[1], counts[2], counts[3]);
+				byte elem = Tornado.detectElementalSynergyFromParts(stageParts);
+				float minRad = Tornado.getTierMinRadius(tier);
+				float dmgMult = Tornado.getTierDamageMultiplier(tier);
+
+				labelText.add("\u00a7e" + StatCollector.translateToLocalFormatted("am2.gui.tornadoPreviewTier", tier));
+				labelText.add("\u00a7b" + StatCollector.translateToLocalFormatted("am2.gui.tornadoPreviewForm", StatCollector.translateToLocal(Tornado.getElementLangKey(elem))));
+				labelText.add("\u00a77" + StatCollector.translateToLocalFormatted("am2.gui.tornadoPreviewStats", String.format("%.1f", minRad), String.format("%.2f", dmgMult)));
+			}else{
+				labelText.add("\u00a7e\u00a7o" + StatCollector.translateToLocal("am2.gui.goldenTornadoScale"));
+			}
 		}
 	}
 

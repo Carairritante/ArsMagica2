@@ -11,6 +11,7 @@ import am2.api.spell.enums.SkillTrees;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class SkillTreeManager implements ISkillTreeManager{
 
@@ -19,6 +20,7 @@ public class SkillTreeManager implements ISkillTreeManager{
 	private final ArrayList<SkillTreeEntry> utilityTree = new ArrayList<SkillTreeEntry>();
 	private final ArrayList<SkillTreeEntry> talentTree = new ArrayList<SkillTreeEntry>();
 	private final HashMap<Integer, SkillPointTypes> skillPointTypeList;
+	private final HashSet<Integer> goldenSkills = new HashSet<Integer>();
 
 	private int highestSkillDepth = 0;
 
@@ -26,6 +28,20 @@ public class SkillTreeManager implements ISkillTreeManager{
 
 	private SkillTreeManager(){
 		skillPointTypeList = new HashMap<Integer, SkillPointTypes>();
+	}
+
+	public void markGoldenSkill(ISkillTreeEntry part){
+		if (part != null){
+			goldenSkills.add(SkillManager.instance.getShiftedPartID(part));
+		}
+	}
+
+	public boolean isGoldenSkill(ISkillTreeEntry part){
+		return part != null && goldenSkills.contains(SkillManager.instance.getShiftedPartID(part));
+	}
+
+	public boolean isGoldenSkill(int shiftedId){
+		return goldenSkills.contains(shiftedId);
 	}
 
 	public SkillPointTypes getSkillPointTypeForPart(ISkillTreeEntry part){
@@ -186,6 +202,12 @@ public class SkillTreeManager implements ISkillTreeManager{
 		RegisterPart(SkillManager.instance.getSkill("FireRain"), 75, 135, SkillTrees.Offense, SkillPointTypes.SILVER);
 		RegisterPart(SkillManager.instance.getSkill("ConcentrateTime"), 75, 180, SkillTrees.Offense, SkillPointTypes.SILVER);
 		RegisterPart(SkillManager.instance.getSkill("Dismembering"), 75, 225, SkillTrees.Offense, SkillPointTypes.SILVER);
+
+		// Golden Spells (apex tier beside Silver; X=120 avoids AM2PlayGround's X=30 Silver column)
+		goldenSkills.clear();
+		ISkillTreeEntry tornadoSkill = SkillManager.instance.getSkill("Tornado");
+		RegisterPart(tornadoSkill, 120, 45, SkillTrees.Offense, SkillPointTypes.SILVER);
+		markGoldenSkill(tornadoSkill);
 
 		//defense tree
 		defenseTree.clear();

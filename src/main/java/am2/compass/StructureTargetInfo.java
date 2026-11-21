@@ -25,14 +25,42 @@ public final class StructureTargetInfo {
 	public final int preferredDimension;
 	public final boolean dimensionRestricted;
 	public final int glyphIndex;
+	private final int[] searchDimensions;
 
 	public StructureTargetInfo(String id, String rawName, String category, int preferredDimension, boolean dimensionRestricted, int glyphIndex) {
+		this(id, rawName, category, dimensionRestricted ? new int[]{preferredDimension} : new int[0], glyphIndex, preferredDimension);
+	}
+
+	public StructureTargetInfo(String id, String rawName, String category, int[] dimensions, int glyphIndex) {
+		this(id, rawName, category, dimensions, glyphIndex, 0);
+	}
+
+	private StructureTargetInfo(String id, String rawName, String category, int[] dimensions, int glyphIndex, int fallbackDimension) {
 		this.id = id;
 		this.rawName = rawName == null ? id : rawName;
 		this.category = category == null ? CAT_MODDED : category;
-		this.preferredDimension = preferredDimension;
-		this.dimensionRestricted = dimensionRestricted;
+		java.util.TreeSet<Integer> unique = new java.util.TreeSet<Integer>();
+		if (dimensions != null && dimensions.length <= 64) for (int dimension : dimensions) unique.add(dimension);
+		this.searchDimensions = new int[unique.size()];
+		int index = 0; for (Integer dimension : unique) this.searchDimensions[index++] = dimension;
+		this.preferredDimension = searchDimensions.length == 0 ? fallbackDimension : searchDimensions[0];
+		this.dimensionRestricted = searchDimensions.length != 0;
 		this.glyphIndex = glyphIndex & 15;
+	}
+
+	public int[] getSearchDimensions() { return searchDimensions.clone(); }
+	public boolean hasKnownDimensions() { return searchDimensions.length != 0; }
+	public boolean canSearchIn(int dimension) {
+		return !hasKnownDimensions() || java.util.Arrays.binarySearch(searchDimensions, dimension) >= 0;
+	}
+	public boolean listsDimension(int dimension) {
+		return java.util.Arrays.binarySearch(searchDimensions, dimension) >= 0;
+	}
+	public StructureTargetInfo withObservedDimension(int dimension) {
+		if (!hasKnownDimensions() || listsDimension(dimension)) return this;
+		int[] extended = java.util.Arrays.copyOf(searchDimensions, searchDimensions.length + 1);
+		extended[searchDimensions.length] = dimension;
+		return new StructureTargetInfo(id, rawName, category, extended, glyphIndex);
 	}
 
 	public String getDisplayName() {

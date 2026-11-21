@@ -114,6 +114,12 @@ public class CompendiumUnlockHandler{
 				ArcaneCompendium.instance.unlockEntry("bindingcatalysts");
 			}else if (event.skill instanceof Summon){
 				ArcaneCompendium.instance.unlockEntry("summoner");
+			}else if (SkillTreeManager.instance.isGoldenSkill(event.skill)){
+				ArcaneCompendium.instance.unlockEntry("silver_skills");
+				String skillKey = am2.spell.SkillManager.instance.getSkillName(event.skill);
+				if (skillKey != null && !skillKey.isEmpty()){
+					ArcaneCompendium.instance.unlockEntry(skillKey);
+				}
 			}else if (SkillTreeManager.instance.getSkillPointTypeForPart(event.skill) == SkillPointTypes.SILVER){
 				ArcaneCompendium.instance.unlockEntry("silver_skills");
 			}

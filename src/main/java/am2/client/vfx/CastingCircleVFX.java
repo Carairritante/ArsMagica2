@@ -183,6 +183,8 @@ public class CastingCircleVFX {
         int lunar, solar;
         Affinity affinity = Affinity.NONE;
         SuperTierType tier;
+        boolean isTornado;
+        byte tornadoElem;
     }
 
     public static void renderAll(float partialTicks) {
@@ -222,7 +224,8 @@ public class CastingCircleVFX {
         int now = player.ticksExisted;
         if (state.spell == null) return false;
         int elapsed = Math.max(player.getItemInUseDuration(), now - state.startedTick);
-        if (state.tier != null) renderSuperTierPlayerCircle(px - cx, py - cy, pz - cz, player, state.tier, elapsed, partialTicks);
+        if (state.isTornado) renderGoldenTornadoCircle(px - cx, py - cy, pz - cz, player, state.tornadoElem, state.solar, state.lunar, elapsed, partialTicks);
+        else if (state.tier != null) renderSuperTierPlayerCircle(px - cx, py - cy, pz - cz, player, state.tier, elapsed, partialTicks);
         else renderNormalPlayerCircle(px - cx, py - cy, pz - cz, player, state.affinity,
                 Math.min(1.0f, (elapsed + partialTicks) / 8.0f), partialTicks);
         return true;
@@ -241,6 +244,7 @@ public class CastingCircleVFX {
         if (changed || (long)now - state.analyzedTick >= 4) {
             state.held = held; state.analyzedTick = now;
             state.spell = null; state.tier = null; state.lunar = state.solar = 0;
+            state.isTornado = false; state.tornadoElem = 0;
             try {
                 ItemStack spell = null;
                 if (held.getItem() instanceof ItemSpellBook) spell = ((ItemSpellBook)held.getItem()).GetActiveItemStack(held);
@@ -252,9 +256,13 @@ public class CastingCircleVFX {
                     state.spell = spell;
                     state.lunar = getLunarCount(spell); state.solar = getSolarCount(spell);
                     state.affinity = safeAffinity(spell);
+                    state.isTornado = hasAnyComponent(spell, am2.spell.components.Tornado.COMPONENT_ID);
+                    if (state.isTornado) {
+                        state.tornadoElem = am2.spell.components.Tornado.detectElementalSynergy(spell);
+                    }
                     // Keep Beam spells on the compact normal ground circle to prevent huge Super Tier rings from cluttering 1st/3rd person view.
                     // Only trigger Super Tiers for the specific Silver / apocalypse spells (never on arbitrary affinity + 3 Lunar/Solar spells).
-                    if (!Beam.isBeamSpell(spell))
+                    if (!state.isTornado && !Beam.isBeamSpell(spell))
                         state.tier = determineSuperTierType(spell, state.lunar, state.solar);
                 }
             } catch (RuntimeException invalidSpell) {
@@ -524,6 +532,129 @@ public class CastingCircleVFX {
 		if (hasAnyComponent(stack, 52) && hasAnyComponent(stack, 34)) return SuperTierType.STORM_LIGHTNING;
 		if (hasAnyComponent(stack, 100) && lunarCount >= 3) return SuperTierType.LUNAR_LIGHTNING;
 		return null;
+	}
+
+	private static final double[] TORNADO_CAST_X = new double[17];
+	private static final double[] TORNADO_CAST_Y = new double[17];
+	private static final double[] TORNADO_CAST_Z = new double[17];
+
+	/**
+	 * Golden Spell casting vortex for Tornado: gleaming gold mandala at the caster's feet
+	 * paired with rising 3D helical wind ribbons tinted by elemental synergy and Solar/Lunar tier.
+	 */
+	private static void renderGoldenTornadoCircle(double x, double y, double z, EntityPlayer player, byte elem, int solarCount, int lunarCount, int useTicks, float partialTicks) {
+		float timeSec = (useTicks + partialTicks) / 20.0f;
+		float intro = Math.min(1.0f, timeSec / 0.45f);
+		float smooth = intro * intro * (3.0f - 2.0f * intro);
+		if (smooth <= 0.01f) return;
+
+		int celestialMax = Math.max(solarCount, lunarCount);
+		boolean isF5Cast = (celestialMax >= 3 || (solarCount + lunarCount) >= 3);
+		double tierScale = 1.0 + celestialMax * 0.25;
+
+		double groundY = y - player.yOffset + 0.04;
+		// Keep natural Golden Spell color regardless of Solar/Lunar; accent changes only for elemental synergies
+		float primaryR = 1.00f;
+		float primaryG = 0.84f;
+		float primaryB = 0.22f;
+
+		float er = 0.48f;
+		float eg = 0.88f;
+		float eb = 1.00f;
+		if (elem == am2.spell.components.Tornado.ELEMENT_FIRE) {
+			er = 1.00f; eg = 0.42f; eb = 0.08f;
+		} else if (elem == am2.spell.components.Tornado.ELEMENT_LIGHTNING) {
+			er = 0.36f; eg = 0.78f; eb = 1.00f;
+		} else if (elem == am2.spell.components.Tornado.ELEMENT_ICE) {
+			er = 0.62f; eg = 0.94f; eb = 1.00f;
+		} else if (elem == am2.spell.components.Tornado.ELEMENT_WATER) {
+			er = 0.22f; eg = 0.72f; eb = 1.00f;
+		}
+
+		Minecraft mc = Minecraft.getMinecraft();
+		Tessellator t = Tessellator.instance;
+		float prevBrightX = OpenGlHelper.lastBrightnessX;
+		float prevBrightY = OpenGlHelper.lastBrightnessY;
+
+		GL11.glPushMatrix();
+		GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_CURRENT_BIT | GL11.GL_POLYGON_BIT | GL11.GL_TEXTURE_BIT | GL11.GL_LIGHTING_BIT);
+
+		try {
+			GL11.glDisable(GL11.GL_LIGHTING);
+			net.minecraft.client.renderer.RenderHelper.disableStandardItemLighting();
+			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0f, 240.0f);
+			GL11.glEnable(GL11.GL_BLEND);
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE);
+			GL11.glDisable(GL11.GL_ALPHA_TEST);
+			GL11.glDepthMask(false);
+			GL11.glDisable(GL11.GL_CULL_FACE);
+
+			// 1. Gleaming Golden / Lunar Air Mandala at the caster's feet
+			AffinityTextures airTex = affinityTextureCache.get(Affinity.AIR);
+			if (airTex != null) {
+				GL11.glEnable(GL11.GL_TEXTURE_2D);
+				double rot1 = timeSec * 1.4;
+				double rot2 = -timeSec * 2.1;
+				double baseR = 2.55 * tierScale * smooth;
+
+				mc.renderEngine.bindTexture(airTex.ground);
+				t.startDrawingQuads();
+				LightningVFXHelper.emitHorizontalQuadUV(t, x, groundY, z, baseR, Math.cos(rot1), Math.sin(rot1), primaryR, primaryG, primaryB, 0.85f * smooth);
+				t.draw();
+
+				mc.renderEngine.bindTexture(airTex.matrix);
+				t.startDrawingQuads();
+				LightningVFXHelper.emitHorizontalQuadUV(t, x, groundY + 0.02, z, baseR * 0.78, Math.cos(rot2), Math.sin(rot2), er, eg, eb, 0.75f * smooth);
+				t.draw();
+			}
+
+			// 2. Pulsing Golden/Lunar Rings + Rising 3D Helical Wind Spirals around the caster
+			GL11.glDisable(GL11.GL_TEXTURE_2D);
+			GL11.glShadeModel(GL11.GL_SMOOTH);
+			t.startDrawing(GL11.GL_TRIANGLES);
+
+			double ringR = (2.75 * tierScale + 0.22 * Math.sin(timeSec * 5.0)) * smooth;
+			LightningVFXHelper.emitHorizontalShockRing(t, x, groundY + 0.03, z, ringR, 0.22, true, primaryR, primaryG, primaryB, 0.88f * smooth);
+			LightningVFXHelper.emitHorizontalShockRing(t, x, groundY + 0.05, z, ringR * 0.96, 0.07, true, 1.0f, 0.97f, 0.82f, 0.92f * smooth);
+			if (isF5Cast) {
+				LightningVFXHelper.emitHorizontalShockRing(t, x, groundY + 0.04, z, ringR * 1.35, 0.28, true, er, eg, eb, 0.65f * smooth);
+			}
+
+			int arms = isF5Cast ? 4 : 3;
+			for (int arm = 0; arm < arms; arm++) {
+				double baseAng = arm * (Math.PI * 2.0 / arms) + timeSec * (4.2 + celestialMax * 0.5);
+				for (int s = 0; s <= 16; s++) {
+					double f = s / 16.0;
+					double ang = baseAng + f * Math.PI * 3.4;
+					double rad = (1.15 + f * 1.45 * tierScale) * smooth;
+					TORNADO_CAST_X[s] = x + Math.cos(ang) * rad;
+					TORNADO_CAST_Y[s] = groundY + 0.12 + f * (4.4 + celestialMax * 0.6) * smooth;
+					TORNADO_CAST_Z[s] = z + Math.sin(ang) * rad;
+				}
+				boolean primaryArm = (arm % 2 == 0);
+				LightningVFXHelper.emitPolylineRibbon(
+						t, TORNADO_CAST_X, TORNADO_CAST_Y, TORNADO_CAST_Z, 17,
+						0.0, 0.0, 0.0,
+						0.12, 0.24,
+						primaryArm ? primaryR : er, primaryArm ? primaryG : eg, primaryArm ? primaryB : eb,
+						0.68f * smooth, 0.08f * smooth, 1.0f
+				);
+				LightningVFXHelper.emitPolylineRibbon(
+						t, TORNADO_CAST_X, TORNADO_CAST_Y, TORNADO_CAST_Z, 17,
+						0.0, 0.0, 0.0,
+						0.038, 0.065,
+						1.0f, 0.98f, 0.88f,
+						0.88f * smooth, 0.12f * smooth, 1.0f
+				);
+			}
+			t.draw();
+		} finally {
+			GL11.glEnable(GL11.GL_TEXTURE_2D);
+			GL11.glDepthMask(true);
+			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBrightX, prevBrightY);
+			GL11.glPopAttrib();
+			GL11.glPopMatrix();
+		}
 	}
 
 	// =========================================================================

@@ -256,6 +256,7 @@ public class AMClientEventHandler{
 	@SideOnly(Side.CLIENT)
 	public void onRenderWorldLast(RenderWorldLastEvent event){
 		am2.client.vfx.OrbitalStormVFX.renderAll(event.partialTicks);
+		am2.client.vfx.TornadoVFX.renderAll(event.partialTicks);
 		am2.client.vfx.CastingCircleVFX.renderAll(event.partialTicks);
 		am2.client.vfx.CastingAtmosphereVFX.renderAll(event.partialTicks);
 		am2.client.vfx.AnimeBeamVFX.renderAll(event.partialTicks);
@@ -266,6 +267,7 @@ public class AMClientEventHandler{
 	public void onWorldUnload(WorldEvent.Unload event){
 		if (event.world != null && event.world.isRemote){
 			am2.client.vfx.OrbitalStormVFX.clearAll();
+			am2.client.vfx.TornadoVFX.clearAll();
 			am2.client.vfx.ManaShieldVFX.clearAll();
 			am2.client.vfx.CastingCircleVFX.clearAll();
 			am2.client.vfx.CastingAtmosphereVFX.reset();

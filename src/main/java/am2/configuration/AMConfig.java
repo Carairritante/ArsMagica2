@@ -16,6 +16,8 @@ public class AMConfig extends Configuration{
 
 	private final String KEY_PlayerSpellsDamageTerrain = "Player_Spells_Destroy_Terrain";
 	private final String KEY_NPCSpellsDamageTerrain = "NPC_Spells_Destroy_Terrain";
+	private final String KEY_TornadoBreaksBlocks = "Tornado_Breaks_Blocks";
+	private final String KEY_TornadoDropsItems = "Tornado_Drops_Items";
 	private final String KEY_TowergenGridSize = "Towergen_Grid_Size";
 	private final String KEY_EnableWorldGen = "EnableWorldGen";
 	private final String KEY_RetroactiveWorldGen = "RetroactiveWorldGen";
@@ -203,6 +205,8 @@ public class AMConfig extends Configuration{
 	private int EtherMode;
 	private boolean PlayerSpellsDamageTerrain;
 	private boolean NPCSpellsDamageTerrain;
+	private boolean TornadoBreaksBlocks;
+	private boolean TornadoDropsItems;
 	private float DamageMultiplier;
 	private boolean UseSpecialRenderers;
 	private boolean SpawnHugeTrees;
@@ -337,6 +341,8 @@ public class AMConfig extends Configuration{
 
 		PlayerSpellsDamageTerrain = get(CATEGORY_GENERAL, KEY_PlayerSpellsDamageTerrain, true, "Set to false to prevent terrain damage from player-casted spells.").getBoolean(true);
 		NPCSpellsDamageTerrain = get(CATEGORY_GENERAL, KEY_NPCSpellsDamageTerrain, false, "Set to false to prevent terrain damage from NPC-casted spells.").getBoolean(false);
+		TornadoBreaksBlocks = get(CATEGORY_GENERAL, KEY_TornadoBreaksBlocks, true, "Set to false to prevent the Tornado spell from breaking real world blocks (visual debris still orbits).").getBoolean(true);
+		TornadoDropsItems = get(CATEGORY_GENERAL, KEY_TornadoDropsItems, true, "Set to true for blocks ripped by Tornado to drop as items instead of vanishing.").getBoolean(true);
 
 		DamageMultiplier = (float)get(CATEGORY_GENERAL, KEY_DamageMultiplier, 1.0, "How much the damage in Ars Magica is scaled.").getDouble(1.0);
 
@@ -589,6 +595,14 @@ public class AMConfig extends Configuration{
 
 	public boolean PlayerSpellsDamageTerrain(){
 		return PlayerSpellsDamageTerrain;
+	}
+
+	public boolean TornadoBreaksBlocks(){
+		return TornadoBreaksBlocks;
+	}
+
+	public boolean TornadoDropsItems(){
+		return TornadoDropsItems;
 	}
 
 	public int getGFXLevel(){

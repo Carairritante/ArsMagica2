@@ -5,7 +5,11 @@ import net.minecraft.util.EntityDamageSource;
 
 public class DamageSourceWind extends EntityDamageSource{
 	public DamageSourceWind(EntityLivingBase source){
+		this(source, true);
+	}
+
+	public DamageSourceWind(EntityLivingBase source, boolean bypassArmor){
 		super("am2.wind", source);
-		this.setDamageBypassesArmor();
+		if (bypassArmor) this.setDamageBypassesArmor();
 	}
 }

@@ -232,6 +232,31 @@ public class AMNetHandler{
 		sendPacketToAllClientsNear(world.provider.dimensionId, cx, cy, cz, 240, AMPacketIDs.ORBITAL_STORM_STRIKE, writer.generate());
 	}
 
+	public void sendTornadoDebrisToClients(
+			World world, int tornadoEntityId,
+			double cx, double cy, double cz,
+			float radius, int remainingTicks, int totalDuration, int customColor, byte element,
+			byte fujitaTier, byte celestialMode,
+			int[] blockIds, int[] metas, int[] bx, int[] by, int[] bz, int count
+	){
+		if (world == null || world.isRemote) return;
+		int capped = Math.min(count, 24);
+		AMDataWriter writer = new AMDataWriter()
+				.add(tornadoEntityId)
+				.add(cx).add(cy).add(cz)
+				.add(radius)
+				.add(remainingTicks).add(totalDuration)
+				.add(customColor)
+				.add(element)
+				.add(fujitaTier)
+				.add(celestialMode)
+				.add((byte) capped);
+		for (int i = 0; i < capped; i++){
+			writer.add(blockIds[i]).add((byte) (metas[i] & 0xF)).add(bx[i]).add(by[i]).add(bz[i]);
+		}
+		sendPacketToAllClientsNear(world.provider.dimensionId, cx, cy, cz, 320, AMPacketIDs.TORNADO_DEBRIS, writer.generate());
+	}
+
 	public void sendAoEShockwaveToClients(double x, double y, double z, int side, float radius, World world, ItemStack spellStack){
 		if (world == null || world.isRemote) return;
 		AMDataWriter writer = new AMDataWriter().add(x).add(y).add(z).add((byte) side).add(radius);

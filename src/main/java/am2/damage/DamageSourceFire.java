@@ -5,8 +5,12 @@ import net.minecraft.util.EntityDamageSource;
 
 public class DamageSourceFire extends EntityDamageSource{
 	public DamageSourceFire(EntityLivingBase source){
+		this(source, true);
+	}
+
+	public DamageSourceFire(EntityLivingBase source, boolean bypassArmor){
 		super("am2.fire", source);
 		this.setFireDamage();
-		this.setDamageBypassesArmor();
+		if (bypassArmor) this.setDamageBypassesArmor();
 	}
 }
