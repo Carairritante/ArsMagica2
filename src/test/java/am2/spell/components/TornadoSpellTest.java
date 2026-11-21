@@ -179,10 +179,11 @@ public class TornadoSpellTest {
 
 	@Test
 	public void goldenSpellEndgameUnlockGateEnforcesAllRequirements() {
-		assertFalse(am2.spell.SpellUnlockManager.meetsGoldenEndgameRequirements(64, 2, true));
-		assertFalse(am2.spell.SpellUnlockManager.meetsGoldenEndgameRequirements(80, 0, true));
-		assertFalse(am2.spell.SpellUnlockManager.meetsGoldenEndgameRequirements(80, 2, false));
-		assertTrue(am2.spell.SpellUnlockManager.meetsGoldenEndgameRequirements(65, 1, true));
+		assertFalse(am2.spell.SpellUnlockManager.meetsGoldenEndgameRequirements(65, 2, true));
+		assertFalse(am2.spell.SpellUnlockManager.meetsGoldenEndgameRequirements(89, 2, true));
+		assertFalse(am2.spell.SpellUnlockManager.meetsGoldenEndgameRequirements(90, 0, true));
+		assertFalse(am2.spell.SpellUnlockManager.meetsGoldenEndgameRequirements(90, 2, false));
+		assertTrue(am2.spell.SpellUnlockManager.meetsGoldenEndgameRequirements(90, 1, true));
 		assertTrue(am2.spell.SpellUnlockManager.meetsGoldenEndgameRequirements(99, 5, true));
 	}
 

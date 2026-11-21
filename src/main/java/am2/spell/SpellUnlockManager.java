@@ -19,7 +19,7 @@ import java.util.ArrayList;
 
 public class SpellUnlockManager{
 
-	public static final int GOLDEN_MIN_MAGIC_LEVEL = 65;
+	public static final int GOLDEN_MIN_MAGIC_LEVEL = 90;
 	public static final int GOLDEN_MIN_SILVER_SKILLS = 1;
 
 	private ArrayList<UnlockEntry> entries;

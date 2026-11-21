@@ -779,9 +779,20 @@ public class GuiArcaneCompendium extends GuiScreen{
 
 		y += 12;
 		x = cx - (int)(modifiers.size() / 2.0f * step);
+		// The Tornado supports many aspects, including optional addon modifiers.
+		// Keep its list inside the right-hand leaf instead of crossing both pages.
+		boolean wrapTornadoModifiers = "Tornado".equals(entryName) && modifiers.size() > 7;
+		int modifierIndex = 0;
+		int firstRowY = y;
 
 		for (ItemStack mod : modifiers){
 			if (mod != null){
+				if (wrapTornadoModifiers){
+					int row = modifierIndex / 7;
+					int columns = Math.min(7, modifiers.size() - row * 7);
+					x = cx - columns * step / 2 + (modifierIndex % 7) * step;
+					y = firstRowY + row * step;
+				}
 				AMGuiHelper.instance.DrawItemAtXY(mod, x, y, this.zLevel);
 				if (mouseX > x && mouseX < x + 16){
 					if (mouseY > y && mouseY < y + 16){
@@ -792,6 +803,7 @@ public class GuiArcaneCompendium extends GuiScreen{
 				}
 			}
 			x += step;
+			modifierIndex++;
 		}
 	}
 
