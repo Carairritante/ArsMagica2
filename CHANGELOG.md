@@ -1,3 +1,8 @@
+## 21/11/2026 — CR44: corpo encolhido com Futura3D
+
+- Corrigido o corpo que permanecia grande enquanto o nome e a caixa diminuíam. O AM2.5 aplica sua escala na matriz do renderizador substituto opcional, incluindo armadura/localizadores, sem editar o Futura3D.
+- Mantidos animações, física, câmera e renderização vanilla. Integração sem dependência obrigatória, idempotente, validada nos dois binários locais do Futura3D. Resultados em docs/SHRINK-FUTURA-CR44.md e relatório da tarefa.
+
 # Alterações de manutenção do AM2.5 LE
 
 ### Recall com intervenções dimensionais — CR44 — 2026-11-21

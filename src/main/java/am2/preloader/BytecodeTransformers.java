@@ -23,6 +23,8 @@ public class BytecodeTransformers implements IClassTransformer{
 	@Override
 	public byte[] transform(String name, String transformedName, byte[] bytes){
         if (bytes == null) return null;
+        if ("com.akashic.futura.client.ThirdPersonRenderer".equals(transformedName))
+            return FuturaShrinkTransformer.transform(bytes);
         if (transformedName.equals("airburn.am2playground.spell.components.NetherIntervention")
                 || transformedName.equals("airburn.am2playground.spell.components.CrossDimensionalIntervention"))
             bytes = RecallInterventionTransformer.transform(transformedName, bytes);

@@ -94,6 +94,12 @@ public class RenderUtilities{
 		RenderHelper.enableStandardItemLighting();
 	}
 
+    public static void scalePlayerModelMatrix(EntityLivingBase entity, float[] matrix) {
+        if (entity == null || matrix == null || matrix.length < 16) return;
+        ExtendedProperties props = ExtendedProperties.For(entity);
+        if (props != null) PlayerModelScale.apply(matrix, props.getShrinkPct());
+    }
+
 	public static void setupShrinkRender(EntityLivingBase entity){
 		if (entity == null)
 			return;

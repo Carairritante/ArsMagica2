@@ -137,3 +137,14 @@ os repositórios deste projeto. Novas instruções explícitas do usuário preva
 
 - O transformer do Playground 0.12.1 injeta código em `SpellHelper.applyStageToEntity` usando o slot local14 para o componente. Acrescentar variáveis locais antes do foreach desloca o slot e gera VerifyError no pack, mesmo com compilação e testes de base aprovados.
 - Preservar o layout dos locais desse método; usar auxiliares sem nova variável local anterior ao laço e validar com o JAR real do Playground no servidor. Não renomear/remover o método, nem desativar os hooks de Silver para contornar o conflito.
+
+## Modelos substitutos e encolhimento (21/11/2026)
+
+- Nome/caixa menores com corpo grande podem indicar que o mod de modelos ignora o renderizador vanilla; não reescrever a física/câmera por esse sintoma visual. Inspecionar o caminho real de desenho e suas matrizes no JAR atual.
+- Futura3D ThirdPersonRenderer.placement usa jogador local0 e matriz local10 na assinatura verificada. Aplicar escala à base, preservando a translação, depois da construção nativa da matriz, com guarda contra dupla transformação. Validar o JAR atual e o anterior quando ambos estiverem no pack.
+- Registrar adaptadores opcionais no AM2.5, sem imports obrigatórios nem alterações físicas nos JARs de outros mods. Não confundir validade ASM com comprovação visual no jogo.
+
+- Validação visual de modelos: um draw chamado em RenderTickEvent.END pode aprovar matrizes sem aparecer na captura do framebuffer, mesmo após bind manual. Preferir a GUI nativa do jogo ou a renderização normal no mundo antes de iniciar o pack completo. GuiInventory redireciona o criativo para outra tela; preparar survival somente na fixture. Não apresentar capturas sem o objeto como confirmação visual.
+
+- Prova visual: chamadas de desenho/matrizes corretas não garantem que a captura inclua o desenho. Para comparações, preferir a tela nativa do jogo. Overlays manuais em RenderTickEvent.END podem ficar fora da imagem capturada; não anunciar confirmação visual sem abrir a imagem e ver o modelo.
+- GuiInventory redireciona automaticamente jogadores criativos ao inventário criativo. Preparar o modo survival somente na fixture antes de abrir a GUI nativa, sem alterar o modo de jogo ou configurações da instância do usuário.
