@@ -1519,32 +1519,7 @@ public class AMEventHandler{
 			}
 		}
 
-		if (event.entityLiving.isPotionActive(BuffList.manaShield)){
-			if (ExtendedProperties.For(event.entityLiving).getCurrentMana() >= event.ammount * 250f){
-				ExtendedProperties.For(event.entityLiving).deductMana(event.ammount * 100f);
-				ExtendedProperties.For(event.entityLiving).forceSync();
-				for (int i = 0; i < Math.min(event.ammount, 5 * AMCore.config.getGFXLevel()); ++i)
-					AMCore.proxy.particleManager.BoltFromPointToPoint(event.entityLiving.worldObj,
-							event.entityLiving.posX,
-							event.entityLiving.posY + event.entityLiving.worldObj.rand.nextFloat() * event.entityLiving.getEyeHeight(),
-							event.entityLiving.posZ,
-							event.entityLiving.posX - 1 + event.entityLiving.worldObj.rand.nextFloat() * 2,
-							event.entityLiving.posY - 1 + event.entityLiving.worldObj.rand.nextFloat() * 2,
-							event.entityLiving.posZ - 1 + event.entityLiving.worldObj.rand.nextFloat() * 2, 6, -1);
-				event.entityLiving.worldObj.playSoundAtEntity(event.entityLiving, "arsmagica2:spell.cast.arcane", 1.0f, event.entityLiving.worldObj.rand.nextFloat() + 0.5f);
-				if (!event.entityLiving.worldObj.isRemote){
-					AMNetHandler.INSTANCE.sendPacketToAllClientsNear(
-							event.entityLiving.worldObj.provider.dimensionId,
-							event.entityLiving.posX,
-							event.entityLiving.posY,
-							event.entityLiving.posZ,
-							32,
-							AMPacketIDs.MANA_SHIELD_HIT,
-							new AMDataWriter().add(event.entityLiving.getEntityId()).generate());
-				}
-				event.setCanceled(true);
-			}
-		}
+
 	}
 
 	private double oldKnockbackValue = -1;
@@ -1585,35 +1560,7 @@ public class AMEventHandler{
 			event.ammount *= (1.0 / (magicShield.getAmplifier() + 1));
 		}
 
-		if (event.entityLiving.isPotionActive(BuffList.manaShield)){
-			float manaToTake = Math.min(ExtendedProperties.For(event.entityLiving).getCurrentMana(), event.ammount * 250f);
-			event.ammount -= manaToTake / 250f;
-			ExtendedProperties.For(event.entityLiving).deductMana(manaToTake);
-			ExtendedProperties.For(event.entityLiving).forceSync();
-			for (int i = 0; i < Math.min(event.ammount, 5 * AMCore.config.getGFXLevel()); ++i)
-				AMCore.proxy.particleManager.BoltFromPointToPoint(event.entityLiving.worldObj,
-						event.entityLiving.posX,
-						event.entityLiving.posY + event.entityLiving.worldObj.rand.nextFloat() * event.entityLiving.getEyeHeight(),
-						event.entityLiving.posZ,
-						event.entityLiving.posX - 1 + event.entityLiving.worldObj.rand.nextFloat() * 2,
-						event.entityLiving.posY + event.entityLiving.getEyeHeight() - 1 + event.entityLiving.worldObj.rand.nextFloat() * 2,
-						event.entityLiving.posZ - 1 + event.entityLiving.worldObj.rand.nextFloat() * 2, 6, -1);
-			event.entityLiving.worldObj.playSoundAtEntity(event.entityLiving, "arsmagica2:spell.cast.arcane", 1.0f, event.entityLiving.worldObj.rand.nextFloat() + 0.5f);
-			if (!event.entityLiving.worldObj.isRemote && manaToTake > 0){
-				AMNetHandler.INSTANCE.sendPacketToAllClientsNear(
-						event.entityLiving.worldObj.provider.dimensionId,
-						event.entityLiving.posX,
-						event.entityLiving.posY,
-						event.entityLiving.posZ,
-						32,
-						AMPacketIDs.MANA_SHIELD_HIT,
-						new AMDataWriter().add(event.entityLiving.getEntityId()).generate());
-			}
-			if (event.ammount <= 0){
-				event.setCanceled(true);
-				return;
-			}
-		}
+
 
 		Entity entitySource = event.source.getSourceOfDamage();
 		if (entitySource instanceof EntityPlayer

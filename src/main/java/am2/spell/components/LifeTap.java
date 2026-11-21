@@ -63,8 +63,12 @@ public class LifeTap implements ISpellComponent, IRitualInteraction{
 				p.deductMana((float)damage * 10);
 			}
 			float manaRefunded = (float)(((damage * 0.01)) * casterProperties.getMaxMana());
+            EntityLivingBase living = (EntityLivingBase)target;
+            boolean shielded = am2.shield.ManaShieldWard.active(living);
+            float before = living.getHealth();
 
-			if ((target).attackEntityFrom(DamageSource.outOfWorld, (int)Math.floor(damage))){
+			if (am2.shield.ManaShieldWard.healthCostAttack(caster, target, DamageSource.outOfWorld, (int)Math.floor(damage))){
+                if (shielded) manaRefunded *= am2.shield.ManaShieldRules.healthPaidFraction(before, living.getHealth(), (int)Math.floor(damage));
 				casterProperties.setCurrentMana(casterProperties.getCurrentMana() + manaRefunded);
 				casterProperties.forceSync();
 			}else{

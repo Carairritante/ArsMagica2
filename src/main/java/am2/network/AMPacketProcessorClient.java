@@ -451,7 +451,7 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
 	private void handleManaShieldHit(byte[] data){
 		AMDataReader rdr = new AMDataReader(data, false);
 		int entityId = rdr.getInt();
-		am2.client.vfx.ManaShieldVFX.triggerHitFlash(entityId);
+		// Mana Shield has no visual overlay or hit particles.
 	}
 
 	private void handleLightningImpact(byte[] data){

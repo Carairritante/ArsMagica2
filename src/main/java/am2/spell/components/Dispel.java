@@ -48,6 +48,8 @@ public class Dispel implements ISpellComponent{
 
 		if (!(target instanceof EntityLivingBase) || target instanceof IBossDisplayData) return false;
 
+		if (am2.shield.ManaShieldWard.hostileAction(caster, target, am2.shield.ManaShieldRules.Action.DISPEL)) return true;
+
 		if (EntityUtilities.isSummon((EntityLivingBase)target)){
 			if (EntityUtilities.getOwner((EntityLivingBase)target) == caster.getEntityId()){
 				target.attackEntityFrom(DamageSource.magic, 50000);

@@ -22,6 +22,12 @@ public class BytecodeTransformers implements IClassTransformer{
 	
 	@Override
 	public byte[] transform(String name, String transformedName, byte[] bytes){
+        if (bytes == null) return null;
+        if (transformedName.startsWith("net.minecraft.") || transformedName.equals("am2.spell.SpellHelper")
+                || transformedName.equals("com.emoniph.witchery.infusion.infusions.symbols.EffectRegistry$12")
+                || transformedName.equals("electroblob.wizardry.spell.Telekinesis")
+                || transformedName.equals("api.player.server.ServerPlayerAPI"))
+            bytes = ManaShieldTransformer.transform(transformedName, bytes);
 		if ("mglucas0123.utils.GenericDungeon".equals(transformedName)
             || "electroblob.wizardry.WizardryWorldGenerator".equals(transformedName)
             || "thaumcraft.common.lib.world.WorldGenMound".equals(transformedName)

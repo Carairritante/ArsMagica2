@@ -49,6 +49,7 @@ public class Transplace implements ISpellComponent, IRitualInteraction{
 
 	@Override
 	public boolean applyEffectEntity(ItemStack stack, World world, EntityLivingBase caster, Entity target){
+        if (am2.shield.ManaShieldWard.hostileAction(caster, target, am2.shield.ManaShieldRules.Action.CONTROL)) return true;
 		if (!world.isRemote && target != null && !target.isDead && !(target instanceof AM2Boss)){
 			double tPosX = target.posX;
 			double tPosY = target.posY;

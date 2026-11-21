@@ -6,7 +6,6 @@ import am2.api.spell.component.interfaces.IRitualInteraction;
 import am2.api.spell.component.interfaces.ISpellComponent;
 import am2.api.spell.enums.Affinity;
 import am2.api.spell.enums.SpellModifiers;
-import am2.buffs.BuffEffectManaShield;
 import am2.buffs.BuffList;
 import am2.items.ItemsCommonProxy;
 import am2.spell.SpellUtils;
@@ -54,7 +53,7 @@ public class ManaShield implements ISpellComponent, IRitualInteraction{
 			}
 
 			if (!world.isRemote)
-				((EntityLivingBase)target).addPotionEffect(new BuffEffectManaShield(duration, SpellUtils.instance.countModifiers(SpellModifiers.BUFF_POWER, stack, 0)));
+				am2.shield.ManaShieldWard.activate((EntityLivingBase)target, duration, Math.max(0, SpellUtils.instance.countModifiers(SpellModifiers.BUFF_POWER, stack, 0) - 1));
 			return true;
 		}
 		return false;

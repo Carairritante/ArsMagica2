@@ -249,7 +249,7 @@ public class AMClientEventHandler{
 	@SubscribeEvent
 	@SideOnly(Side.CLIENT)
 	public void onPlayerRenderSpecials(RenderPlayerEvent.Specials.Post event){
-		am2.client.vfx.ManaShieldVFX.renderThirdPerson(event);
+		// Mana Shield has no visual overlay or hit particles.
 	}
 
 	@SubscribeEvent
@@ -268,7 +268,7 @@ public class AMClientEventHandler{
 		if (event.world != null && event.world.isRemote){
 			am2.client.vfx.OrbitalStormVFX.clearAll();
 			am2.client.vfx.TornadoVFX.clearAll();
-			am2.client.vfx.ManaShieldVFX.clearAll();
+			// Mana Shield has no visual overlay or hit particles.
 			am2.client.vfx.CastingCircleVFX.clearAll();
 			am2.client.vfx.CastingAtmosphereVFX.reset();
 			am2.client.vfx.AnimeBeamVFX.clearAll();

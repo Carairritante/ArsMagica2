@@ -70,6 +70,6 @@ public class RenderPlayerSpecial extends RenderPlayer {
 
         super.renderFirstPersonArm(player);
 
-        am2.client.vfx.ManaShieldVFX.renderFirstPersonArm(player, this);
+        // Mana Shield has no visual overlay or hit particles.
     }
 }

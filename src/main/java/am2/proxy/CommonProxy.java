@@ -99,6 +99,9 @@ public class CommonProxy{
 		BuffList.postInit();
 
 		MinecraftForge.EVENT_BUS.register(new AMEventHandler());
+        am2.shield.ManaShieldWard ward = new am2.shield.ManaShieldWard();
+        MinecraftForge.EVENT_BUS.register(ward);
+        FMLCommonHandler.instance().bus().register(ward);
 		FMLCommonHandler.instance().bus().register(new AMEventHandler());
 
 		am2.soulbound.TrueSoulboundHandler trueSoulboundHandler = new am2.soulbound.TrueSoulboundHandler();

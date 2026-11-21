@@ -1,5 +1,45 @@
 # Alterações de manutenção do AM2.5 LE
 
+### Mana Shield: proteção por mana e remoção dos efeitos visuais — CR44 — 2026-11-20
+
+- Removidas a cobertura corporal, a camada de primeira pessoa, a textura exclusiva e os clarões/partículas de impacto do escudo; ícone e duração preservados.
+- Proteção independente da poção, controlada no servidor, com valores I–V de 50 / 37,5 / 25 / 17,5 / 12,5 mana por ponto de dano efetivo. Frações, absorção parcial e regeneração normal preservadas.
+- Resistências adicionais: efeitos negativos e controle (1% da mana máxima, mínimo25), desarme coberto (2%, mínimo50), dissipação coberta (5%, mínimo100) e morte direta coberta (25%, mínimo250). Escritas da mesma origem/categoria no mesmo tick compartilham uma taxa; dano é cobrado separadamente.
+- Guardas comuns de vida, efeitos, fogo, movimento e morte; compatibilidade pontual com desarme do Witchery, telecinese do Wizardry e os despachantes do PlayerAPI usados pelo Galacticraft. Nenhum JAR estrangeiro é alterado no disco.
+- Leite, dissipação própria, teleportes próprios reconhecidos, inventário e custo intencional de vida do Life Tap preservados. Dissipação sem mana encerra a proteção; aplicações novas de poção por addons continuam reconhecidas.
+- Life Tap contra um alvo protegido só devolve mana pela parcela de vida efetivamente paga; conjuração própria mantém seu custo em vida, sem desativar a proteção de outras entidades durante o ataque.
+- Nove folhas do Compêndio em português e inglês explicam custos, funcionamento e limites. Sistemas privados de outros mods e escrita direta em campos podem contornar os pontos interceptados; não há promessa de imunidade universal.
+
+### Guia do Tornado e descoberta nível 90 — CR44 — 2026-11-20
+
+- Página do Tornado expandida em português e inglês com folhas curtas, títulos coloridos e quebras nativas do Compêndio: escala F1–F5, modos Solar/Lunar, elementos, modificadores, dano, terreno, formas e renovação.
+- Descoberta de Magias Douradas passa a exigir nível mágico 90 no servidor; avisos do Oculus e texto do Compêndio atualizados. Guardiões, Silver de Ofensa e habilidades já aprendidas preservados.
+- Velocidade Acrescentada incluída na lista de modificadores do Tornado. Jogabilidade do vórtice preservada.
+- Modificadores do Tornado organizados em linhas na folha direita, incluindo os adicionais presentes no pack, sem atravessar o texto da folha esquerda.
+
+### Oculus: remoção da borda externa — CR44 — 2026-11-20
+
+- Removido o contorno externo extra das habilidades Golden, que aparecia branco e espesso. Moldura original do ícone, cores de disponibilidade, requisitos e aprendizagem preservados.
+
+### Limpeza dos círculos antigos — CR44 — 2026-11-20
+
+- Retirados 101 recursos sem referências dos antigos círculos, liberando aproximadamente 13,2 MB no JAR.
+- Modelos verticais, paletas e efeitos atmosféricos mantidos. Nenhuma alteração de código ou de regras das magias.
+
+### Círculos verticais Mahou — CR44 — 2026-11-20
+
+- Substituídas as três rotas antigas dos círculos por geometria vertical dos 16 modelos aprovados, com atlas e runas próprios por afinidade/SuperTier.
+- Afinidades normais limitadas às camadas de 9m e 18,5m; a camada principal de 32m e seu halo pertencem aos SuperTiers.
+- Centro aberto, sem manequim, discos preenchidos ou pilar central; abertura progressiva com ponta luminosa e partículas restritas às bordas.
+- Geometria validada e preparada uma vez, fases completas reutilizadas no desenho; limites de distância/conjuradores e captura de posição corporal mantidos.
+- Efeitos atmosféricos dos SuperTiers preservados. Nenhuma mudança em custos, dano, progressão, Playground ou Segundo Cérebro.
+
+### Agrupamento de drops do Tornado — CR44
+
+- Drops de terreno e de quebras vizinhas síncronas passam pelo consolidador existente.
+- Loot permanece no chão para empilhar; a física do vórtice processa criaturas e blocos físicos, preservando os debris visuais.
+- Nenhum item antigo do mundo é removido por esta atualização.
+
 ### Correções do Tornado e reintegração da Bússola — CR44 — 2026-11-19
 
 - Tornado considera somente os componentes e modificadores da etapa executada;

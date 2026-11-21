@@ -53,6 +53,7 @@ public class Attract implements ISpellComponent{
 		EntityLivingBase target = getClosestEntityToPointWithin(caster, world, new AMVector3(impactX, impactY, impactZ), 16);
 
 		if (target == null) return false;
+        if (am2.shield.ManaShieldWard.hostileAction(caster, target, am2.shield.ManaShieldRules.Action.CONTROL)) return true;
 
 		int hDist = 3;
 		AMVector3 movement = MathUtilities.GetMovementVectorBetweenPoints(new AMVector3(target), new AMVector3(impactX, impactY, impactZ));

@@ -30,6 +30,7 @@ public class Knockback implements ISpellComponent{
 
 	@Override
 	public boolean applyEffectEntity(ItemStack stack, World world, EntityLivingBase caster, Entity target){
+        if (am2.shield.ManaShieldWard.hostileAction(caster, target, am2.shield.ManaShieldRules.Action.CONTROL)) return true;
 
 		if (target instanceof EntityLivingBase){
 			double speed = 1.5;

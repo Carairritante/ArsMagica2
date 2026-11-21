@@ -50,6 +50,8 @@ public class Disarm implements ISpellComponent{
 		if (target instanceof EntityPlayer && (!AMCore.config.getDisarmAffectsPlayers() || (!world.isRemote && !MinecraftServer.getServer().isPVPEnabled())))
 			return false;
 
+		if (am2.shield.ManaShieldWard.hostileAction(caster, target, am2.shield.ManaShieldRules.Action.THEFT)) return true;
+
 		if (target instanceof EntityPlayer && ((EntityPlayer)target).getHeldItem() != null && !target.worldObj.isRemote){
 			if (TrueSoulboundHelper.isTrueSoulbound(((EntityPlayer)target).getHeldItem()))
 				return false;
