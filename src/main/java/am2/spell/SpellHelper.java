@@ -156,7 +156,8 @@ public class SpellHelper{
 
 		if (lingeringSpellZoneList.contains(stack)) {
 			lingeringSpellZoneList.remove(stack);
-			return SpellCastResult.SUCCESS;
+			RecallTravel.confirm(stack, target);
+            return SpellCastResult.SUCCESS;
 		}
 		if (appliedOneComponent){
 			int persistenceModifiers = SpellUtils.instance.getModifiedInt_Add(0, stack, caster, target, world, 0, SpellModifiers.LINGERING);
@@ -164,7 +165,8 @@ public class SpellHelper{
 				int timeToNextCast = SpellUtils.instance.getModifiedInt_Mul(15, stack, caster, target, world, 0, SpellModifiers.DURATION);
 				lingeringSpellList.add(new LingeringSpell(persistenceModifiers, stack, world, caster, target, timeToNextCast));
 			}
-			return SpellCastResult.SUCCESS;
+			RecallTravel.confirm(stack, target);
+            return SpellCastResult.SUCCESS;
 		} else{
 			return SpellCastResult.EFFECT_FAILED;
 		}

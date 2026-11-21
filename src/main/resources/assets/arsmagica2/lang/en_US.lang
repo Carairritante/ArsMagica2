@@ -1484,3 +1484,7 @@ am2.astral_compass.dim.ore_villagemania=VillageMania
 am2.astral_compass.dim.ore_islands=Islands
 am2.astral_compass.dim.ore_crystal=Crystal
 am2.astral_compass.dim.ore_chaos=Chaos
+
+am2.recall.playersOnly=Dimensional Recall works on players.
+am2.recall.invalidDestination=The marked dimension or coordinates are unavailable.
+am2.recall.dismount=Dismount and remove passengers before using Recall across dimensions.

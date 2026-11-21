@@ -41,6 +41,7 @@ public class Recall implements ISpellComponent, IRitualInteraction{
 
 	@Override
 	public boolean applyEffectEntity(ItemStack stack, World world, EntityLivingBase caster, Entity target){
+        if (world == null || caster == null) return false;
 		if (target != null){
 			int tx = (int)Math.floor(target.posX);
 			int ty = (int)Math.floor(target.posY);
@@ -76,11 +77,15 @@ public class Recall implements ISpellComponent, IRitualInteraction{
 			if (caster instanceof EntityPlayer && !world.isRemote)
 				((EntityPlayer)caster).addChatMessage(new ChatComponentText(StatCollector.translateToLocal("am2.tooltip.noMark")));
 			return false;
-		}else if (casterProperties.getMarkDimension() != caster.dimension){
+		}else if (casterProperties.getMarkDimension() != target.dimension && !am2.spell.RecallTravel.combination(stack)){
 			if (caster instanceof EntityPlayer && !world.isRemote)
 				((EntityPlayer)caster).addChatMessage(new ChatComponentText(StatCollector.translateToLocal("am2.tooltip.diffDimMark")));
 			return false;
 		}
+        if (casterProperties.getMarkDimension() != target.dimension) {
+            return am2.spell.RecallTravel.queue(stack, (EntityLivingBase)target, caster,
+                casterProperties.getMarkDimension(), casterProperties.getMarkX(), casterProperties.getMarkY(), casterProperties.getMarkZ());
+        }
 		if (!world.isRemote){
 			((EntityLivingBase)target).setPositionAndUpdate(casterProperties.getMarkX(), casterProperties.getMarkY(), casterProperties.getMarkZ());
 		}

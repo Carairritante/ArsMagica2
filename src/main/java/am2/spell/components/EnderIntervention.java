@@ -30,6 +30,7 @@ public class EnderIntervention implements ISpellComponent{
 
 	@Override
 	public boolean applyEffectEntity(ItemStack stack, World world, EntityLivingBase caster, Entity target){
+        if (am2.spell.RecallTravel.combination(stack)) return false;
 		if (world.isRemote || !(target instanceof EntityLivingBase)) return true;
 
 		if (((EntityLivingBase)target).isPotionActive(BuffList.astralDistortion.id)){

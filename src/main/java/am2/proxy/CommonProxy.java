@@ -101,6 +101,9 @@ public class CommonProxy{
 		MinecraftForge.EVENT_BUS.register(new AMEventHandler());
         am2.shield.ManaShieldWard ward = new am2.shield.ManaShieldWard();
         MinecraftForge.EVENT_BUS.register(ward);
+        am2.spell.RecallTravel recallTravel = new am2.spell.RecallTravel();
+        MinecraftForge.EVENT_BUS.register(recallTravel);
+        FMLCommonHandler.instance().bus().register(recallTravel);
         FMLCommonHandler.instance().bus().register(ward);
 		FMLCommonHandler.instance().bus().register(new AMEventHandler());
 

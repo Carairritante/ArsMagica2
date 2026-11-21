@@ -118,3 +118,22 @@ os repositórios deste projeto. Novas instruções explícitas do usuário preva
 - Preservar subclasses elementais de DamageSource, pois guardiões verificam instanceof. Manter construtores existentes compatíveis ao ajustar fontes locais.
 - Dedicado: registrar o conjurador simulado no mundo e carregar os chunks; usar capacidade de burnout coerente com o nível. Distinguir erro de fixture, recusa de mana e bug real.
 - Autorizar antes de efeitos colaterais e remoção; eventos de spawn podem cancelar ou matar a entidade. Só remover o bloco após confirmar aceitação e vida.
+
+## Círculos verticais aprovados (20/11/2026)
+
+- Substituir os desenhos antigos ao redor do conjurador pelos 16 modelos Mahou aprovados, preservando atlas e runas por variante. Não renderizar o manequim de referência dos modelos.
+- Afinidades comuns usam somente as camadas 1–2; camada colossal 3 exclusiva dos SuperTiers. Manter centro aberto e evitar discos/pilares sobre a visão em primeira pessoa.
+- Confirmação expressa do usuário: os efeitos atmosféricos dos SuperTiers continuam ativos. A substituição dos círculos não autoriza remover tempestades, céu elemental ou efeitos de queda.
+- Preparar geometria uma vez, limitar partículas por tick e preservar captura corporal anterior ao freecam. Não alterar regras, custo ou dano das magias por causa desta apresentação.
+
+## Progressão e páginas do Compêndio (20/11/2026)
+
+- Tornado: descoberta exige nível mágico 90; preservar os outros requisitos e o conhecimento já adquirido. Alterar a validação autoritativa, avisos do Oculus e traduções em conjunto; testar a fronteira 89/90 e os demais requisitos independentemente.
+- Guias extensos devem usar as quebras nativas `!p`, `!l`, `!d` e as cores `#1`/`#0`. Conferir com a fonte real do jogo: 140px de largura, 15 linhas na abertura e 17 nas demais folhas. Evitar tabelas largas.
+- Conferir a lista de modificadores também com os addons presentes. No Tornado, distribuir os ícones em linhas de até sete para mantê-los na folha direita.
+
+
+## Compatibilidade do laço de componentes (21/11/2026)
+
+- O transformer do Playground 0.12.1 injeta código em `SpellHelper.applyStageToEntity` usando o slot local14 para o componente. Acrescentar variáveis locais antes do foreach desloca o slot e gera VerifyError no pack, mesmo com compilação e testes de base aprovados.
+- Preservar o layout dos locais desse método; usar auxiliares sem nova variável local anterior ao laço e validar com o JAR real do Playground no servidor. Não renomear/remover o método, nem desativar os hooks de Silver para contornar o conflito.

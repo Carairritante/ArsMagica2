@@ -424,7 +424,7 @@
     </component>
     <component id="Recall">
       <name>Recall</name>
-      <desc>You can tune your teleportation magic to home in on a mark you have left, transporting you or your target back to its location. !d Used as a catalyst over a runic ring centered on a #5Chimerite Block#0, it also seals the #5Ritual of the Eternal Bond#0.</desc>
+      <desc>Recall returns the target to the caster's mark in the same dimension. !p #1Across dimensions#0 !d With the appropriate dimensional intervention components in the same spell stage, Recall can send players to their caster's mark in other dimensions. The mark supplies the exact destination; supporting interventions do not perform a second teleport. !p #1How it works#0 !d The target must be a player, without a mount or passenger. The marked dimension must exist and be available. Normal component costs still apply. The interventions do not perform another teleport afterward. !p #1Restrictions#0 !d Astral Distortion still prevents Recall. Mana Shield may resist another caster moving you. Without the combination, Recall stays limited to the current dimension. Existing Recall rituals keep their normal behavior.</desc>
       <modifiedBy></modifiedBy>
       <relatedEntries>rituals_overview,true_soulbound_ritual</relatedEntries>
     </component>

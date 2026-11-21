@@ -424,7 +424,7 @@
     </component>
     <component id="Recall">
       <name>Retornar</name>
-      <desc>Você pode sintonizar sua magia de teletransporte com uma marca deixada anteriormente, levando você ou o alvo de volta até ela. !d Usado como catalisador sob um anel rúnico centrado em #5Quimerita#0, também sela o #5Ritual do Vínculo Eterno#0.</desc>
+      <desc>Recall leva o alvo até a marca do conjurador na mesma dimensão. !p #1Entre dimensões#0 !d Com os componentes de intervenção dimensional apropriados na mesma etapa, Recall pode levar jogadores à marca em outras dimensões. A marca fornece o destino exato; as intervenções de apoio não executam um segundo teleporte. !p #1Como funciona#0 !d O alvo deve ser um jogador, sem montaria ou passageiro. A dimensão da marca precisa existir e estar disponível. A combinação usa os custos normais de seus componentes e não executa outro teleporte depois. !p #1Bloqueios#0 !d Distorção Astral continua impedindo Recall. Escudo de Mana pode resistir quando outro conjurador tenta mover você. Sem a combinação, Recall fica limitado à dimensão atual. Os rituais de Recall mantêm suas funções.</desc>
       <modifiedBy />
       <relatedEntries>rituals_overview,true_soulbound_ritual</relatedEntries>
     </component>

@@ -1147,3 +1147,7 @@ am2.astral_compass.dim.ore_villagemania=Vila
 am2.astral_compass.dim.ore_islands=Ilhas
 am2.astral_compass.dim.ore_crystal=Cristal
 am2.astral_compass.dim.ore_chaos=Caos
+
+am2.recall.playersOnly=A combinação dimensional de Recall funciona em jogadores.
+am2.recall.invalidDestination=A dimensão ou as coordenadas da marca não estão disponíveis.
+am2.recall.dismount=Desmonte e remova passageiros antes de usar Recall entre dimensões.

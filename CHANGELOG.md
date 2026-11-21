@@ -1,5 +1,12 @@
 # Alterações de manutenção do AM2.5 LE
 
+### Recall com intervenções dimensionais — CR44 — 2026-11-21
+
+- Recall passa a reconhecer apoios dimensionais na etapa ativa da magia e usa a dimensão e as coordenadas da marca do conjurador como destino para jogadores.
+- As intervenções usadas como apoio não executam seus teleportes próprios; a transferência só é confirmada após sucesso da etapa, preservando validações e bloqueios opcionais dos addons, independentemente da ordem dos componentes.
+- Transferência ao final do tick, sem portais/plataformas ou escala de coordenadas, com validação de marca/dimensão, expiração da fila, respeito a Distorção Astral, montarias e Escudo de Mana. Retorno do End e recusa de spawn recebem tratamento próprio; flags de sonho do Witchery são opcionais e reversíveis em falha.
+- Recall na mesma dimensão e rituais existentes preservados. Compatibilidade inteiramente no AM2.5, sem editar ou exigir o Playground em disco. Guia PT/EN com quatro folhas e sem revelar receitas de descobertas Silver.
+
 ### Mana Shield: proteção por mana e remoção dos efeitos visuais — CR44 — 2026-11-20
 
 - Removidas a cobertura corporal, a camada de primeira pessoa, a textura exclusiva e os clarões/partículas de impacto do escudo; ícone e duração preservados.

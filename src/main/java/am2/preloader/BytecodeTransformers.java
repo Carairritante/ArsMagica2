@@ -23,6 +23,10 @@ public class BytecodeTransformers implements IClassTransformer{
 	@Override
 	public byte[] transform(String name, String transformedName, byte[] bytes){
         if (bytes == null) return null;
+        if (transformedName.equals("airburn.am2playground.spell.components.NetherIntervention")
+                || transformedName.equals("airburn.am2playground.spell.components.CrossDimensionalIntervention"))
+            bytes = RecallInterventionTransformer.transform(transformedName, bytes);
+
         if (transformedName.startsWith("net.minecraft.") || transformedName.equals("am2.spell.SpellHelper")
                 || transformedName.equals("com.emoniph.witchery.infusion.infusions.symbols.EffectRegistry$12")
                 || transformedName.equals("electroblob.wizardry.spell.Telekinesis")
