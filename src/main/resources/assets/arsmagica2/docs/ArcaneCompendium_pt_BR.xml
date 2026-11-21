@@ -2646,7 +2646,7 @@
     </mechanic>
     <mechanic id="burnout" unlocked="true">
       <name>Exaustão</name>
-      <desc>Exaustão é o esforço acumulado ao conjurar. Quanto maior, mais mana custa cada magia. Magias poderosas geram mais exaustão, que diminui com o tempo. Subir de nível aumenta o limite e permite conjurar mais antes de ficar completamente fatigado. Valores altos podem causar efeitos adversos: desde breves fraqueza e lentidão até descargas elétricas, teletransportes aleatórios curtos ou, raramente, destruição completa do próprio mago. Esse extremo só ocorre quando magos muito fortes ultrapassam totalmente seu limite. A barra vermelha mostra a exaustão. Use “#2/amuicfg#0” para exibir seus valores numéricos.</desc>
+      <desc>#1Exaustão#0 !l Conjurar aumenta a exaustão. Quanto mais cheia a barra, maior o custo de mana das magias. A exaustão diminui com o tempo; equipamentos e efeitos de redução continuam ajudando. !p #1Sobrecarga#0 !l Ultrapassar a capacidade ao gastar magia causa Silêncio por 30 segundos. Durante o efeito, você não consegue conjurar. A sobrecarga não causa dano, morte, Wither, raios ou teleporte aleatório. !p #1Recuperação#0 !l Pulsos de uma mesma sobrecarga não reiniciam o Silêncio. Uma nova punição exige recuperar a exaustão até 80% da capacidade ou menos e aguardar pelo menos 30 segundos desde a anterior. Um Silêncio já ativo não é encurtado nem prolongado. A barra vermelha mostra sua exaustão; #2/amuicfg#0 permite exibir os valores.</desc>
       <relatedEntries />
     </mechanic>
     <mechanic id="rituals">

@@ -14,6 +14,7 @@ import am2.armor.infusions.GenericImbuement;
 import am2.armor.infusions.ImbuementRegistry;
 import am2.bosses.EntityLifeGuardian;
 import am2.buffs.BuffList;
+import am2.buffs.BuffEffectSilence;
 import am2.guis.AMGuiHelper;
 import am2.items.ItemManaStone;
 import am2.items.ItemSoulspike;
@@ -33,7 +34,6 @@ import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.effect.EntityLightningBolt;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
@@ -183,8 +183,7 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 	private static final int syncTickDelay = 50; //2.5 seconds
 	private int ticksToSync;
 	public int redGlint = 0;
-	private int lightningsLeft = 0;
-	private int ticksLeft = 0;
+	private final BurnoutSafety burnoutSafety = new BurnoutSafety();
 
 	public ExtendedProperties(){
 		hasInitialized = false;
@@ -606,100 +605,12 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 	}
 
 	public void setCurrentFatigue(float currentFatigue){
-		if (currentFatigue < 0) currentFatigue = 0;
-		if (currentFatigue >= getMaxFatigue()) {
-			currentFatigue = getMaxFatigue() - 1;
-			// BURNOUT NEGATIVE EFFECTS
-			if (this.entity instanceof EntityPlayer && !((EntityPlayer)this.entity).capabilities.isCreativeMode){
-				Random random = new Random();
-				if (currentFatigue > 50){ // lvl 5+
-					int roll = random.nextInt(4);
-					if (roll == 0){
-						if (currentFatigue < 250){
-							if (!this.entity.worldObj.isRemote)
-								this.entity.addPotionEffect(new PotionEffect(Potion.blindness.id, random.nextInt(100), 1));
-						}
-					}else if (roll == 1){
-						this.deductMana(this.currentMana / 4);
-						if (!this.entity.worldObj.isRemote){
-							List entitiesNear = this.entity.worldObj.getEntitiesWithinAABBExcludingEntity(this.entity, AxisAlignedBB.getBoundingBox(this.entity.posX - 5, this.entity.posY - 5, this.entity.posZ - 5, this.entity.posX + 5, this.entity.posY + 5, this.entity.posZ + 5));
-							for (Object o : entitiesNear){
-								((Entity)o).attackEntityFrom(DamageSource.magic, currentFatigue / 25);
-								float f = (random.nextFloat() - 0.5F) * 0.2F;
-								float f1 = (random.nextFloat() - 0.5F) * 0.2F;
-								float f2 = (random.nextFloat() - 0.5F) * 0.2F;
-								this.entity.worldObj.spawnParticle("reddust", ((Entity)o).posX, ((Entity)o).posY, ((Entity)o).posZ, f, f1, f2);
-							}
-							this.entity.attackEntityFrom(DamageSource.magic, currentFatigue / 25);
-						}
-						float f = (random.nextFloat() - 0.5F) * 0.2F;
-						float f1 = (random.nextFloat() - 0.5F) * 0.2F;
-						float f2 = (random.nextFloat() - 0.5F) * 0.2F;
-						this.entity.worldObj.spawnParticle("reddust", this.entity.posX, this.entity.posY, this.entity.posZ, f, f1, f2);
-					}else if (roll == 2){
-						if (currentFatigue < 250){
-							if (!this.entity.worldObj.isRemote)
-								this.entity.addPotionEffect(new PotionEffect(Potion.wither.id, random.nextInt(60), 1));
-						}
-					}else if (roll == 3){
-						if (currentFatigue < 500){
-							if (!this.entity.worldObj.isRemote){
-								this.entity.addPotionEffect(new PotionEffect(Potion.digSlowdown.id, random.nextInt(160), 1));
-								this.entity.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, random.nextInt(160), 1));
-							}
-						}
-					}
-				}
-				if (currentFatigue > 250){ // lvl 25+
-					int roll = random.nextInt(3);
-					if (roll == 0) { // red bolts
-						this.lightningsLeft = random.nextInt(5) + 5;
-					} else if (roll == 1){ // red glint on screen
-						this.redGlint = 2000;
-					}
-					// roll 2 does nothing: lucky roll
-				}
-				if (currentFatigue > 500){ // lvl 50+
-					int roll = random.nextInt(3);
-					if (roll == 0){
-						if (!this.entity.worldObj.isRemote){
-							this.entity.addPotionEffect(new PotionEffect(Potion.blindness.id, random.nextInt(120), 1));
-							this.entity.addPotionEffect(new PotionEffect(Potion.wither.id, random.nextInt(60), 1));
-							this.entity.addPotionEffect(new PotionEffect(Potion.digSlowdown.id, random.nextInt(160), 1));
-							this.entity.addPotionEffect(new PotionEffect(Potion.moveSlowdown.id, random.nextInt(160), 1));
-						}
-					}else if (roll == 1){
-						if (!this.entity.worldObj.isRemote){
-							this.entity.worldObj.addWeatherEffect(new EntityLightningBolt(this.entity.worldObj, this.entity.posX, this.entity.posY, this.entity.posZ));
-						}
-					}else if (roll == 2){
-						for (int i = 0; i < 100; i++){
-							double x = this.entity.posX + random.nextInt(10) - 5,
-									y = this.entity.posY + random.nextInt(10) - 5,
-									z = this.entity.posZ + random.nextInt(10) - 5;
-							if (this.entity.worldObj.isAirBlock((int)x, (int)y, (int)z) && this.entity.worldObj.isAirBlock((int)x, (int)y - 1, (int)z) && this.entity.worldObj.isAirBlock((int)x, (int)y + 1, (int)z)){
-								this.entity.setPosition(x, y, z);
-								float f = (random.nextFloat() - 0.5F) * 0.2F;
-								float f1 = (random.nextFloat() - 0.5F) * 0.2F;
-								float f2 = (random.nextFloat() - 0.5F) * 0.2F;
-								this.entity.worldObj.spawnParticle("portal", x, y, z, (double)f, (double)f1, (double)f2);
-								break;
-							}
-						}
-					}
-				}
-				if (currentFatigue > 950 && !this.entity.worldObj.isRemote){ // lvl 95+
-					int roll = random.nextInt(3);
-					if (roll == 2){
-						this.entity.setHealth(0);
-						this.entity.onDeath(DamageSource.magic);
-					}
-				}
-			}
-		}
-		this.currentFatigue = currentFatigue;
-		this.setUpdateFlag(UPD_CURRENT_MANA_FATIGUE);
-	}
+        // Persistence and synchronization must never damage or punish an entity.
+        float maximum = getMaxFatigue();
+        this.currentFatigue = BurnoutSafety.clamp(currentFatigue, maximum);
+        burnoutSafety.observe(currentFatigue, maximum);
+        this.setUpdateFlag(UPD_CURRENT_MANA_FATIGUE);
+    }
 
 	public void setMaxFatigue(float maxFatigue){
 		this.maxFatigue = maxFatigue;
@@ -1481,10 +1392,21 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 	}
 
 	public void addBurnout(float burnout){
-		if (entity.isPotionActive(BuffList.burnoutReduction))
-			burnout *= 0.75f;
-		this.setCurrentFatigue(currentFatigue + burnout);
-	}
+        if (Float.isNaN(burnout)) return;
+        if (entity.isPotionActive(BuffList.burnoutReduction)) burnout *= 0.75f;
+        float total = currentFatigue + burnout;
+        float maximum = getMaxFatigue();
+        this.setCurrentFatigue(total);
+        if (burnout > 0f && entity instanceof EntityPlayer && entity.worldObj != null
+                && !entity.worldObj.isRemote && entity.isEntityAlive()
+                && !((EntityPlayer)entity).capabilities.isCreativeMode
+                && burnoutSafety.overflow(total, maximum, entity.worldObj.getTotalWorldTime())) {
+            // Do not replace or extend another Silence, including one applied by a spell.
+            if (!entity.isPotionActive(BuffList.silence)) {
+                entity.addPotionEffect(new BuffEffectSilence(BurnoutSafety.SILENCE_TICKS, 0));
+            }
+        }
+    }
 	
 	@Override
 	public String toString() {
@@ -1560,17 +1482,6 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 			this.entity.motionY = 0;
 		}
 
-		if (ticksLeft > 0){
-			ticksLeft--;
-		}
-		if (this.lightningsLeft > 0 && ticksLeft <= 0) {
-			lightningsLeft--;
-			ticksLeft = 15;
-			Random random = new Random();
-			this.entity.attackEntityFrom(DamageSource.magic, 0.5f);
-			for (int i = 0; i < 10; i++) AMCore.proxy.particleManager.BoltFromPointToPoint(this.entity.worldObj, this.entity.posX + random.nextInt(14) - 7, this.entity.posY + random.nextInt(6) - 3, this.entity.posZ + random.nextInt(14) - 7, this.entity.posX, this.entity.posY, this.entity.posZ, 1, 0xE40000);
-		}
-		
 		if (ticksSinceLastRegen >= ticksToRegen){
 			//mana regeneration
 			float actualMaxMana = getMaxMana();

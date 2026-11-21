@@ -1,3 +1,9 @@
+## CR44 — Sobrecarga sem morte (21/11/2026)
+
+- Burnout excessivo agora causa Silêncio por 600 ticks, sem dano, Wither, raios, teleporte ou morte direta. Custos e recuperação de exaustão permanecem.
+- O setter usado por dados salvos/sincronização apenas limita valores; punição pertence ao custo real via addBurnout. Pulsos não renovam a duração: nova ocorrência exige recuperar até80% e intervalo600ticks. Silêncio existente é preservado.
+- Documentação de exaustão atualizada no Compêndio PT/EN. Alteração somente AM2.5, mantendo os mods separados e CR44.
+
 ## 21/11/2026 — CR44: corpo encolhido com Futura3D
 
 - Corrigido o corpo que permanecia grande enquanto o nome e a caixa diminuíam. O AM2.5 aplica sua escala na matriz do renderizador substituto opcional, incluindo armadura/localizadores, sem editar o Futura3D.

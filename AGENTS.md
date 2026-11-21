@@ -148,3 +148,11 @@ os repositórios deste projeto. Novas instruções explícitas do usuário preva
 
 - Prova visual: chamadas de desenho/matrizes corretas não garantem que a captura inclua o desenho. Para comparações, preferir a tela nativa do jogo. Overlays manuais em RenderTickEvent.END podem ficar fora da imagem capturada; não anunciar confirmação visual sem abrir a imagem e ver o modelo.
 - GuiInventory redireciona automaticamente jogadores criativos ao inventário criativo. Preparar o modo survival somente na fixture antes de abrir a GUI nativa, sem alterar o modo de jogo ou configurações da instância do usuário.
+
+## Sobrecarga, persistência e efeitos repetidos (21/11/2026)
+
+- Setters usados por NBT/sincronização não devem causar dano, morte ou punição. setCurrentFatigue deve apenas limitar/atualizar valores; a sobrecarga nasce no gasto real addBurnout, no servidor e para jogador vivo em survival.
+- Burnout excedente usa Silêncio600ticks e não punições letais. Pulsos não podem renovar Silêncio continuamente: exigir recuperação<=80% e intervalo600ticks. Não encurtar/prolongar Silêncio preexistente; mana e recuperação mantidas. Decisão posterior do usuário: permitir que Mana Shield resista ao Silêncio pelas regras normais de status.
+- Ao remover código de manaBurnoutTick, validar os locais que o transformer real do Playground assume, além de compilar. Restauração de NBT cheia deve ser testada sem punir quem reaparece/entra.
+
+- Preferência explícita posterior (21/11/2026): Mana Shield DEVE poder bloquear o Silêncio de burnout normalmente, cobrando resistência de status existente. Remover a exceção interna experimental, manter Ward inalterado. Custos fracionados de Dig devem acumular até o máximo; limitar a máximo-1 apenas quando ESTOURAR, não antes.
