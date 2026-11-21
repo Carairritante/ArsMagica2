@@ -1,3 +1,11 @@
+# Alterações de manutenção do AM2.5 LE
+
+## CR-45 — 21/11/2026
+
+- Novos visuais de Zone, AoE e canalização, atualizações do Tornado, do Bate-Estacas e da Bússola.
+- Burnout excessivo aplica Silêncio por 30 segundos. Escudo de Mana pode resistir ao efeito.
+- Recall entre dimensões, escala do personagem no Futura3D e proteção contra a nova Telecinese do Wizardry.
+
 ## CR44 — Sobrecarga sem morte (21/11/2026)
 
 - Burnout excessivo agora causa Silêncio por 600 ticks, sem dano, Wither, raios, teleporte ou morte direta. Custos e recuperação de exaustão permanecem.
@@ -8,8 +16,6 @@
 
 - Corrigido o corpo que permanecia grande enquanto o nome e a caixa diminuíam. O AM2.5 aplica sua escala na matriz do renderizador substituto opcional, incluindo armadura/localizadores, sem editar o Futura3D.
 - Mantidos animações, física, câmera e renderização vanilla. Integração sem dependência obrigatória, idempotente, validada nos dois binários locais do Futura3D. Resultados em docs/SHRINK-FUTURA-CR44.md e relatório da tarefa.
-
-# Alterações de manutenção do AM2.5 LE
 
 ### Recall com intervenções dimensionais — CR44 — 2026-11-21
 

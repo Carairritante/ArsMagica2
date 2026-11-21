@@ -75,7 +75,11 @@ public class ManaShieldTransformerTest {
                     }
                 }
                 assertTrue(name + " guards", guards >= 2); checked++;
-                if (name.endsWith("Telekinesis")) assertEquals(Integer.valueOf(1), hooks.get("filterHeldItem"));
+                if (name.endsWith("Telekinesis")) {
+                    int heldItem = hooks.getOrDefault("filterHeldItem", 0);
+                    int remoteInventory = hooks.getOrDefault("openTelekinesisInventory", 0);
+                    assertEquals("Wizardry transfer or remote inventory guard", 1, heldItem + remoteInventory);
+                }
                 if (name.endsWith("EffectRegistry$12")) assertEquals(Integer.valueOf(1), hooks.get("preventTheft"));
                 if (name.endsWith("ServerPlayerAPI")) {
                     assertEquals(Integer.valueOf(1), hooks.get("preventControlFrom"));

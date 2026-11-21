@@ -106,16 +106,24 @@ public final class ManaShieldTransformer implements Opcodes {
                     guard(node, method, "preventTheft", "(Ljava/lang/Object;)Z", args(1)); changed = true;
                 } else if (m.equals("onCollision")) { scope(node, method, "Actor", 2); changed = true; }
             } else if (name.equals("electroblob.wizardry.spell.Telekinesis") && m.equals("cast")) {
-                // Verified player overload: World, EntityPlayer, four float modifiers.
-                // Cancel its held-item test, BEFORE spawning the stolen copy or clearing the slot.
+                // Old builds transfer the held item. The Forbidden 6.5 build opens a remote inventory.
                 if (!method.desc.startsWith("(Lnet/minecraft/world/World;Lnet/minecraft/entity/player/EntityPlayer;")) continue;
                 for (AbstractInsnNode i : method.instructions.toArray()) if (i instanceof MethodInsnNode) {
                     MethodInsnNode invoke = (MethodInsnNode)i;
-                    if (!is(invoke.name, "getHeldItem", "func_70694_bm") || i.getNext().getOpcode() != IFNULL) continue;
-                    method.instructions.insertBefore(i, new InsnNode(DUP));
-                    InsnList filter = new InsnList(); call(filter, "filterHeldItem", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-                    filter.add(new TypeInsnNode(CHECKCAST, Type.getReturnType(invoke.desc).getInternalName()));
-                    method.instructions.insert(i, filter); changed = true;
+                    if (is(invoke.name, "getHeldItem", "func_70694_bm")
+                            && i.getNext() != null && i.getNext().getOpcode() == IFNULL) {
+                        method.instructions.insertBefore(i, new InsnNode(DUP));
+                        InsnList filter = new InsnList();
+                        call(filter, "filterHeldItem", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+                        filter.add(new TypeInsnNode(CHECKCAST, Type.getReturnType(invoke.desc).getInternalName()));
+                        method.instructions.insert(i, filter);
+                    } else if (invoke.getOpcode() == INVOKEVIRTUAL
+                            && invoke.owner.equals("net/minecraft/entity/player/EntityPlayer")
+                            && invoke.name.equals("openGui")
+                            && invoke.desc.equals("(Ljava/lang/Object;ILnet/minecraft/world/World;III)V")) {
+                        method.instructions.set(i, new MethodInsnNode(INVOKESTATIC, HOOK, "openTelekinesisInventory",
+                                "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/Object;III)V", false));
+                    }
                 }
                 scope(node, method, "Actor", 2); changed = true;
             }

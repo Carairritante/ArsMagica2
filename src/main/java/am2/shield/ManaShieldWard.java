@@ -325,6 +325,14 @@ public final class ManaShieldWard {
     public static Object filterHeldItem(Object target, Object held) {
         return held != null && preventTheft(target) ? null : held;
     }
+
+    public static void openTelekinesisInventory(Object caster, Object mod, int gui, Object world,
+                                                int targetId, int y, int z) {
+        EntityPlayer player = (EntityPlayer)caster;
+        net.minecraft.world.World targetWorld = (net.minecraft.world.World)world;
+        Entity target = targetWorld.getEntityByID(targetId);
+        if (!preventTheft(target)) player.openGui(mod, gui, targetWorld, targetId, y, z);
+    }
     public static boolean preventFire(Object object, int seconds) {
         return seconds > 0 && object instanceof EntityLivingBase && !voluntary((EntityLivingBase)object)
             && resist((EntityLivingBase)object, ManaShieldRules.Action.STATUS);

@@ -1,68 +1,15 @@
 Ars Magica 2.5
 ==========
 
-## Versão de manutenção 1.6.11-LE-CR44 (branch `correcoes`)
+## AM2.5 1.6.11-LE-CR-45
 
-Esta atualização reúne, em commits separados e na ordem de implementação:
+- Novos visuais para **Zone**, **AoE** e **magias canalizadas**, com modelos e círculos por afinidade.
+- **Bate-Estacas Arcano** com manequim de treino e medição de dano.
+- **Bússola Astral** com busca de estruturas, filtros por mod e dimensão e prévias 3D.
 
-- Bússola Astral funcionando no servidor integrado: catálogo do servidor chega à interface.
-- Filtros por mod/dimensão, favoritos, histórico local e HUD configurável.
-- Busca incremental com raios de 2.000/5.000/10.000 blocos, opção Encontrar outra,
-  suporte a alturas negativas e indicação de registro, previsão ou região aproximada.
-- ChromatiCraft: pylons de qualquer cor ou por cor e recuperação de registros de
-  ruínas V33 cujo campo de coordenada exata não está preenchido.
-- HUD própria da bússola com rosa dos ventos e agulha de alvo; poses na mão,
-  ícones de hotbar e painéis internos próprios da bússola e do bate-estacas.
+Na branch `correcoes`, baixe o JAR e o `SHA256SUMS` separados na última execução verde do [GitHub Actions](https://github.com/Carairritante/ArsMagica2/actions/workflows/ci.yml?query=branch%3Acorrecoes). O [changelog](CHANGELOG.md) registra as correções.
 
-As correções da CR44 anterior para o manequim e a medição de dano foram
-preservadas. A busca continua exigindo nível 50 e cobra 20.000 de mana apenas
-no sucesso, com limites compartilhados no servidor. Playground e o addon de
-tecnologia mágica permanecem projetos separados, sem nova dependência.
-
-O nome CR44 foi mantido por orientação do mantenedor. **Compare o SHA-256:**
-dois arquivos com o mesmo nome podem pertencer a compilações diferentes.
-Cliente e servidor devem usar o mesmo build para dispor de todas as funções.
-
-### Baixar o mod compilado
-
-1. Abra o [Actions da branch correcoes](https://github.com/Carairritante/ArsMagica2/actions/workflows/ci.yml?query=branch%3Acorrecoes).
-2. Escolha a execução do commit mais recente e confira o resultado verde.
-3. Em Artifacts, baixe `AM2.5-LTS-1.6.11-LE-CR44.jar` e `SHA256SUMS`.
-   São arquivos separados, sem ZIP externo, com retenção de 14 dias.
-   O GitHub pode solicitar login.
-4. Substitua o JAR anterior, mantendo uma única cópia ativa. Confira o checksum
-   da própria execução; o JAR é jogável, não um pacote de ferramentas.
-
-O CI roda em pushes e pull requests, compila o mod, executa os testes e
-verificadores e publica os artefatos na execução. Não são criadas releases
-automáticas. Pull requests de colaboradores podem apontar para `correcoes`.
-
-### Escopo e limites da validação
-
-Para esta publicação, o build local passou em 35 testes automatizados, nove
-verificadores do JAR e na conferência de 542 entradas/481 descrições do Compêndio.
-O resultado do Actions correspondente deve ser conferido antes de baixar.
-
-A correção inicial do catálogo foi reproduzida no Forbidden em singleplayer
-(64 entradas, 56 na aba Mods, busca pela GUI) e no dedicado com 196 mods.
-As melhorias posteriores de busca, ChromatiCraft e apresentação foram
-compiladas e entregues para teste manual, sem nova execução do jogo pelo agente.
-O CI valida compilação e verificações automatizadas; não equivale a teste visual,
-multiplayer remoto, carga ou comprovação de localização de todas as estruturas.
-
-Não existe recuperação universal de construções antigas sem metadados.
-Registro não garante uma construção intacta; previsão não confirma sua geração.
-Quando só a região é conhecida, a bússola não inventa a altura.
-
-Detalhes: [busca](docs/BUSSOLA-BUSCA-CR44.md),
-[ChromatiCraft](docs/BUSSOLA-CHROMATICRAFT-CR44.md),
-[HUD](docs/BUSSOLA-HUD-CR44.md),
-[apresentação dos instrumentos](docs/INSTRUMENTOS-VISUAL-CR44.md) e
-[histórico completo](CHANGELOG.md).
-
-O projeto preserva as licenças e os créditos dos autores originais. OpenAI
-Codex teve participação substancial na investigação, implementação, documentação
-e verificações destas alterações, com orientação e testes manuais do mantenedor.
+O projeto preserva as licenças e os créditos originais. OpenAI Codex participou da investigação, implementação, documentação e testes, com orientação do mantenedor.
 
 ### Histórico da CR43
 
