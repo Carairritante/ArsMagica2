@@ -1,0 +1,194 @@
+{
+  "none": {
+    "source": "mahou_vertical_none.bbmodel",
+    "source_sha256": "151c36a404d4bb2941b890a94963f46e7c75cb138ee3026fea2cab8d46bdbe2c",
+    "mesh_sha256": "bf376a1e7b5e067b5fceb70b15bc89863372d760e0c9ea3f0b296abae040c4c0",
+    "atlas_sha256": "c8b97c3a80177431e19a0562615b3b7e88fb3ce3fa4dc145029261108763a1de",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "arcane": {
+    "source": "mahou_vertical_arcane.bbmodel",
+    "source_sha256": "161144d2124351c7f6688708c82540920f3aee761e8c6c00b2db7358605a994a",
+    "mesh_sha256": "613674b56bdbf64e38cc8ddb2e765d7775b46426f23149f7b316a86814763e59",
+    "atlas_sha256": "a114f0c24d82c175fc68ecba06a415f2ee3a1ba2d9f75589230b42ff4e78b226",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "water": {
+    "source": "mahou_vertical_water.bbmodel",
+    "source_sha256": "0b36c566649ef51e25bd32b437f492416df70ca78985edc945c9e0127ef4f223",
+    "mesh_sha256": "f769a2113e56387b696d67e1f890478aa34e7a3a74586b967ec6aca70cf07540",
+    "atlas_sha256": "0d8133b691ff00eb21399510b551b3e6cb0818e99602ba959157dc27aeca18c1",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "fire": {
+    "source": "mahou_vertical_fire.bbmodel",
+    "source_sha256": "8cf9a7b0ae6e7d81ded378577d808df14c12e46a52adb03f1b280973e21bd3f2",
+    "mesh_sha256": "4039ad7dc76067fe63240c36b4c83ab989fd39abf5fc65e6c54fbd71a578f478",
+    "atlas_sha256": "b8d630445e0bcc6a77ba79dd698cf0fec0a73391925709e8d95df36c7b6acbe2",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "earth": {
+    "source": "mahou_vertical_earth.bbmodel",
+    "source_sha256": "5933ffa40b2a9ceae103f7d0c827a1763ddfd33a97c6ad3b6ff2108249323ac4",
+    "mesh_sha256": "65f758f8a54f754ecdfc4bfb638605dfae0d0d7cfa1503df702d436d918f679e",
+    "atlas_sha256": "22d0cdd56d018df364778062de0c8e005f51f8827f78d3ac4da75837ee66b619",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "air": {
+    "source": "mahou_vertical_air.bbmodel",
+    "source_sha256": "db2ff2f282522db362483e60c388041e8d25c3e612916ad048606c87219b0b35",
+    "mesh_sha256": "02f58872b2f068dfce50d1777aea32e314d04a1e7dcaa81de2ff3748ef2000d5",
+    "atlas_sha256": "26fea564d230599c713dfc94b743a9b4be468d12cc33a558340cfea9a1291916",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "lightning": {
+    "source": "mahou_vertical_lightning.bbmodel",
+    "source_sha256": "16d1d7e5b13f1ba7a9ae41aa41ee9cc0a031f6e78cf891fb64b9a989dd4066bd",
+    "mesh_sha256": "34549fa494b8890c805f3789fa7585ba6dacaf45fe989db2bbe19ad3f52b1dc1",
+    "atlas_sha256": "23fa534236c8f3974614556018f163b2bc8e2d91bf758b26c1eaede7dd93c75a",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "ice": {
+    "source": "mahou_vertical_ice.bbmodel",
+    "source_sha256": "9d3c7c0270b54797664c12be2708cb8b0408c0674667369a14fb6cceadbcb892",
+    "mesh_sha256": "f01f3ce0a7cf10ad2f94d40f39f5b08529577b5dc3332b2367ec6b5f9ae59e99",
+    "atlas_sha256": "a30cd9b6e5dcbdb0cf68c7eaa7568c233b603a0132f4e506047b6e371e9d3091",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "nature": {
+    "source": "mahou_vertical_nature.bbmodel",
+    "source_sha256": "ce60d0cc97d07c81f0d10ccb3b9d611bef26b6ef3301c73dfa1eb24f15798ba9",
+    "mesh_sha256": "b2355f2c43f09807f84c2c08fbf85607f5f79fd08a35b5f89e994c1ff6a9bf72",
+    "atlas_sha256": "f8eb58c81d349515385277fbf01241165b6ccd112ffa264bf85c3e63c42faf1b",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "life": {
+    "source": "mahou_vertical_life.bbmodel",
+    "source_sha256": "ee18eeea3d45dac314a4a05349e52098d1e5b2a2afa116a8866fb4036d6d0562",
+    "mesh_sha256": "3e70cb396a7c93c6d2205ecc1234336ce0907887b0e15bf35660aed57d8d10db",
+    "atlas_sha256": "05e3cf7055620c657e268f1c090ed39853ea804c681a2f79f7977acc297e7fdf",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "ender": {
+    "source": "mahou_vertical_ender.bbmodel",
+    "source_sha256": "c9d225dc1e4acbfd0e3b5262cd366f6f3ca4548e6c0565701f14da27f32693c1",
+    "mesh_sha256": "8e5d052defc45638671157980d842c833017069a5fe3b9e1f0fcd84cf58726e6",
+    "atlas_sha256": "04346efed77414073c39bf31f8da659bcd30f15f828ff849e3ff0bea86473ef3",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "lightning_lunar": {
+    "source": "mahou_vertical_lightning_lunar.bbmodel",
+    "source_sha256": "69f9af3ca7b7114b99ffcd568bff38845ad0ab521435726344eac3623729b063",
+    "mesh_sha256": "3e70cb396a7c93c6d2205ecc1234336ce0907887b0e15bf35660aed57d8d10db",
+    "atlas_sha256": "f258813733879da2d4ed2195f2b671dff3cc62212659fbb4bc6a1a113530f726",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "blizzard": {
+    "source": "mahou_vertical_blizzard.bbmodel",
+    "source_sha256": "c05898a41cac76e14f05da95d266f73f9e93e9b44b8111d104ae16e058964bc5",
+    "mesh_sha256": "b2355f2c43f09807f84c2c08fbf85607f5f79fd08a35b5f89e994c1ff6a9bf72",
+    "atlas_sha256": "6a79e71978247e9b8c6efa601bf8d0a7351a712468d236674b7c3e87a9a971de",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "firestorm": {
+    "source": "firestorm_mahou_vertical_3d.bbmodel",
+    "source_sha256": "2b55a65e918aa4e3598175279ab238f6a94b6412324dfc1c28a844392d31a793",
+    "mesh_sha256": "d8c0f9164e8f220e4a8f0b28499db52aa3cac415ba718af91413085db0856b08",
+    "atlas_sha256": "9764f2d379c70452dc14f5b15a137c5b3658b52d26b14d01eef91a47812402c8",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "starfall": {
+    "source": "mahou_vertical_starfall.bbmodel",
+    "source_sha256": "4e8f6baa3c241641ae34032d7f02d4b313197560b6bbfaad776e206ad56a53ab",
+    "mesh_sha256": "8e5d052defc45638671157980d842c833017069a5fe3b9e1f0fcd84cf58726e6",
+    "atlas_sha256": "d567045374320e062b0048d4a3d956c057cbc4cafb85b974c17dc171d6350ed3",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  },
+  "storm_lightning": {
+    "source": "mahou_vertical_storm_lightning.bbmodel",
+    "source_sha256": "55a3340dde48e75b77350ad999998804294a0a14eb0f209f1048a323e645445c",
+    "mesh_sha256": "920927f339602041a8074356c761c290882a91e5efa908d5f2328a159b2b74a2",
+    "atlas_sha256": "42f154b861f63d4c0e8d0b3f59a8144a31dd6ed7bbcca2d64861b6916468c27f",
+    "phase_elements": [
+      64,
+      308,
+      524
+    ],
+    "reference_elements_excluded": 7
+  }
+}

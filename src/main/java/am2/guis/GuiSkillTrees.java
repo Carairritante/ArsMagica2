@@ -308,18 +308,6 @@ public class GuiSkillTrees extends GuiScreen{
 			LearnStates state = sk.getLearnState(entry, Minecraft.getMinecraft().thePlayer);
 			boolean isGolden = SkillTreeManager.instance.isGoldenSkill(entry.registeredItem);
 
-			if (isGolden){
-				int gx = l + entry.x - offsetX * 2;
-				int gy = i1 + entry.y - offsetY * 2;
-				boolean activeGold = (state == LearnStates.LEARNED || state == LearnStates.CAN_LEARN);
-				int gBorder = activeGold
-						? ((AMGuiHelper.instance.getFastTicker() % 20 < 10) ? 0xFFE564 : 0xD49418)
-						: 0x6E5110;
-				drawOctagonOutline(gx - 1, gy - 1, IIcondims + 2, 10, gBorder);
-				if (activeGold){
-					drawOctagonOutline(gx - 2, gy - 2, IIcondims + 4, 11, 0x996B0A);
-				}
-			}
 
 			if (state == LearnStates.LEARNED){
 				GL11.glColor3f(1.0f, 1.0f, 1.0f);
@@ -584,23 +572,6 @@ public class GuiSkillTrees extends GuiScreen{
 		}
 		GL11.glPopMatrix();
 		GL11.glMatrixMode(GL11.GL_MODELVIEW);
-	}
-
-	private void drawOctagonOutline(int x, int y, int size, int chamfer, int color){
-		int x1 = x + chamfer;
-		int x2 = x + size - chamfer;
-		int x3 = x + size;
-		int y1 = y + chamfer;
-		int y2 = y + size - chamfer;
-		int y3 = y + size;
-		line2d(x1, y, x2, y, color);
-		line2d(x2, y, x3, y1, color);
-		line2d(x3, y1, x3, y2, color);
-		line2d(x3, y2, x2, y3, color);
-		line2d(x2, y3, x1, y3, color);
-		line2d(x1, y3, x, y2, color);
-		line2d(x, y2, x, y1, color);
-		line2d(x, y1, x1, y, color);
 	}
 
 	private void line2d(int src_x, int src_y, int dst_x, int dst_y, int color){
