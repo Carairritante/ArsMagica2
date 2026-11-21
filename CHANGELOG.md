@@ -5,6 +5,7 @@
 - Novos visuais de Zone, AoE e canalização, atualizações do Tornado, do Bate-Estacas e da Bússola.
 - Burnout excessivo aplica Silêncio por 30 segundos. Escudo de Mana pode resistir ao efeito.
 - Recall entre dimensões, escala do personagem no Futura3D e proteção contra a nova Telecinese do Wizardry.
+- Corrigida a identificação do jogador pelo Escudo de Mana no respawn. Recall respeita a passagem do Witchery entre corpo e espírito. Blocos lançados por Tornado consultam a proteção de colocação do Forge ao cair.
 
 ## CR44 — Sobrecarga sem morte (21/11/2026)
 

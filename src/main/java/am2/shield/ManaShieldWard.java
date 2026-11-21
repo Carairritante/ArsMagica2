@@ -36,6 +36,9 @@ public final class ManaShieldWard {
     private static final ThreadLocal<ArrayDeque<Entity>> ACTORS = new ThreadLocal<ArrayDeque<Entity>>() {
         protected ArrayDeque<Entity> initialValue() { return new ArrayDeque<Entity>(); }
     };
+    private static final ThreadLocal<ArrayDeque<Integer>> PACKET_DEPTHS = new ThreadLocal<ArrayDeque<Integer>>() {
+        protected ArrayDeque<Integer> initialValue() { return new ArrayDeque<Integer>(); }
+    };
     private static final ThreadLocal<ArrayDeque<DamageFrame>> DAMAGE = new ThreadLocal<ArrayDeque<DamageFrame>>() {
         protected ArrayDeque<DamageFrame> initialValue() { return new ArrayDeque<DamageFrame>(); }
     };
@@ -148,10 +151,17 @@ public final class ManaShieldWard {
         if (!stack.isEmpty() && stack.peek() == actor) stack.pop();
     }
     public static void enterPacket(Object handler) {
-        if (handler instanceof NetHandlerPlayServer) enterActor(((NetHandlerPlayServer)handler).playerEntity);
+        if (!(handler instanceof NetHandlerPlayServer)) return;
+        PACKET_DEPTHS.get().push(ACTORS.get().size());
+        enterActor(((NetHandlerPlayServer)handler).playerEntity);
     }
     public static void exitPacket(Object handler) {
-        if (handler instanceof NetHandlerPlayServer) exitActor(((NetHandlerPlayServer)handler).playerEntity);
+        if (!(handler instanceof NetHandlerPlayServer)) return;
+        // Respawn can replace handler.playerEntity before this packet returns.
+        Integer previousDepth = PACKET_DEPTHS.get().poll();
+        if (previousDepth == null) return;
+        ArrayDeque<Entity> actors = ACTORS.get();
+        while (actors.size() > previousDepth) actors.pop();
     }
     public static void enterDamage(Object target, Object source) {
         if (target instanceof EntityLivingBase && source instanceof DamageSource)

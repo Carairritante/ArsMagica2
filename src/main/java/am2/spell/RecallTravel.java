@@ -5,6 +5,7 @@ import am2.api.spell.component.interfaces.ISpellComponent;
 import am2.buffs.BuffList;
 import am2.shield.ManaShieldRules;
 import am2.shield.ManaShieldWard;
+import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.PlayerEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
@@ -16,11 +17,10 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTBase;
 import net.minecraft.util.ChatComponentTranslation;
 import net.minecraft.world.Teleporter;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldProvider;
 import net.minecraft.world.WorldServer;
 import net.minecraftforge.common.DimensionManager;
 import net.minecraftforge.event.world.WorldEvent;
@@ -70,6 +70,7 @@ public final class RecallTravel {
         if (!validCoordinates(x, y, z) || !DimensionManager.isDimensionRegistered(dimension)) {
             message(caster, "am2.recall.invalidDestination"); return false;
         }
+        if (!allowsMarkedTravel(target, dimension, caster)) return false;
         if (target.ridingEntity != null || target.riddenByEntity != null) {
             message(caster, "am2.recall.dismount"); return false;
         }
@@ -124,7 +125,6 @@ public final class RecallTravel {
         WorldServer source = (WorldServer)p.worldObj;
         double oldX = p.posX, oldY = p.posY, oldZ = p.posZ;
         int oldDimension = p.dimension;
-        DreamState dream = null;
         boolean committed = false;
         am2.shield.ManaShieldWard.enterActor(p);
         try {
@@ -133,8 +133,9 @@ public final class RecallTravel {
             if (destination == null || r.y >= destination.getHeight()) {
                 message(r.caster, "am2.recall.invalidDestination"); return;
             }
-            dream = DreamState.prepare(p, destination);
-            if (dream != null) dream.apply();
+            if (source != destination && (isDreamWorld(source.provider) || isDreamWorld(destination.provider))) {
+                message(r.caster, "am2.recall.dreamBoundary"); return;
+            }
             committed = transfer(p, destination, r.x, r.y, r.z);
             if (!committed) message(r.caster, "am2.recall.invalidDestination");
         } catch (Exception failure) {
@@ -142,7 +143,6 @@ public final class RecallTravel {
             message(r.caster, "am2.recall.invalidDestination");
         } finally {
             if (!committed) {
-                if (dream != null) dream.restore();
                 if (p.worldObj != source || p.dimension != oldDimension || !source.loadedEntityList.contains(p)) {
                     try {
                         if (!transfer(p, source, oldX, oldY, oldZ))
@@ -171,40 +171,24 @@ public final class RecallTravel {
         p.setPositionAndUpdate(x, y, z);
         return true;
     }
-    /** Optional Witchery flags: snapshot ONLY the three booleans we change, never inventory. */
-    private static final class DreamState {
-        final NBTTagCompound nbt;
-        final Class<?> dream;
-        final boolean to;
-        final NBTBase walking, nightmare, demonic;
-        DreamState(NBTTagCompound nbt, Class<?> dream, boolean to) {
-            this.nbt = nbt; this.dream = dream; this.to = to;
-            walking = copy(nbt.getTag("WITCSpiritWalking"));
-            NBTTagCompound spirit = nbt.getCompoundTag("WITCSpiritWorld");
-            nightmare = copy(spirit.getTag("Nightmare")); demonic = copy(spirit.getTag("Demonic"));
+    private static boolean isDreamWorld(WorldProvider provider) {
+        for (Class<?> type = provider.getClass(); type != null; type = type.getSuperclass())
+            if (type.getName().equals("com.emoniph.witchery.dimension.WorldProviderDreamWorld")) return true;
+        return false;
+    }
+    private static boolean allowsMarkedTravel(EntityLivingBase target, int dimension, EntityLivingBase caster) {
+        if (target.dimension == dimension || !Loader.isModLoaded("witchery")) return true;
+        try {
+            World destination = DimensionManager.getWorld(dimension);
+            // Identify an unloaded Dream World without starting it or touching the player's spirit inventory.
+            if (!isDreamWorld(target.worldObj.provider) && !isDreamWorld(destination == null
+                    ? DimensionManager.createProviderFor(dimension) : destination.provider)) return true;
+            message(caster, "am2.recall.dreamBoundary");
+        } catch (RuntimeException unavailable) {
+            LogHelper.error("Recall could not identify dimension %d: %s", dimension, unavailable.toString());
+            message(caster, "am2.recall.invalidDestination");
         }
-        static NBTBase copy(NBTBase tag) { return tag == null ? null : tag.copy(); }
-        static DreamState prepare(EntityPlayerMP player, WorldServer destination) throws Exception {
-            String provider = "com.emoniph.witchery.dimension.WorldProviderDreamWorld";
-            boolean from = player.worldObj.provider.getClass().getName().equals(provider);
-            boolean to = destination.provider.getClass().getName().equals(provider);
-            if (!from && !to) return null;
-            Class<?> infusion = Class.forName("com.emoniph.witchery.infusion.Infusion");
-            NBTTagCompound nbt = (NBTTagCompound)infusion.getMethod("getNBT", Entity.class).invoke(null, player);
-            return new DreamState(nbt, Class.forName(provider), to);
-        }
-        void apply() throws Exception {
-            if (to) dream.getMethod("setPlayerHasNightmare", NBTTagCompound.class, boolean.class, boolean.class).invoke(null, nbt, false, false);
-            dream.getMethod("setPlayerIsSpiritWalking", NBTTagCompound.class, boolean.class).invoke(null, nbt, to);
-        }
-        static void restoreTag(NBTTagCompound tag, String key, NBTBase value) {
-            if (value == null) tag.removeTag(key); else tag.setTag(key, value);
-        }
-        void restore() {
-            restoreTag(nbt, "WITCSpiritWalking", walking);
-            NBTTagCompound spirit = nbt.getCompoundTag("WITCSpiritWorld");
-            restoreTag(spirit, "Nightmare", nightmare); restoreTag(spirit, "Demonic", demonic);
-        }
+        return false;
     }
     private static final class MarkTeleporter extends Teleporter {
         final double x, y, z;

@@ -1642,6 +1642,7 @@ public class EntitySpellEffect extends Entity{
 
 			if (isFallingBlock){
 				net.minecraft.entity.item.EntityFallingBlock fb = (net.minecraft.entity.item.EntityFallingBlock) ent;
+				TornadoLanding.mark(fb, sourceCaster);
 				if (endingFling || heightFrac > 0.65 || fb.field_145812_b >= 36){
 					double flingMult = isSolar ? 1.50 : (1.22 + this.tornadoTier * 0.07);
 					fb.motionX = dirX * flingMult + tangX * 0.65;
@@ -1946,6 +1947,7 @@ public class EntitySpellEffect extends Entity{
 										this.worldObj, bx + 0.5, cy + 0.5, bz + 0.5, block, meta
 								);
 								falling.field_145812_b = 1; // source is cleared synchronously only after spawn acceptance
+								TornadoLanding.mark(falling, sourceCaster);
 								falling.field_145813_c = true; // guaranteed drop as item if landing cell is obstructed
 								if (block != net.minecraft.init.Blocks.anvil
 										&& tornadoThrownBlocksMayHurt(sourceCaster)){

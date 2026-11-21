@@ -1,14 +1,44 @@
 package am2.entities;
 
 import am2.damage.DamageSources;
+import am2.preloader.TornadoLandingTransformer;
 import am2.spell.components.Tornado;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.DamageSource;
 import org.junit.Test;
 import java.lang.reflect.Method;
+import java.io.InputStream;
+import java.util.jar.JarFile;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.analysis.*;
 import static org.junit.Assert.*;
 
 public class TornadoSafetyTest {
+    @Test public void fallingBlockLandingKeepsItsStackAndIsPatchedOnce() throws Exception {
+        String entry = "net/minecraft/entity/item/EntityFallingBlock.class";
+        for (String name : new String[]{"recompiled_minecraft-1.7.10.jar", "srg_merged_minecraft.jar"}) {
+            try (JarFile jar = new JarFile("build/rfg/" + name);
+                 InputStream in = jar.getInputStream(jar.getJarEntry(entry))) {
+                byte[] patched = TornadoLandingTransformer.transform(org.apache.commons.io.IOUtils.toByteArray(in));
+                assertArrayEquals(patched, TornadoLandingTransformer.transform(patched));
+                ClassNode node = new ClassNode();
+                new ClassReader(patched).accept(node, ClassReader.EXPAND_FRAMES);
+                int landings = 0;
+                for (Object raw : node.methods) {
+                    MethodNode method = (MethodNode)raw;
+                    for (AbstractInsnNode i : method.instructions.toArray()) if (i instanceof MethodInsnNode) {
+                        MethodInsnNode call = (MethodInsnNode)i;
+                        if (!call.owner.equals("am2/entities/TornadoLanding")) continue;
+                        assertEquals("place", call.name);
+                        new Analyzer(new BasicVerifier()).analyze(node.name, method);
+                        landings++;
+                    }
+                }
+                assertEquals(name, 1, landings);
+            }
+        }
+    }
     @Test public void refreshingDoesNotTruncateLongLunarDuration() {
         EntitySpellEffect effect = new EntitySpellEffect(null);
         effect.setTornado(null, null, 0, 80, 0, 32, 800, 7, 0, 0, 8.5f, 0, 0,

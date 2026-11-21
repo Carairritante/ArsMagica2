@@ -1487,4 +1487,5 @@ am2.astral_compass.dim.ore_chaos=Chaos
 
 am2.recall.playersOnly=Dimensional Recall works on players.
 am2.recall.invalidDestination=The marked dimension or coordinates are unavailable.
+am2.recall.dreamBoundary=Enter or leave the Spirit World through Witchery's dreaming and waking rituals.
 am2.recall.dismount=Dismount and remove passengers before using Recall across dimensions.

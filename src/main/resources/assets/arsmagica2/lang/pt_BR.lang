@@ -1150,4 +1150,5 @@ am2.astral_compass.dim.ore_chaos=Caos
 
 am2.recall.playersOnly=A combinação dimensional de Recall funciona em jogadores.
 am2.recall.invalidDestination=A dimensão ou as coordenadas da marca não estão disponíveis.
+am2.recall.dreamBoundary=Para entrar ou sair do Mundo dos Espíritos, adormeça ou desperte pelo Witchery.
 am2.recall.dismount=Desmonte e remova passageiros antes de usar Recall entre dimensões.
