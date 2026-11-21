@@ -1603,7 +1603,9 @@ public class EntitySpellEffect extends Entity{
 				this.posX + pullRadius, Math.min(256.0, this.posY + height + 4.0), this.posZ + pullRadius
 		);
 		@SuppressWarnings("unchecked")
-		List<Entity> affected = this.worldObj.getEntitiesWithinAABB(Entity.class, vortexBox);
+		List<Entity> affected = new ArrayList<Entity>();
+		affected.addAll(this.worldObj.getEntitiesWithinAABB(EntityLivingBase.class, vortexBox));
+		affected.addAll(this.worldObj.getEntitiesWithinAABB(net.minecraft.entity.item.EntityFallingBlock.class, vortexBox));
 		boolean endingFling = (this.ticksExisted >= this.getTicksToExist() - 3);
 		int dmgInterval = this.tornadoTier >= 5 ? 5 : (this.tornadoTier == 4 ? 7 : (this.tornadoTier == 3 ? 8 : 9));
 		if (this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_LIGHTNING){
@@ -1775,6 +1777,8 @@ public class EntitySpellEffect extends Entity{
 		boolean canBreakBlocks = AMCore.config.TornadoBreaksBlocks()
 				&& (this.tornadoPlayerOwned ? AMCore.config.PlayerSpellsDamageTerrain() : AMCore.config.NPCSpellsDamageTerrain());
 
+		SpellDropConsolidator.beginBatch(worldObj, posX, posY, posZ, false);
+		try {
 		// Glacial Tornado synergy: freeze surface water along the touchdown footprint
 		if (canBreakBlocks && this.tornadoActiveElement == am2.spell.components.Tornado.ELEMENT_ICE && this.ticksExisted % 4 == 0){
 			for (int f = 0; f < 4; f++){
@@ -2011,6 +2015,10 @@ public class EntitySpellEffect extends Entity{
 		if (sampledNow > 0 || this.ticksExisted % 3 == 0){
 			syncTornadoState(bIds, bMetas, bXs, bYs, bZs, sampledNow);
 		}
+		} finally {
+			SpellDropConsolidator.endBatch(worldObj);
+		}
+
 	}
 
 	private void syncTornadoState(int[] bIds, int[] bMetas, int[] bXs, int[] bYs, int[] bZs, int count){
