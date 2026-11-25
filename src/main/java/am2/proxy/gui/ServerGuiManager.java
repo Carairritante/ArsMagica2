@@ -161,6 +161,11 @@ public class ServerGuiManager implements IGuiHandler{
 				return null;
 			}
 			return new ContainerEntropicEnervator((TileEntityEntropicEnervator)te, player);
+		case ArsMagicaGuiIdList.GUI_VOCAL_AURA:
+			if (!(te instanceof TileEntityVocalAura) || !am2.skills.VocalResonance.isUnlocked(player)){
+				return null;
+			}
+			return new ContainerVocalAura(player.inventory, am2.playerextensions.VoiceVaultStorage.For(player));
 		}
 		return null;
 	}

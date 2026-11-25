@@ -123,6 +123,7 @@ public class ClientProxy extends CommonProxy{
 		((ParticleManagerClient)particleManager).registerEventHandlers();
 
 		FMLCommonHandler.instance().bus().register(new AMKeyBindings());
+		am2.interop.voice.VoiceSpellController.initializeClient();
 	}
 
 	@Override
@@ -167,6 +168,7 @@ public class ClientProxy extends CommonProxy{
 		MinecraftForgeClient.registerItemRenderer(Item.getItemFromBlock(BlocksCommonProxy.caster), CustomItemRenderer.instance);
 
 		ClientCommandHandler.instance.registerCommand(new ConfigureAMUICommand());
+		ClientCommandHandler.instance.registerCommand(new am2.interop.voice.VoiceSpellCommand());
 	}
 
 	@Override

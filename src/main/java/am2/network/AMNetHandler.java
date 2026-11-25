@@ -415,4 +415,24 @@ public class AMNetHandler{
 				.add(damageType == null ? "generic" : damageType);
 		sendPacketToAllClientsNear(dimension, x, y, z, 48.0, AMPacketIDs.DUMMY_DAMAGE_POPUP, writer.generate());
 	}
+
+	public void sendVoiceSpellCast(int inventorySlot, int spellBookSlot, String spokenWord){
+		AMDataWriter writer = new AMDataWriter()
+				.add(inventorySlot)
+				.add(spellBookSlot)
+				.add(spokenWord == null ? "" : spokenWord);
+		sendPacketToServer(AMPacketIDs.VOICE_SPELL_CAST, writer.generate());
+	}
+
+	public void sendVoiceVaultWordUpdate(int slot, String word){
+		AMDataWriter writer = new AMDataWriter()
+				.add(slot)
+				.add(word == null ? "" : word);
+		sendPacketToServer(AMPacketIDs.VOICE_VAULT_ACTION, writer.generate());
+	}
+
+	public void sendVoiceCastFx(int dimension, double x, double y, double z){
+		AMDataWriter writer = new AMDataWriter().add(x).add(y).add(z);
+		sendPacketToAllClientsNear(dimension, x, y, z, 32.0, AMPacketIDs.VOICE_CAST_FX, writer.generate());
+	}
 }

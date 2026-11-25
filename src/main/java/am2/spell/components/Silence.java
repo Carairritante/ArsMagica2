@@ -1,5 +1,8 @@
 package am2.spell.components;
 
+import am2.api.blocks.MultiblockStructureDefinition;
+import am2.api.math.AMVector3;
+import am2.api.spell.component.interfaces.IRitualInteraction;
 import am2.api.spell.component.interfaces.ISpellComponent;
 import am2.api.spell.enums.Affinity;
 import am2.api.spell.enums.SpellModifiers;
@@ -17,7 +20,7 @@ import net.minecraft.world.World;
 import java.util.EnumSet;
 import java.util.Random;
 
-public class Silence implements ISpellComponent{
+public class Silence implements ISpellComponent, IRitualInteraction{
 
 	@Override
 	public Object[] getRecipeItems(){
@@ -37,6 +40,10 @@ public class Silence implements ISpellComponent{
 
 	@Override
 	public boolean applyEffectBlock(ItemStack stack, World world, int blockx, int blocky, int blockz, int blockFace, double impactX, double impactY, double impactZ, EntityLivingBase caster){
+		AMVector3 center = am2.interop.voice.VocalAuraRitual.resolveRitualCenter(world, blockx, blocky, blockz);
+		if (center != null){
+			return am2.interop.voice.VocalAuraRitual.tryExecute(world, (int) center.x, (int) center.y, (int) center.z, caster);
+		}
 		return false;
 	}
 
@@ -82,6 +89,21 @@ public class Silence implements ISpellComponent{
 	@Override
 	public float getAffinityShift(Affinity affinity){
 		return 0.01f;
+	}
+
+	@Override
+	public MultiblockStructureDefinition getRitualShape(){
+		return am2.interop.voice.VocalAuraRitual.INSTANCE.getRitualShape();
+	}
+
+	@Override
+	public ItemStack[] getReagents(){
+		return am2.interop.voice.VocalAuraRitual.INSTANCE.getReagents();
+	}
+
+	@Override
+	public int getReagentSearchRadius(){
+		return am2.interop.voice.VocalAuraRitual.INSTANCE.getReagentSearchRadius();
 	}
 
 }

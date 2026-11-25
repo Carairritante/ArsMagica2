@@ -772,6 +772,11 @@
       <name>Colour</name>
       <desc>This modifier allows you to change the color of the particles on your spell.  Want green fireballs?  Have at it!  Color is determined by the color dye that you throw in during the crafting process.  Any one will be accepted, regardless of what the lectern prompts for.</desc>
     </talent>
+    <talent id="VocalResonance" unlocked="true">
+      <name>Vocal Resonance</name>
+      <desc>For decades I required parchment, staves, and gestures to shape Etherium — until, beyond #5Magic Level 90#0, I realized the oldest focus of all was my own voice. !d By spending a #4Red Skill Point#0 to awaken #9Vocal Resonance#0, your soul becomes attuned to spoken incantations, allowing you to invoke the #9Vocal Resonance Aura#0 and unleash up to #98 stored spells#0 from any dimension simply by speaking their bound words.</desc>
+      <relatedEntries>vocal_aura,vocal_resonance_ritual,Silence</relatedEntries>
+    </talent>
   </talents>
   <items>
     <item id="resources">
@@ -1789,6 +1794,13 @@
         <ritualName>astralDivination</ritualName>
         <ritualController>Mark</ritualController>
       </subitem>
+      <subitem id="vocal_resonance">
+        <name>Ritual of Vocal Resonance</name>
+        <desc>#5Chronicles of the Spoken Word:#0 !l Even the greatest archmages can be caught with a blade or pickaxe in hand when danger strikes. Seeking to cast spells at the speed of breath without surrendering inventory slots to heavy tomes, masters beyond #5Magic Level 90#0 wove #5Arcane Essence#0, #5Air Essence#0, #5Purified Vinteum Dust#0, and #9Chimerite#0 over a resonant #5Quartz Block#0, shattering a veil of #5Silence#0 to birth the #9Vocal Resonance Aura#0. !p #9Structure &amp; Execution:#0 !l - Unlock #9Vocal Resonance#0 in the Talents tree (#4Magic Level 90+#0). !l - Draw the 5x5 harmonic ring with #5Wizard's Chalk#0 (use the #9Arcane Architect's Chalk#0 to preview the pattern). !l - Place #54 Warding Candles#0 at the four corners of the circle. !l - Place #51 Quartz Block#0 at the exact center. !l - Throw inside the circle: #91x Arcane Essence#0, #91x Air Essence#0, #91x Purified Vinteum Dust#0, and #91x Chimerite#0. !l - Cast a spell containing #5Silence#0 directly at the central Quartz Block. !p #9Laws of Vocal Resonance:#0 !l - #5Soul-Bound Sanctuary:#0 The #98 spell scroll slots#0 reside inside your own soul rather than the physical block — no thief can view or take your scrolls, and breaking the aura never destroys them. !l - #5Cross-Dimensional Reach:#0 Speak a bound word while holding #2V#0 (or in #2Continuous#0 mode) to cast from anywhere without chunk-loading your base and with #9no extra mana cost#0.</desc>
+        <relatedEntries>wizardChalk,warding_candle,ritualArchitect,vocal_aura,VocalResonance</relatedEntries>
+        <ritualName>vocalResonance</ritualName>
+        <ritualController>Silence</ritualController>
+      </subitem>
       <subitem id="true_soulbound">
         <name>Ritual of the Eternal Bond</name>
         <desc>#5Chronicles of the Eternal Circle:#0 !l During the ancient Wars of the Conclave, archmages learned the hard way that their greatest vulnerability was not their flesh, but physical separation from their #9Spell Books#0 and relics. Ordinary #5Soulbound#0 enchantments only anchored an object at the moment of death, leaving a mage defenseless against #4Disarm#0 spells, dimensional pickpockets, Void chasms, or raiders who locked a stolen tome inside chests and arcane storage networks. !d Refusing to let the power conquered over a lifetime of study be stolen or erased from existence, the masters wove #5Arcane Essence#0 (absolute magical law), #5Ender Essence#0 (spatial omnipresence), and #5Purified Vinteum Dust#0 over a core of #9Chimerite#0 — a living mineral capable of mirroring the caster's very soul — and sealed the covenant with #5Recall#0. Thus was born the #5Eternal Bond#0. !p #9Structure &amp; Execution:#0 !l - Draw the 5x5 runic ring with #5Wizard's Chalk#0 (use the #9Arcane Architect's Chalk#0 to project the layout). !l - Place #54 Warding Candles#0 at the cardinal points of the ring. !l - Place #51 Chimerite Block#0 at the exact center. !l - Throw onto the central block: #91x Arcane Essence#0, #91x Ender Essence#0, #91x Purified Vinteum Dust#0, and #91x Non-Stackable Item#0 (such as your #5Spell Book#0, staff, weapon, or armor). !l - Cast a spell containing #5Recall#0 directly at the central Chimerite Block. !p #9Laws of the Eternal Bond:#0 !l - #5Anti-Theft &amp; Retribution:#0 If any other player or creature tries to pick up, steal, or disarm the relic, it rejects the thief, immediately returns to the owner's hand/inventory, and punishes the thief with magic damage, #4Weakness II#0, #4Slowness II#0, and #4Blindness#0. !l - #5Container Lock:#0 The bound item can never be placed or piped into chests, hoppers, barrels, terminals, or third-party inventories. !l - #5Absolute Immortality:#0 Immune to fire, lava, cacti, explosions, despawning, and the #4Void#0 itself (from which it ascends back to its owner). Persists across death, dimensions, and in the #9Soul Vault#0 if the owner is offline. !l - #5Voluntary Release:#0 Only the true owner can unbind the seal by pressing #2Shift + Q#0 twice within 5s (or #2/am2unbind#0), or permanently destroy the item with #4/am2destroy#0 twice within 10s.</desc>
@@ -2021,6 +2033,13 @@
       <relatedEntries>wizardChalk,warding_candle,ritualArchitect,astral_compass</relatedEntries>
       <ritualName>astralDivination</ritualName>
       <ritualController>Mark</ritualController>
+    </ritual>
+    <ritual id="vocal_resonance_ritual" unlocked="true">
+      <name>Ritual of Vocal Resonance</name>
+      <desc>#5Chronicles of the Spoken Word:#0 !l Even the greatest archmages can be caught with a blade or pickaxe in hand when danger strikes. Seeking to cast spells at the speed of breath without surrendering inventory slots to heavy tomes, masters beyond #5Magic Level 90#0 wove #5Arcane Essence#0, #5Air Essence#0, #5Purified Vinteum Dust#0, and #9Chimerite#0 over a resonant #5Quartz Block#0, shattering a veil of #5Silence#0 to birth the #9Vocal Resonance Aura#0. !p #9Structure &amp; Execution:#0 !l - Unlock #9Vocal Resonance#0 in the Talents tree (#4Magic Level 90+#0). !l - Draw the 5x5 harmonic ring with #5Wizard's Chalk#0 (use the #9Arcane Architect's Chalk#0 to preview the pattern). !l - Place #54 Warding Candles#0 at the four corners of the circle. !l - Place #51 Quartz Block#0 at the exact center. !l - Throw inside the circle: #91x Arcane Essence#0, #91x Air Essence#0, #91x Purified Vinteum Dust#0, and #91x Chimerite#0. !l - Cast a spell containing #5Silence#0 directly at the central Quartz Block. !p #9Laws of Vocal Resonance:#0 !l - #5Soul-Bound Sanctuary:#0 The #98 spell scroll slots#0 reside inside your own soul rather than the physical block — no thief can view or take your scrolls, and breaking the aura never destroys them. !l - #5Cross-Dimensional Reach:#0 Speak a bound word while holding #2V#0 (or in #2Continuous#0 mode) to cast from anywhere without chunk-loading your base and with #9no extra mana cost#0.</desc>
+      <relatedEntries>wizardChalk,warding_candle,ritualArchitect,vocal_aura,VocalResonance</relatedEntries>
+      <ritualName>vocalResonance</ritualName>
+      <ritualController>Silence</ritualController>
     </ritual>
   </structures>
   <mobs>
@@ -3001,6 +3020,7 @@
 		<relatedEntries>otherworldly_aura,blackaurem_structure,crystal_phylactery</relatedEntries>
 	</block>
     <block id="arcane_striker" unlocked="true"><name>Arcane Striker</name><desc>An arcane park-style strength tester built to measure spell and weapon burst damage. Right-click the #5Arcane Striker#0 to configure the test duration up to #960 seconds#0, toggle whether attacks #5bypass invulnerability frames (i-frames)#0, and summon a holographic training dummy directly on top of the pedestal. !d Strike the dummy with spells, melee weapons, or projectiles while the test runs. The rising arcane gauge reflects your current damage against the stored record and rings the top bell whenever a new peak is achieved. !p Both the machine panel and the dummy nameplate track live and stored #9Total Damage#0, #9DPS#0, #9Peak Hit#0, and the all-time #5Record#0 holder.</desc><relatedEntries>mana_battery</relatedEntries></block>
+    <block id="vocal_aura" unlocked="true"><name>Vocal Resonance Aura</name><desc>A floating harmonic sanctuary awakened by the #5Ritual of Vocal Resonance#0. Right-click the #5Vocal Resonance Aura#0 to place up to #98 real spell scrolls#0 into your personal soul vault, edit each slot's trigger word, record up to #94 voice samples#0 per word, and calibrate recognition safely using the #2Test#0 mode without firing spells indoors. !d Because the vault is bound to your soul (much like #5Rift Storage#0), every mage who touches the aura accesses only their own spells, and your bound incantations remain castable across death and across all dimensions.</desc><relatedEntries>vocal_resonance_ritual,VocalResonance,Silence</relatedEntries></block>
   </blocks>
   <mechanics>
     <mechanic id="affinity">

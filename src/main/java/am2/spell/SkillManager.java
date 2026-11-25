@@ -336,6 +336,7 @@ public class SkillManager implements ISpellPartManager{
 		registerSkillTreeEntry(new ManaCapacityBoostII(), "ManaCapacityII");
 		registerSkillTreeEntry(new ManaCapacityBoostIII(), "ManaCapacityIII");
 		registerSkillTreeEntry(new SpellMovement(), "SpellMotion");
+		registerSkillTreeEntry(new am2.skills.VocalResonance(), "VocalResonance");
 	}
 
 	public String getDisplayName(ISkillTreeEntry part){

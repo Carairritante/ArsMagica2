@@ -98,6 +98,7 @@ public class BlocksCommonProxy{
 	public static BlockFlickerLure flickerLure;
 	public static BlockArcaneDeconstructor arcaneDeconstructor;
 	public static BlockOtherworldAura otherworldAura;
+	public static BlockVocalAura vocalAura;
 	public static BlockSpellSealedDoor spellSealedDoor;
 	public static BlockEntropicEnervator entropicEnervator;
 	public static BlockSpellReplicator spellReplicator;
@@ -260,6 +261,7 @@ public class BlocksCommonProxy{
 		flickerLure = (BlockFlickerLure)new BlockFlickerLure().setBlockName("arsmagica2:flicker_lure").setCreativeTab(blockTab);
 		arcaneDeconstructor = (BlockArcaneDeconstructor)new BlockArcaneDeconstructor().setBlockName("arsmagica2:arcane_deconstructor").setCreativeTab(blockTab);
 		otherworldAura = (BlockOtherworldAura)new BlockOtherworldAura().setBlockName("arsmagica2:otherworld_aura").setCreativeTab(blockTab);
+		vocalAura = (BlockVocalAura)new BlockVocalAura().setBlockName("arsmagica2:vocal_aura").setCreativeTab(blockTab);
 		spellSealedDoor = (BlockSpellSealedDoor)new BlockSpellSealedDoor().setBlockName("arsmagica2:spell_sealed_door");
 		entropicEnervator = (BlockEntropicEnervator)new BlockEntropicEnervator().setBlockName("arsmagica2:entropic_enervator").setCreativeTab(blockTab);
 		spellReplicator = (BlockSpellReplicator)new BlockSpellReplicator().setBlockName("arsmagica2:spellReplicator").setCreativeTab(blockTab);
@@ -837,6 +839,7 @@ public class BlocksCommonProxy{
 		registerBlock(arcaneDeconstructor, "arcaneDeconstructor");
 		registerBlock(wakebloom, "wakebloom");
 		registerBlock(otherworldAura, "otherworldAura");
+		registerBlock(vocalAura, "vocalAura");
 		registerBlock(spellSealedDoor, "spellSealedDoor");
 		registerBlock(entropicEnervator, "entropicEvervator");
 		registerBlock(spellReplicator, "spellReplicator");
@@ -933,6 +936,7 @@ public class BlocksCommonProxy{
 		GameRegistry.registerTileEntity(TileEntityFlickerLure.class, "TileEntityFlickerLure");
 		GameRegistry.registerTileEntity(TileEntityArcaneDeconstructor.class, "TileEntityArcaneDeconstructor");
 		GameRegistry.registerTileEntity(TileEntityOtherworldAura.class, "TileEntityOtherworldAura");
+		GameRegistry.registerTileEntity(TileEntityVocalAura.class, "TileEntityVocalAura");
 		GameRegistry.registerTileEntity(TileEntityCrystalMarkerSpellExport.class, "TileEntityCrystalMarkerSpellExport");
 		GameRegistry.registerTileEntity(TileEntityInertSpawner.class, "TileEntityInertSpawner");
 		GameRegistry.registerTileEntity(TileEntitySpellSealedDoor.class, "TileEntitySpellSealedDoor");

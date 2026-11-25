@@ -772,6 +772,11 @@
       <name>Cor</name>
       <desc>Este modificador permite mudar a cor das partículas da magia. Quer bolas de fogo verdes? Vá em frente! A cor é definida pelo corante que você joga durante a criação. Qualquer corante é aceito, independentemente do que o atril pedir.</desc>
     </talent>
+    <talent id="VocalResonance" unlocked="true">
+      <name>Ressonância Vocal</name>
+      <desc>Durante décadas precisei de pergaminhos, cajados e gestos para moldar o Etherium — até que, além do #5Nível Mágico 90#0, compreendi que o foco mais antigo de todos era a minha própria voz. !d Ao gastar um #4Ponto de Habilidade Vermelho#0 para despertar a #9Ressonância Vocal#0, sua alma entra em sintonia com encantamentos falados, permitindo invocar a #9Aura de Ressonância Vocal#0 e liberar até #98 magias guardadas#0 de qualquer dimensão apenas pronunciando suas palavras vinculadas.</desc>
+      <relatedEntries>vocal_aura,vocal_resonance_ritual,Silence</relatedEntries>
+    </talent>
   </talents>
   <items>
     <item id="resources">
@@ -1683,6 +1688,13 @@
         <ritualName>astralDivination</ritualName>
         <ritualController>Mark</ritualController>
       </subitem>
+      <subitem id="vocal_resonance">
+        <name>Ritual da Ressonância Vocal</name>
+        <desc>#5Crônicas da Palavra Falada:#0 !l Mesmo os maiores arquimagos podem ser surpreendidos segurando uma espada ou picareta quando o perigo surge. Buscando conjurar na velocidade do próprio fôlego sem ocupar o inventário com tomos pesados, mestres além do #5Nível Mágico 90#0 teceram #5Essência Arcana#0, #5Essência do Ar#0, #5Pó de Vinteum Purificado#0 e #9Quimerita#0 sobre um #5Bloco de Quartzo#0 ressonante, rompendo um véu de #5Silêncio#0 para dar origem à #9Aura de Ressonância Vocal#0. !p #9Estrutura e Execução:#0 !l - Desbloqueie #9Ressonância Vocal#0 na aba de Talentos (#4Nível Mágico 90+#0). !l - Desenhe o anel harmônico 5x5 com #5Giz de Mago#0 (use o #9Giz do Arquiteto Arcano#0 para projetar o molde). !l - Posicione #54 Velas de Proteção#0 nos quatro cantos do círculo. !l - Coloque #51 Bloco de Quartzo#0 no centro exato. !l - Jogue dentro do círculo: #91x Essência Arcana#0, #91x Essência do Ar#0, #91x Pó de Vinteum Purificado#0 e #91x Quimerita#0. !l - Conjure uma magia com #5Silêncio#0 diretamente no Bloco de Quartzo central. !p #9Leis da Ressonância Vocal:#0 !l - #5Santuário da Alma:#0 Os #98 slots de pergaminho#0 residem na sua própria alma e não no bloco físico — nenhum invasor vê ou rouba suas magias, e quebrar a aura nunca as destrói. !l - #5Alcance Dimensional:#0 Pronuncie a palavra vinculada segurando #2V#0 (ou no modo #2Contínuo#0) para conjurar de qualquer dimensão sem chunk-loader e #9sem custo extra de mana#0.</desc>
+        <relatedEntries>wizardChalk,warding_candle,ritualArchitect,vocal_aura,VocalResonance</relatedEntries>
+        <ritualName>vocalResonance</ritualName>
+        <ritualController>Silence</ritualController>
+      </subitem>
       <subitem id="true_soulbound">
         <name>Ritual do Vínculo Eterno</name>
         <desc>#5Crônicas do Círculo Eterno:#0 !l Nas antigas Guerras do Conclave, arquimagos descobriram da pior maneira que sua maior fraqueza não era a carne, mas a separação física de seus #9Livros de Magias#0 e relíquias. Encantamentos comuns de #5Vínculo de Alma#0 prendiam um objeto apenas no instante da morte, deixando o mago vulnerável a feitiços de #4Desarmar#0, ladrões dimensionais, abismos do Vazio ou saqueadores que trancavam o tomo roubado em baús e redes arcanas. !d Recusando-se a permitir que o poder conquistado ao longo de toda uma vida fosse tomado ou apagado da existência, os mestres teceram #5Essência Arcana#0 (a lei mágica absoluta), #5Essência do Ender#0 (onipresença espacial) e #5Pó de Vinteum Purificado#0 sobre um núcleo de #9Quimerita#0 — mineral vivo capaz de espelhar a própria alma do conjurador — selando o pacto com #5Retornar#0. Assim nasceu o #5Vínculo Eterno#0. !p #9Estrutura e Execução:#0 !l - Desenhe o anel rúnico 5x5 com #5Giz de Mago#0 (use o #9Giz do Arquiteto Arcano#0 para projetar o molde). !l - Posicione #54 Velas de Proteção#0 nos pontos cardeais do círculo. !l - Coloque #51 Bloco de Quimerita#0 no centro exato. !l - Lance sobre o bloco central: #91x Essência Arcana#0, #91x Essência do Ender#0, #91x Pó de Vinteum Purificado#0 e #91x Item Único#0 não empilhável (como seu #5Livro de Magias#0, cajado, arma ou armadura). !l - Conjure uma magia com #5Retornar#0 diretamente no Bloco de Quimerita central. !p #9Leis do Vínculo Eterno:#0 !l - #5Antirroubo e Punição:#0 Se qualquer outro jogador ou criatura tentar pegar, roubar ou desarmar a relíquia, ela rejeita o invasor, retorna imediatamente às mãos do dono e pune o ladrão com dano mágico, #4Fraqueza II#0, #4Lentidão II#0 e #4Cegueira#0. !l - #5Bloqueio de Recipientes:#0 O item vinculado jamais pode ser guardado ou puxado para baús, funis, barris, terminais ou inventários de terceiros. !l - #5Imortalidade Absoluta:#0 Imune a fogo, lava, cactos, explosões, desaparecimento por tempo e ao próprio #4Vazio#0 (de onde ascende de volta ao dono). Persiste após a morte, entre dimensões e até no #9Cofre de Almas#0 caso o dono esteja desconectado. !l - #5Renúncia Voluntária:#0 Apenas o verdadeiro dono pode romper o selo pressionando #2Shift + Q#0 duas vezes em 5s (ou #2/am2unbind#0), ou destruir o item de vez com #4/am2destroy#0 duas vezes em 10s.</desc>
@@ -1915,6 +1927,13 @@
       <relatedEntries>wizardChalk,warding_candle,ritualArchitect,astral_compass</relatedEntries>
       <ritualName>astralDivination</ritualName>
       <ritualController>Mark</ritualController>
+    </ritual>
+    <ritual id="vocal_resonance_ritual" unlocked="true">
+      <name>Ritual da Ressonância Vocal</name>
+      <desc>#5Crônicas da Palavra Falada:#0 !l Mesmo os maiores arquimagos podem ser surpreendidos segurando uma espada ou picareta quando o perigo surge. Buscando conjurar na velocidade do próprio fôlego sem ocupar o inventário com tomos pesados, mestres além do #5Nível Mágico 90#0 teceram #5Essência Arcana#0, #5Essência do Ar#0, #5Pó de Vinteum Purificado#0 e #9Quimerita#0 sobre um #5Bloco de Quartzo#0 ressonante, rompendo um véu de #5Silêncio#0 para dar origem à #9Aura de Ressonância Vocal#0. !p #9Estrutura e Execução:#0 !l - Desbloqueie #9Ressonância Vocal#0 na aba de Talentos (#4Nível Mágico 90+#0). !l - Desenhe o anel harmônico 5x5 com #5Giz de Mago#0 (use o #9Giz do Arquiteto Arcano#0 para projetar o molde). !l - Posicione #54 Velas de Proteção#0 nos quatro cantos do círculo. !l - Coloque #51 Bloco de Quartzo#0 no centro exato. !l - Jogue dentro do círculo: #91x Essência Arcana#0, #91x Essência do Ar#0, #91x Pó de Vinteum Purificado#0 e #91x Quimerita#0. !l - Conjure uma magia com #5Silêncio#0 diretamente no Bloco de Quartzo central. !p #9Leis da Ressonância Vocal:#0 !l - #5Santuário da Alma:#0 Os #98 slots de pergaminho#0 residem na sua própria alma e não no bloco físico — nenhum invasor vê ou rouba suas magias, e quebrar a aura nunca as destrói. !l - #5Alcance Dimensional:#0 Pronuncie a palavra vinculada segurando #2V#0 (ou no modo #2Contínuo#0) para conjurar de qualquer dimensão sem chunk-loader e #9sem custo extra de mana#0.</desc>
+      <relatedEntries>wizardChalk,warding_candle,ritualArchitect,vocal_aura,VocalResonance</relatedEntries>
+      <ritualName>vocalResonance</ritualName>
+      <ritualController>Silence</ritualController>
     </ritual>
   </structures>
   <mobs>
@@ -2567,6 +2586,7 @@
 		<relatedEntries>otherworldly_aura,blackaurem_structure,crystal_phylactery</relatedEntries>
 	</block>
     <block id="arcane_striker" unlocked="true"><name>Bate-Estaca Arcano</name><desc>Uma máquina arcana de teste de força estilo parque criada para medir o dano de magias e armas. Clique com o botão direito no #5Bate-Estaca Arcano#0 para ajustar a duração do teste até #960 segundos#0, alternar se golpes #5ignoram invulnerabilidade (i-frames)#0 e invocar um manequim holográfico exatamente em cima do pedestal. !d Ataque o manequim com feitiços, armas corpo a corpo ou projéteis durante a contagem. O indicador ascendente mostra seu progresso contra o recorde salvo e toca o sino do topo ao bater uma nova marca. !p Tanto o painel quanto o manequim exibem #9Dano Total#0, #9DPS#0, #9Maior Golpe#0 e o dono do #5Recorde#0 absoluto.</desc><relatedEntries>mana_battery</relatedEntries></block>
+    <block id="vocal_aura" unlocked="true"><name>Aura de Ressonância Vocal</name><desc>Um santuário harmônico flutuante despertado pelo #5Ritual da Ressonância Vocal#0. Clique com o botão direito na #5Aura de Ressonância Vocal#0 para guardar até #98 pergaminhos reais#0 no cofre da sua alma, editar a palavra de cada slot, gravar até #94 amostras de voz#0 por palavra e calibrar o microfone com segurança pelo modo #2Testar#0 sem disparar magias na base. !d Como o cofre é ligado à sua alma (assim como o #5Armazenamento de Fenda#0), cada mago que toca a aura acessa apenas suas próprias magias, e seus encantamentos continuam ativos após a morte e em qualquer dimensão.</desc><relatedEntries>vocal_resonance_ritual,VocalResonance,Silence</relatedEntries></block>
   </blocks>
   <mechanics>
     <mechanic id="affinity">

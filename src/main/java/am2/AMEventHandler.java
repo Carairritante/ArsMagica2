@@ -158,6 +158,7 @@ public class AMEventHandler{
 
 			if (event.entity instanceof EntityPlayer){
 				event.entity.registerExtendedProperties(RiftStorage.identifier, new RiftStorage());
+				event.entity.registerExtendedProperties(am2.playerextensions.VoiceVaultStorage.identifier, new am2.playerextensions.VoiceVaultStorage());
 				event.entity.registerExtendedProperties(AffinityData.identifier, new AffinityData());
 				event.entity.registerExtendedProperties(SkillData.identifier, new SkillData((EntityPlayer)event.entity));
 			}

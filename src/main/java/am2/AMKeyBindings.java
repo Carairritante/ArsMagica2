@@ -25,6 +25,7 @@ public class AMKeyBindings{
 	private static KeyBinding AuraCustomizationKey = new KeyBinding("key.AuraCustomization", Keyboard.KEY_B, "key.am2.category");
 	private static KeyBinding ManaToggleKey = new KeyBinding("key.ToggleManaDisplay", Keyboard.KEY_O, "key.am2.category");
 	private static KeyBinding AffinityActivationKey = new KeyBinding("key.ActivateAffinityAbility", Keyboard.KEY_X, "key.am2.category");
+	public static KeyBinding VoiceCastKey = new KeyBinding("key.VoiceCast", Keyboard.KEY_V, "key.am2.category");
 
 	public AMKeyBindings(){
 		ClientRegistry.registerKeyBinding(ShapeGroupKey);
@@ -33,6 +34,7 @@ public class AMKeyBindings{
 		ClientRegistry.registerKeyBinding(AuraCustomizationKey);
 		ClientRegistry.registerKeyBinding(ManaToggleKey);
 		ClientRegistry.registerKeyBinding(AffinityActivationKey);
+		ClientRegistry.registerKeyBinding(VoiceCastKey);
 	}
 
 	@SubscribeEvent

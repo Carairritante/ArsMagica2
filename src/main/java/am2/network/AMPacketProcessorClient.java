@@ -215,6 +215,14 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
                     am2.items.ItemAstralCompass.setClientSearchProgress(input.readInt(),input.readInt(),input.readInt());
                 }
                 break;
+            case AMPacketIDs.VOICE_VAULT_SYNC:
+                if (Minecraft.getMinecraft().thePlayer != null) {
+                    am2.playerextensions.VoiceVaultStorage.For(Minecraft.getMinecraft().thePlayer).handleClientSyncPacket(remaining);
+                }
+                break;
+            case AMPacketIDs.VOICE_CAST_FX:
+                am2.interop.voice.VoiceSpellController.spawnClientVoiceCastParticles(remaining);
+                break;
 			}
 		}catch (Throwable t){
 			LogHelper.error("Client Packet Failed to Handle!");

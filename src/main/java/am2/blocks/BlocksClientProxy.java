@@ -28,6 +28,7 @@ public class BlocksClientProxy extends BlocksCommonProxy{
 	public static TileEntitySpatialVortex spatialVortexInventoryRenderer;
 	public static TileEntityFlickerHabitat elementalAttunerInventoryRenderer;
 	public static TileEntityOtherworldAura otherworldAuraInventoryRenderer;
+	public static TileEntityVocalAura vocalAuraInventoryRenderer;
 	public static TileEntityArcaneStriker arcaneStrikerInventoryRenderer;
 
 	public BlocksClientProxy(){
@@ -55,6 +56,7 @@ public class BlocksClientProxy extends BlocksCommonProxy{
 		candleInventoryRenderer = new TileEntityCandle();
 		elementalAttunerInventoryRenderer = new TileEntityFlickerHabitat();
 		otherworldAuraInventoryRenderer = new TileEntityOtherworldAura();
+		vocalAuraInventoryRenderer = new TileEntityVocalAura();
 		arcaneStrikerInventoryRenderer = new TileEntityArcaneStriker();
 	}
 
@@ -81,6 +83,7 @@ public class BlocksClientProxy extends BlocksCommonProxy{
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityCandle.class, new CandleRenderer());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityFlickerHabitat.class, new FlickerHabitatRenderer());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityOtherworldAura.class, new RenderOtherworldAura());
+		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityVocalAura.class, new RenderVocalAura());
 		ClientRegistry.bindTileEntitySpecialRenderer(TileEntityArcaneStriker.class, new am2.blocks.renderers.ArcaneStrikerRenderer());
 	}
 }

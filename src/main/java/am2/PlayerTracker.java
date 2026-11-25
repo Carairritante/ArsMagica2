@@ -39,11 +39,13 @@ public class PlayerTracker{
 
 	public static HashMap<UUID, NBTTagCompound> storedExtProps_death;
 	public static HashMap<UUID, NBTTagCompound> riftStorage_death;
+	public static HashMap<UUID, NBTTagCompound> voiceVault_death;
 	public static HashMap<UUID, NBTTagCompound> affinityStorage_death;
 	public static HashMap<UUID, NBTTagCompound> spellKnowledgeStorage_death;
 
 	public static HashMap<UUID, NBTTagCompound> storedExtProps_dimension;
 	public static HashMap<UUID, NBTTagCompound> riftStorage_dimension;
+	public static HashMap<UUID, NBTTagCompound> voiceVault_dimension;
 	public static HashMap<UUID, NBTTagCompound> affinityStorage_dimension;
 	public static HashMap<UUID, NBTTagCompound> spellKnowledgeStorage_dimension;
 
@@ -57,6 +59,8 @@ public class PlayerTracker{
 
 		riftStorage_death = new HashMap<UUID, NBTTagCompound>();
 		riftStorage_dimension = new HashMap<UUID, NBTTagCompound>();
+		voiceVault_death = new HashMap<UUID, NBTTagCompound>();
+		voiceVault_dimension = new HashMap<UUID, NBTTagCompound>();
 		affinityStorage_dimension = new HashMap<UUID, NBTTagCompound>();
 		spellKnowledgeStorage_dimension = new HashMap<UUID, NBTTagCompound>();
 
@@ -82,6 +86,7 @@ public class PlayerTracker{
 		CustomWorldData.syncAllWorldVarsToClients(event.player);
 
 		AMNetHandler.INSTANCE.syncLoginData((EntityPlayerMP)event.player, data);
+		am2.playerextensions.VoiceVaultStorage.For(event.player).syncToClient((EntityPlayerMP)event.player);
 		if (ServerTickHandler.lastWorldName != null)
 			AMNetHandler.INSTANCE.syncWorldName((EntityPlayerMP)event.player, ServerTickHandler.lastWorldName);
 
@@ -162,6 +167,16 @@ public class PlayerTracker{
 
 			RiftStorage.For(event.player).loadNBTData(stored);
 		}
+		if (voiceVault_death.containsKey(event.player.getUniqueID())){
+			NBTTagCompound stored = voiceVault_death.remove(event.player.getUniqueID());
+			am2.playerextensions.VoiceVaultStorage.For(event.player).loadNBTData(stored);
+		}else if (voiceVault_dimension.containsKey(event.player.getUniqueID())){
+			NBTTagCompound stored = voiceVault_dimension.remove(event.player.getUniqueID());
+			am2.playerextensions.VoiceVaultStorage.For(event.player).loadNBTData(stored);
+		}
+		if (event.player instanceof EntityPlayerMP){
+			am2.playerextensions.VoiceVaultStorage.For(event.player).syncToClient((EntityPlayerMP)event.player);
+		}
 		//================================================================================
 		//affinity data
 		//================================================================================
@@ -230,6 +245,9 @@ public class PlayerTracker{
 		RiftStorage.For(player).saveNBTData(saveRift);
 
 		riftStorage_death.put(player.getUniqueID(), saveRift);
+		NBTTagCompound saveVoiceVault = new NBTTagCompound();
+		am2.playerextensions.VoiceVaultStorage.For(player).saveNBTData(saveVoiceVault);
+		voiceVault_death.put(player.getUniqueID(), saveVoiceVault);
 
 		//================================================================================
 		//affinity storage
@@ -303,6 +321,11 @@ public class PlayerTracker{
 			RiftStorage.For(player).saveNBTData(saveRift);
 
 			riftStorage_dimension.put(player.getUniqueID(), saveRift);
+		}
+		if (!voiceVault_death.containsKey(player.getUniqueID())){
+			NBTTagCompound saveVoiceVault = new NBTTagCompound();
+			am2.playerextensions.VoiceVaultStorage.For(player).saveNBTData(saveVoiceVault);
+			voiceVault_dimension.put(player.getUniqueID(), saveVoiceVault);
 		}
 		//================================================================================
 		//affinity storage

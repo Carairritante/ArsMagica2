@@ -229,6 +229,10 @@ public class GuiSkillTrees extends GuiScreen{
 				}
 			}
 
+			if (hoveredItem.registeredItem instanceof am2.skills.VocalResonance){
+				text.add("\u00a7b" + StatCollector.translateToLocal("am2.gui.vocalResonanceDesc"));
+			}
+
 			if (hoveredItem.registeredItem instanceof ISpellComponent){
 				EnumSet<Affinity> aff = ((ISpellComponent)hoveredItem.registeredItem).getAffinity();
 
@@ -298,6 +302,10 @@ public class GuiSkillTrees extends GuiScreen{
 
 		for (SkillTreeEntry entry : skillTree){
 			if (entry.registeredItem == null)
+				continue;
+			if (entry.registeredItem instanceof am2.skills.VocalResonance
+					&& !sk.isEntryKnown(entry)
+					&& !am2.skills.VocalResonance.hasRequiredLevel(Minecraft.getMinecraft().thePlayer))
 				continue;
 			String name = SkillManager.instance.getSkillName(entry.registeredItem);
 			if (name == null)

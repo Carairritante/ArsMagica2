@@ -364,6 +364,7 @@ public class SkillTreeManager implements ISkillTreeManager{
 		RegisterPart(SkillManager.instance.getSkill("ManaCapacityI"), 230, 210, SkillTrees.Talents, SkillPointTypes.RED, SkillManager.instance.getSkill("AugmentedCasting"));
 		RegisterPart(SkillManager.instance.getSkill("ManaCapacityII"), 275, 210, SkillTrees.Talents, SkillPointTypes.RED, SkillManager.instance.getSkill("ManaCapacityI"));
 		RegisterPart(SkillManager.instance.getSkill("ManaCapacityIII"), 320, 210, SkillTrees.Talents, SkillPointTypes.RED, SkillManager.instance.getSkill("ManaCapacityII"));
+		RegisterPart(SkillManager.instance.getSkill("VocalResonance"), 320, 75, SkillTrees.Talents, SkillPointTypes.RED);
 
 		calculateHighestOverallTier();
 

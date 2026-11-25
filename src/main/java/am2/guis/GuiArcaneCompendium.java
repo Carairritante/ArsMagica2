@@ -213,7 +213,9 @@ public class GuiArcaneCompendium extends GuiScreen{
 				? TrueSoulboundRitual.INSTANCE.getReagents()
 				: (this.entryMultiblock == RitualShapeHelper.instance.astralDivination)
 						? am2.compass.AstralCompassRitual.INSTANCE.getReagents()
-						: ritualController.getReagents();
+						: (this.entryMultiblock == RitualShapeHelper.instance.vocalResonance)
+								? am2.interop.voice.VocalAuraRitual.INSTANCE.getReagents()
+								: ritualController.getReagents();
 		for (ItemStack stack : ritualReagents){
 			this.modifiers.add(stack);
 		}

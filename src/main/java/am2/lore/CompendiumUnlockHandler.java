@@ -74,6 +74,11 @@ public class CompendiumUnlockHandler{
 				ArcaneCompendium.instance.unlockEntry("BossLightningGuardian");
 				ArcaneCompendium.instance.unlockEntry("BossEnderGuardian");
 			}
+			if (event.level >= am2.skills.VocalResonance.REQUIRED_MAGIC_LEVEL){
+				ArcaneCompendium.instance.unlockEntry("VocalResonance");
+				ArcaneCompendium.instance.unlockEntry("vocal_aura");
+				ArcaneCompendium.instance.unlockEntry("vocal_resonance_ritual");
+			}
 		}
 	}
 
@@ -114,6 +119,10 @@ public class CompendiumUnlockHandler{
 				ArcaneCompendium.instance.unlockEntry("bindingcatalysts");
 			}else if (event.skill instanceof Summon){
 				ArcaneCompendium.instance.unlockEntry("summoner");
+			}else if (event.skill instanceof am2.skills.VocalResonance){
+				ArcaneCompendium.instance.unlockEntry("VocalResonance");
+				ArcaneCompendium.instance.unlockEntry("vocal_aura");
+				ArcaneCompendium.instance.unlockEntry("vocal_resonance_ritual");
 			}else if (SkillTreeManager.instance.isGoldenSkill(event.skill)){
 				ArcaneCompendium.instance.unlockEntry("silver_skills");
 				String skillKey = am2.spell.SkillManager.instance.getSkillName(event.skill);

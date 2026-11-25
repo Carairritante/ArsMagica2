@@ -20,6 +20,7 @@ public class RitualShapeHelper{
 	public MultiblockStructureDefinition worldFusion;
 	public MultiblockStructureDefinition trueSoulbound;
 	public MultiblockStructureDefinition astralDivination;
+	public MultiblockStructureDefinition vocalResonance;
 
 	public static final RitualShapeHelper instance = new RitualShapeHelper();
 
@@ -112,6 +113,7 @@ public class RitualShapeHelper{
 		initWorldFusion();
 		initTrueSoulbound();
 		initAstralDivination();
+		initVocalResonance();
 	}
 
 	private void initWorldFusion(){
@@ -376,6 +378,32 @@ public class RitualShapeHelper{
 		astralDivination.addAllowedBlock(-2, 0, 0, BlocksCommonProxy.candle);
 		astralDivination.addAllowedBlock(0, 0, 2, BlocksCommonProxy.candle);
 		astralDivination.addAllowedBlock(0, 0, -2, BlocksCommonProxy.candle);
+	}
+
+	private void initVocalResonance(){
+		vocalResonance = new MultiblockStructureDefinition("vocalResonance");
+
+		// Inner acoustic diamond
+		vocalResonance.addAllowedBlock(1, 0, 0, BlocksCommonProxy.wizardChalk);
+		vocalResonance.addAllowedBlock(-1, 0, 0, BlocksCommonProxy.wizardChalk);
+		vocalResonance.addAllowedBlock(0, 0, 1, BlocksCommonProxy.wizardChalk);
+		vocalResonance.addAllowedBlock(0, 0, -1, BlocksCommonProxy.wizardChalk);
+
+		// Outer resonance wave arcs
+		vocalResonance.addAllowedBlock(-2, 0, 0, BlocksCommonProxy.wizardChalk);
+		vocalResonance.addAllowedBlock(2, 0, 0, BlocksCommonProxy.wizardChalk);
+		vocalResonance.addAllowedBlock(0, 0, -2, BlocksCommonProxy.wizardChalk);
+		vocalResonance.addAllowedBlock(0, 0, 2, BlocksCommonProxy.wizardChalk);
+		vocalResonance.addAllowedBlock(-2, 0, -1, BlocksCommonProxy.wizardChalk);
+		vocalResonance.addAllowedBlock(-2, 0, 1, BlocksCommonProxy.wizardChalk);
+		vocalResonance.addAllowedBlock(2, 0, -1, BlocksCommonProxy.wizardChalk);
+		vocalResonance.addAllowedBlock(2, 0, 1, BlocksCommonProxy.wizardChalk);
+
+		// Diagonal harmonic candles
+		vocalResonance.addAllowedBlock(-2, 0, -2, BlocksCommonProxy.candle);
+		vocalResonance.addAllowedBlock(-2, 0, 2, BlocksCommonProxy.candle);
+		vocalResonance.addAllowedBlock(2, 0, -2, BlocksCommonProxy.candle);
+		vocalResonance.addAllowedBlock(2, 0, 2, BlocksCommonProxy.candle);
 	}
 
 	private class EntityItemComparator implements Comparator<EntityItem>{

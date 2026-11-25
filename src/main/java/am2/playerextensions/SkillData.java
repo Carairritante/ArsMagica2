@@ -272,6 +272,10 @@ public class SkillData implements IExtendedEntityProperties, ISkillData{
 				updateFlags |= KNOWN_MODIFIER_UPDATE;
 				break;
 			case 3:
+				if (id == (SkillManager.TALENT_OFFSET + am2.skills.VocalResonance.SKILL_ID)
+						&& !am2.skills.VocalResonance.hasRequiredLevel(this.player)){
+					break;
+				}
 				if (!isTalentKnown(id) && getSpellPoints(skillType) > 0){
 					setTalentKnown(id);
 					decrementSpellPoints(skillType);
@@ -571,6 +575,10 @@ public class SkillData implements IExtendedEntityProperties, ISkillData{
 
 		if (sk.isEntryKnown(entry)){
 			return LearnStates.LEARNED;
+		}
+
+		if (entry.registeredItem instanceof am2.skills.VocalResonance && !am2.skills.VocalResonance.hasRequiredLevel(player)){
+			return LearnStates.LOCKED;
 		}
 
 		SkillPointTypes pointType = SkillTreeManager.instance.getSkillPointTypeForPart(entry.registeredItem);

@@ -155,6 +155,11 @@ public class ClientGuiManager extends ServerGuiManager{
 				return null;
 			}
 			return new GuiEntropicEnervator((TileEntityEntropicEnervator)te, player);
+		case ArsMagicaGuiIdList.GUI_VOCAL_AURA:
+			if (!(te instanceof TileEntityVocalAura)){
+				return null;
+			}
+			return new am2.guis.GuiVocalAura(player.inventory, am2.playerextensions.VoiceVaultStorage.For(player));
 		}
 		return null;
 	}

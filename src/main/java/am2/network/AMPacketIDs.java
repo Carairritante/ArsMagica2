@@ -70,4 +70,8 @@ public class AMPacketIDs{
 	public static final byte ASTRAL_COMPASS_STATUS = 80;
 	public static final byte ASTRAL_COMPASS_PROGRESS = 81;
 	public static final byte TORNADO_DEBRIS = 82;
+	public static final byte VOICE_SPELL_CAST = 83;
+	public static final byte VOICE_VAULT_SYNC = 84;
+	public static final byte VOICE_VAULT_ACTION = 85;
+	public static final byte VOICE_CAST_FX = 86;
 }

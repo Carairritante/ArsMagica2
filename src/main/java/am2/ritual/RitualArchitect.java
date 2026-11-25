@@ -163,6 +163,7 @@ public final class RitualArchitect {
             add(list, "spawner_extraction_rift", "Rift", Blocks.mob_spawner, false);
             list.add(new Entry(list.size(), "true_soulbound", "Recall", null, false, TrueSoulboundRitual.INSTANCE));
             list.add(new Entry(list.size(), "astral_divination", "Mark", Blocks.lapis_block, false, AstralCompassRitual.INSTANCE));
+            list.add(new Entry(list.size(), "vocal_resonance", "Silence", Blocks.quartz_block, false, am2.interop.voice.VocalAuraRitual.INSTANCE));
             for (PlaygroundRitualCompat.Descriptor descriptor : PlaygroundRitualCompat.descriptors())
                 list.add(new Entry(list.size(), descriptor));
             catalog = Collections.unmodifiableList(list);

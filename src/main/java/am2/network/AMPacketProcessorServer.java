@@ -151,7 +151,11 @@ public class AMPacketProcessorServer{
 				handleArcaneStrikerAction(remaining, player);
 				break;
 			case AMPacketIDs.ASTRAL_COMPASS_ACTION:
-				handleAstralCompassAction(remaining, player);
+				handleAstralCompassAction(remaining, player); break;
+			case AMPacketIDs.VOICE_SPELL_CAST:
+				am2.interop.voice.VoiceSpellServerHandler.handlePacket(remaining, player); break;
+			case AMPacketIDs.VOICE_VAULT_ACTION:
+				am2.interop.voice.VoiceSpellServerHandler.handleVaultAction(remaining, player);
 				break;
 			}
 		}catch (Throwable t){
