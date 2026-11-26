@@ -35,18 +35,21 @@ public class RitualShapeHelper{
 				return reagents;
 
 			int r = interaction.getReagentSearchRadius();
-			ArrayList<EntityItem> items = (ArrayList<EntityItem>)world.getEntitiesWithinAABB(EntityItem.class, AxisAlignedBB.getBoundingBox(x - r, y, z - r, x + r + 1, y + 1, z + r + 1));
+			ArrayList<EntityItem> found = (ArrayList<EntityItem>)world.getEntitiesWithinAABB(EntityItem.class, AxisAlignedBB.getBoundingBox(x - r, y, z - r, x + r + 1, y + 1, z + r + 1));
 
-			Collections.sort(items, new EntityItemComparator());
+			Collections.sort(found, new EntityItemComparator());
 
-			for (int i = 0; i < items.size(); i++){
-				EntityItem item = items.get(i);
-				if (item.getEntityItem().stackSize > 1){
+			// Count one virtual item per unit without touching the stacks lying in the world.
+			ArrayList<EntityItem> items = new ArrayList<EntityItem>();
+			for (EntityItem item : found){
+				ItemStack stack = item.getEntityItem();
+				if (stack == null) continue;
+				for (int n = 0; n < Math.max(1, stack.stackSize); n++){
 					EntityItem oneItem = new EntityItem(item.worldObj);
-					oneItem.setEntityItemStack(item.getEntityItem().copy());
-					oneItem.getEntityItem().stackSize = 1;
-					items.add(i, oneItem);
-					item.getEntityItem().stackSize--;
+					ItemStack one = stack.copy();
+					one.stackSize = 1;
+					oneItem.setEntityItemStack(one);
+					items.add(oneItem);
 				}
 			}
 

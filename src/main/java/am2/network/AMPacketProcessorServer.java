@@ -79,7 +79,7 @@ public class AMPacketProcessorServer{
 				handleMagicLevelUp(remaining, (EntityPlayerMP)player);
 				break;
 			case AMPacketIDs.SYNCMAPTOSERVER:
-				handleSyncMapServer(remaining);
+				handleSyncMapServer(remaining, player);
 				break;
 			case AMPacketIDs.SYNCCOMPENDIUM:
 				handleSyncCompendium(remaining, (EntityPlayerMP)player);
@@ -207,22 +207,38 @@ public class AMPacketProcessorServer{
 		ExtendedProperties.For(entity).onSyncCompendiumDataPacketServer(remaining);
 	}
 
-	private void handleSyncMapServer(byte[] remaining) {
+	private void handleSyncMapServer(byte[] remaining, EntityPlayerMP player) {
+		if (player == null) return;
+		String name = player.getCommandSenderName();
+		String value;
 		try {
 			AMDataReader rdr = new AMDataReader(remaining, false);
-			int size = rdr.getInt();
-			for (int i = 0; i < size; i++) {
-				String key = rdr.getString();
-				String value = rdr.getString();
-				if (key == null || key.isEmpty()) continue;
-				if (value == null || value.isEmpty() || value.equalsIgnoreCase("human") || value.equalsIgnoreCase("none")) {
-					net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.remove(key);
-				} else {
-					net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.put(key, value);
-				}
-			}
-		} catch (Throwable ignored) {}
-		AMNetHandler.INSTANCE.sendPacketToAllClients(AMPacketIDs.SYNCMAPTOCLIENTS, remaining);
+			if (rdr.getInt() != 1 || !name.equals(rdr.getString())) return;
+			value = rdr.getString();
+		} catch (Throwable malformed) {
+			return;
+		}
+		boolean clear = value == null || value.isEmpty() || value.equalsIgnoreCase("human") || value.equalsIgnoreCase("none");
+		if (!clear && !holdsCatalystFor(player, value)) return;
+		if (clear) {
+			net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.remove(name);
+		} else {
+			net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.put(name, value);
+		}
+		// Relay what the server accepted, never the raw client data.
+		AMDataWriter writer = new AMDataWriter().add(1).add(name).add(clear ? "" : value);
+		AMNetHandler.INSTANCE.sendPacketToAllClients(AMPacketIDs.SYNCMAPTOCLIENTS, writer.generate());
+	}
+
+	/** Same catalyst search the Box of Illusions uses on the client; maid variants are random. */
+	private static boolean holdsCatalystFor(EntityPlayerMP player, String model) {
+		if (!am2.items.renderers.IllusionEntityHelper.isValidMob(model)) return false;
+		for (ItemStack stack : player.inventory.mainInventory) {
+			String offered = am2.items.renderers.IllusionEntityHelper.getModelForCatalyst(stack, player);
+			if (offered == null) continue;
+			if (offered.equals(model) || (offered.startsWith("maid") && model.startsWith("maid"))) return true;
+		}
+		return false;
 	}
 
 	private void handleCasterUpdate(byte[] data, EntityPlayerMP player){
@@ -342,7 +358,7 @@ public class AMPacketProcessorServer{
 
 	private void handleSyncSpellKnowledge(byte[] data, EntityPlayerMP player){
 		// Quietly drop anything else so a modified client cannot overwrite knowledge or points (or flood the log).
-		if (!SkillData.isClientLearnRequest(data)) return;
+		if (!SkillData.isAllowedClientLearn(data, player)) return;
 		SkillData.For(player).handlePacketData(data);
 	}
 

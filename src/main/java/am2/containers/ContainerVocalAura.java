@@ -29,7 +29,7 @@ public class ContainerVocalAura extends Container {
 
 		@Override
 		public boolean isItemValid(ItemStack stack) {
-			return stack != null && stack.getItem() instanceof ItemSpellBase;
+			return VoiceVaultStorage.acceptsScroll(stack);
 		}
 
 		@Override
@@ -80,7 +80,7 @@ public class ContainerVocalAura extends Container {
 					return null;
 				}
 			} else {
-				if (!(stack.getItem() instanceof ItemSpellBase)) {
+				if (!VoiceVaultStorage.acceptsScroll(stack)) {
 					return null;
 				}
 				// Find first empty vault slot for single-scroll insertion

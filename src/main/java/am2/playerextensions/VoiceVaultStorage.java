@@ -243,6 +243,12 @@ public class VoiceVaultStorage implements IExtendedEntityProperties, IInventory 
 
 	@Override
 	public boolean isItemValidForSlot(int slot, ItemStack stack) {
-		return stack != null && stack.getItem() instanceof ItemSpellBase;
+		return acceptsScroll(stack);
+	}
+
+	/** Plain spell scrolls only; True Soulbound items stay in the player's own inventory. */
+	public static boolean acceptsScroll(ItemStack stack) {
+		return stack != null && stack.getItem() instanceof ItemSpellBase
+				&& !am2.soulbound.TrueSoulboundHelper.isTrueSoulbound(stack);
 	}
 }

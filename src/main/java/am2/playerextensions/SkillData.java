@@ -335,6 +335,30 @@ public class SkillData implements IExtendedEntityProperties, ISkillData{
 		return data != null && data.length > 0 && data[0] == SPELL_LEARNED;
 	}
 
+	/**
+	 * Server check for a client learn request: the part must exist, match the declared type and
+	 * be learnable now (points, prerequisites, tree locks; addons may refine getLearnState).
+	 * Learning through rituals, orbs or discoveries does not use this packet.
+	 */
+	public static boolean isAllowedClientLearn(byte[] data, EntityPlayer player){
+		if (!isClientLearnRequest(data) || player == null) return false;
+		try{
+			AMDataReader rdr = new AMDataReader(data, false);
+			rdr.getByte();
+			rdr.getInt();
+			int id = rdr.getInt();
+			int type = rdr.getInt();
+			ISkillTreeEntry part = SkillManager.instance.getSkill(id);
+			if (part == null || part == SkillManager.instance.missingComponent) return false;
+			int expected = part instanceof ISpellShape ? 0 : part instanceof ISpellComponent ? 1 : part instanceof ISpellModifier ? 2 : 3;
+			if (type != expected) return false;
+			SkillTreeEntry entry = SkillTreeManager.instance.getSkillTreeEntry(part);
+			return entry != null && For(player).getLearnState(entry, player) == LearnStates.CAN_LEARN;
+		}catch (Throwable malformed){
+			return false;
+		}
+	}
+
 	public boolean handlePacketData(byte[] data){
 		try{
 			AMDataReader rdr = new AMDataReader(data, false);

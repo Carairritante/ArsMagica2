@@ -146,13 +146,16 @@ public final class SpellInscriptionAnalyzer {
 
         // Build each effective spell sequence (one per populated shape group, or direct recipe if none)
         List<ArrayList<ArrayList<ISpellPart>>> variants = new ArrayList<ArrayList<ArrayList<ISpellPart>>>();
+        List<ArrayList<ISpellPart>> sequences = new ArrayList<ArrayList<ISpellPart>>();
         if (nonEmptyGroups.isEmpty()) {
+            sequences.add(new ArrayList<ISpellPart>(recipe));
             variants.add(SpellValidator.splitToStages(new ArrayList<ISpellPart>(recipe)));
         } else {
             for (List<ISpellPart> group : nonEmptyGroups) {
                 ArrayList<ISpellPart> combined = new ArrayList<ISpellPart>(group.size() + recipe.size());
                 combined.addAll(group);
                 combined.addAll(recipe);
+                sequences.add(combined);
                 variants.add(SpellValidator.splitToStages(combined));
             }
         }
@@ -202,9 +205,11 @@ public final class SpellInscriptionAnalyzer {
         float burnout = 0f;
         int maxStages = 0;
 
-        for (ArrayList<ArrayList<ISpellPart>> stages : variants) {
+        for (int v = 0; v < variants.size(); v++) {
+            ArrayList<ArrayList<ISpellPart>> stages = variants.get(v);
             maxStages = Math.max(maxStages, stages.size());
-            float[] costs = computeStagesCost(stages, player);
+            float[] costs = realSpellCost(sequences.get(v), player);
+            if (costs == null) costs = computeStagesCost(stages, player);
             float baseMana = costs[0];
             float stageBurnout = costs[1];
             float effMana = applyAffinityDiscount(baseMana, affShares, affData);
@@ -291,6 +296,40 @@ public final class SpellInscriptionAnalyzer {
         if (partCount <= 11) return 3;
         if (partCount <= 13) return 4;
         return 5;
+    }
+
+    /**
+     * Mana and burnout exactly as SpellUtils.calculateSpellRequirements does, read from a real
+     * spell stack. Shapes such as AoE and Beam inspect that stack (radius modifiers, Wave), so
+     * an empty stand-in stack gives wrong costs. Returns null if the stack cannot be built.
+     */
+    private static float[] realSpellCost(List<ISpellPart> sequence, EntityPlayer player) {
+        try {
+            ArrayList<am2.utility.KeyValuePair<ISpellPart, byte[]>> parts = new ArrayList<am2.utility.KeyValuePair<ISpellPart, byte[]>>();
+            for (ISpellPart part : sequence) parts.add(new am2.utility.KeyValuePair<ISpellPart, byte[]>(part, new byte[0]));
+            ItemStack stack = SpellUtils.instance.createSpellStack(
+                    new ArrayList<ArrayList<am2.utility.KeyValuePair<ISpellPart, byte[]>>>(), parts);
+            float mana = 0f, burnout = 0f;
+            for (int i = SpellUtils.instance.numStages(stack) - 1; i >= 0; --i) {
+                float stageMana = 0f, stageBurnout = 0f;
+                for (ISpellComponent component : SpellUtils.instance.getComponentsForStage(stack, i)) {
+                    stageMana += component.manaCost(player);
+                    stageBurnout += component.burnout(player);
+                }
+                Map<ISpellModifier, Integer> counts = new HashMap<ISpellModifier, Integer>();
+                for (ISpellModifier modifier : SpellUtils.instance.getModifiersForStage(stack, i)) {
+                    Integer c = counts.get(modifier);
+                    counts.put(modifier, c == null ? 1 : c + 1);
+                }
+                for (Map.Entry<ISpellModifier, Integer> e : counts.entrySet())
+                    stageMana *= e.getKey().getManaCostMultiplier(stack, i, e.getValue(), player);
+                mana += stageMana * SpellUtils.instance.getShapeForStage(stack, i).manaCostMultiplier(stack);
+                burnout += stageBurnout;
+            }
+            return new float[] { mana, burnout };
+        } catch (Throwable unavailable) {
+            return null;
+        }
     }
 
     private static float[] computeStagesCost(ArrayList<ArrayList<ISpellPart>> stages, EntityPlayer player) {
