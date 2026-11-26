@@ -124,18 +124,31 @@ public class ArcaneCompendium implements ILoreHelper, IResourceManagerReloadList
 	public void onResourceManagerReload(IResourceManager manager){
 		// Only mark dirty here: language tables and addons may still be reloading.
 		reloadPending = true;
+		am2.guis.grimoire.GrimoireLang.clearCache();
 	}
 
 	public boolean refreshLanguageIfNeeded(){
-		Language lang = Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage();
-		if (lang == null || (!reloadPending && languageCode.equals(lang.getLanguageCode().trim()))) return false;
+		String desired = am2.guis.grimoire.GrimoirePrefs.get().effectiveLanguageCode();
+		if (desired == null || desired.isEmpty()) return false;
+		if (!reloadPending && languageCode.equals(desired)) return false;
+		return switchLanguageCode(desired);
+	}
+
+	/** Instantly reloads the Compendium XML in the requested language code while preserving unlock & new flags. */
+	public boolean switchLanguageCode(String targetCode){
+		if (targetCode == null || targetCode.trim().isEmpty()) return false;
+		String clean = targetCode.trim();
 		Map<String, Integer> states = new HashMap<String, Integer>();
 		for (CompendiumEntry entry : compendium.values()) rememberState(entry, states);
-		init(lang);
+		initForCode(clean);
 		MinecraftForge.EVENT_BUS.post(new RegisterCompendiumEntries(this));
 		loadUnlockData();
 		for (CompendiumEntry entry : compendium.values()) restoreState(entry, states);
 		return true;
+	}
+
+	public String getActiveLanguageCode(){
+		return languageCode;
 	}
 
 	private void rememberState(CompendiumEntry entry, Map<String, Integer> states){
@@ -157,8 +170,14 @@ public class ArcaneCompendium implements ILoreHelper, IResourceManagerReloadList
 			LogHelper.error("Got a current language of NULL from Minecraft?!?  The compendium cannot load!");
 			return;
 		}
+		String code = am2.guis.grimoire.GrimoirePrefs.get().effectiveLanguageCode();
+		if (code == null || code.isEmpty()) code = lang.getLanguageCode().trim();
+		initForCode(code);
+	}
+
+	private void initForCode(String code){
 		MCVersion = (String)ReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getMinecraft(), "field_110447_Z", "launchedVersion");
-		languageCode = lang.getLanguageCode().trim();
+		languageCode = code.trim();
 		reloadPending = false;
 
 		compendium.clear();
@@ -166,7 +185,7 @@ public class ArcaneCompendium implements ILoreHelper, IResourceManagerReloadList
 		zeroItemTexts.clear();
 
 		//get the compendium stream again, either from an updated version or the default packaged one
-		InputStream stream = getCompendium(lang);
+		InputStream stream = getPackagedCompendiumByCode(languageCode);
 		if (stream == null){
 			LogHelper.error("Unable to load the Arcane Compendium!");
 			return;
@@ -269,11 +288,11 @@ public class ArcaneCompendium implements ILoreHelper, IResourceManagerReloadList
 	}
 
 	private InputStream getCompendium(Language lang){
-		return getPackagedCompendium(lang);
+		return getPackagedCompendiumByCode(lang.getLanguageCode());
 	}
 
-	private InputStream getPackagedCompendium(Language lang){
-		ResourceLocation rLoc = new ResourceLocation("arsmagica2", String.format("docs/ArcaneCompendium_%s.xml", lang.getLanguageCode()));
+	private InputStream getPackagedCompendiumByCode(String code){
+		ResourceLocation rLoc = new ResourceLocation("arsmagica2", String.format("docs/ArcaneCompendium_%s.xml", code));
 		IResource resource = null;
 		try{
 			resource = Minecraft.getMinecraft().getResourceManager().getResource(rLoc);
@@ -317,6 +336,9 @@ public class ArcaneCompendium implements ILoreHelper, IResourceManagerReloadList
 		return toReturn;
 	}
 
+	/** Client only: something was unlocked since the book was last opened. */
+	public static volatile boolean freshDiscovery;
+
 	private void unlockEntry(CompendiumEntry entry, boolean unlockRelated){
 		if (unlockRelated){
 			for (CompendiumEntry e : entry.getRelatedItems()){
@@ -329,6 +351,7 @@ public class ArcaneCompendium implements ILoreHelper, IResourceManagerReloadList
 		}
 		if (entry.isLocked()){
 			entry.setIsLocked(false);
+			freshDiscovery = true;
 			if (ExtendedProperties.For(Minecraft.getMinecraft().thePlayer).getMagicLevel() > 0)
 				Minecraft.getMinecraft().guiAchievement.func_146256_a(compendiumData);
 

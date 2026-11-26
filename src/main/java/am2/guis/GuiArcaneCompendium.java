@@ -107,6 +107,9 @@ public class GuiArcaneCompendium extends GuiScreen{
 	ArrayList<String> lines;
 	float framecount = 0;
 
+	/** Dark entry layout; null while the classic book is selected. */
+	private am2.guis.grimoire.GrimoireEntryView grimoire;
+
 	//======================================================
 	// Recipe Rendering Variables
 	//======================================================
@@ -215,7 +218,9 @@ public class GuiArcaneCompendium extends GuiScreen{
 						? am2.compass.AstralCompassRitual.INSTANCE.getReagents()
 						: (this.entryMultiblock == RitualShapeHelper.instance.vocalResonance)
 								? am2.interop.voice.VocalAuraRitual.INSTANCE.getReagents()
-								: ritualController.getReagents();
+								: (this.entryMultiblock == RitualShapeHelper.instance.worldFusion && am2.interop.CinematicsRitualGuide.active())
+										? am2.interop.CinematicsRitualGuide.allReagents()
+										: ritualController.getReagents();
 		for (ItemStack stack : ritualReagents){
 			this.modifiers.add(stack);
 		}
@@ -364,6 +369,8 @@ public class GuiArcaneCompendium extends GuiScreen{
 
 	public GuiArcaneCompendium(String entryName){
 		mc = Minecraft.getMinecraft();
+		grimoire = am2.guis.grimoire.GrimoireEntryView.createIfEnabled();
+		ArcaneCompendium.instance.refreshLanguageIfNeeded();
 		entry = ArcaneCompendium.instance.getEntry(entryName);
 
 		this.entryName = entryName;
@@ -443,7 +450,7 @@ public class GuiArcaneCompendium extends GuiScreen{
 	public void initGui(){
 		super.initGui();
 
-		int l = (width - xSize) / 2;
+		int l = pageLeft();
 		int i1 = (height - ySize) / 2;
 
 		prevPage = new GuiButtonCompendiumNext(0, l + 35, i1 + ySize - 25, false);
@@ -473,6 +480,77 @@ public class GuiArcaneCompendium extends GuiScreen{
 		this.buttonList.add(nextLayer);
 		this.buttonList.add(backToIndex);
 		this.buttonList.add(pauseCycling);
+
+		if (grimoire != null){
+			prevPage.visible = false;
+			nextPage.visible = false;
+			pauseCycling.displayString = AMGuiHelper.instance.runCompendiumTicker
+					? am2.guis.grimoire.GrimoireLang.tr("am2.gui.pause")
+					: am2.guis.grimoire.GrimoireLang.tr("am2.gui.cycle");
+			buttonList.remove(backToIndex);
+			buttonList.add(new am2.guis.controls.GuiButtonArcaneChalk(2, grimoire.backX(), grimoire.backY(height), 52, 14,
+					"< " + am2.guis.grimoire.GrimoireLang.tr("am2.gui.back")));
+			buttonList.add(new am2.guis.controls.GuiButtonArcaneChalk(6, grimoire.langBtnX(), grimoire.langBtnY(height), 22, 14,
+					am2.guis.grimoire.GrimoirePrefs.get().isPortuguese() ? "PT" : "EN"));
+		}
+	}
+
+	private int pageLeft(){
+		return grimoire == null ? (width - xSize) / 2 : grimoire.pageLeft(width);
+	}
+
+	/** Text colour of the labels drawn over the right-hand page. */
+	private int ink(){
+		return grimoire == null ? 0x000000 : am2.guis.grimoire.GrimoireEntryView.INK;
+	}
+
+	private void drawGrimoireScreen(int mouseX, int mouseY, float partial){
+		int l = pageLeft();
+		int i1 = (height - ySize) / 2;
+		stackTip = null;
+
+		// No depth writes from the backdrop, so creatures and structures are never cut off behind it.
+		GL11.glDepthMask(false);
+		drawDefaultBackground();
+		GL11.glDepthMask(true);
+		boolean plainItem = entryEntity == null && craftingComponents == null;
+		grimoire.follow(page);
+		grimoire.draw(width, height, fontRendererObj, entryName, entry, plainItem, entryMultiblock != null);
+		page = Math.max(0, Math.min(page, grimoire.maxScroll()));
+		grimoire.drawScrollBar(page);
+
+		drawRightPage(l, i1, mouseX, mouseY);
+		drawStackCount(l + 250, i1 + 114);
+
+		RenderHelper.enableStandardItemLighting();
+		super.drawScreen(mouseX, mouseY, partial);
+
+		if (entryMultiblock != null){
+			fontRendererObj.drawString(am2.guis.grimoire.GrimoireLang.tr("am2.gui.mbb"), l + 190, i1 + 195, ink());
+		}
+		if (stackTip != null){
+			renderItemToolTip(stackTip, tipX, tipY);
+		}
+		RenderHelper.disableStandardItemLighting();
+	}
+
+	/** Redraws the crafted amount in a light colour over the classic black one. */
+	private void drawStackCount(int cx, int cy){
+		if (craftingComponents == null || renderStack == null || renderStack.stackSize <= 1) return;
+		if (renderStack.getItem() == ItemsCommonProxy.essence || renderStack.getItem() == ItemsCommonProxy.deficitCrystal
+				|| renderStack.getItem() == ItemsCommonProxy.spell_component) return;
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		fontRendererObj.drawString("x" + renderStack.stackSize, cx + 16, cy - 80 + 8, ink(), false);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+	}
+
+	@Override
+	public void handleMouseInput(){
+		super.handleMouseInput();
+		int wheel = org.lwjgl.input.Mouse.getEventDWheel();
+		if (grimoire != null && wheel != 0){
+			page = Math.max(0, Math.min(grimoire.maxScroll(), page + (wheel > 0 ? -3 : 3)));
+		}
 	}
 
 	@Override
@@ -581,9 +659,9 @@ public class GuiArcaneCompendium extends GuiScreen{
 				if (prevEntry.entryType == prevEntry.TYPE_ENTRY)
 					Minecraft.getMinecraft().displayGuiScreen(new GuiArcaneCompendium(prevEntry));
 				else
-					Minecraft.getMinecraft().displayGuiScreen(new GuiCompendiumIndex(prevEntry));
+					Minecraft.getMinecraft().displayGuiScreen(am2.guis.grimoire.CompendiumScreens.index(prevEntry));
 			}else{
-				Minecraft.getMinecraft().displayGuiScreen(new GuiCompendiumIndex());
+				Minecraft.getMinecraft().displayGuiScreen(am2.guis.grimoire.CompendiumScreens.index(null));
 			}
 			break;
 		case 3:
@@ -600,7 +678,30 @@ public class GuiArcaneCompendium extends GuiScreen{
 			break;
 		case 5:
 			AMGuiHelper.instance.runCompendiumTicker = !AMGuiHelper.instance.runCompendiumTicker;
-			pauseCycling.displayString = AMGuiHelper.instance.runCompendiumTicker ? StatCollector.translateToLocal("am2.gui.pause") : StatCollector.translateToLocal("am2.gui.cycle");
+			if (grimoire != null){
+				pauseCycling.displayString = AMGuiHelper.instance.runCompendiumTicker
+						? am2.guis.grimoire.GrimoireLang.tr("am2.gui.pause")
+						: am2.guis.grimoire.GrimoireLang.tr("am2.gui.cycle");
+			}else{
+				pauseCycling.displayString = AMGuiHelper.instance.runCompendiumTicker
+						? StatCollector.translateToLocal("am2.gui.pause")
+						: StatCollector.translateToLocal("am2.gui.cycle");
+			}
+			break;
+		case 6:
+			String nextLang = am2.guis.grimoire.GrimoirePrefs.get().toggleLanguage();
+			ArcaneCompendium.instance.switchLanguageCode(nextLang);
+			CompendiumEntry refreshed = ArcaneCompendium.instance.getEntry(this.entryName);
+			if (refreshed != null){
+				this.entry = refreshed;
+				this.lines = splitStringToLines(Minecraft.getMinecraft().fontRenderer, entry.getDescription(entryName), lineWidth, maxLines);
+				this.numPages = lines.size() - 1;
+			}
+			if (grimoire != null){
+				grimoire.invalidateWrap();
+				this.buttonList.clear();
+				this.initGui();
+			}
 			break;
 		}
 	}
@@ -610,6 +711,11 @@ public class GuiArcaneCompendium extends GuiScreen{
 		framecount += 0.5f;
 
 		framecount %= 360;
+
+		if (grimoire != null){
+			drawGrimoireScreen(par1, par2, par3);
+			return;
+		}
 
 		int l = (width - xSize) / 2;
 		int i1 = (height - ySize) / 2;
@@ -664,15 +770,15 @@ public class GuiArcaneCompendium extends GuiScreen{
 			storeBreadcrumb();
 			onGuiClosed();
 		}
+		if (grimoire != null && (par2 == org.lwjgl.input.Keyboard.KEY_UP || par2 == org.lwjgl.input.Keyboard.KEY_DOWN)){
+			page = Math.max(0, Math.min(grimoire.maxScroll(), page + (par2 == org.lwjgl.input.Keyboard.KEY_UP ? -1 : 1)));
+		}
 		super.keyTyped(par1, par2);
 	}
 
 	private void drawLeftPage(int l, int i1){
 
 		if (entry == null) return;
-
-		int y_start_title = i1 + 50;
-		int x_start_title = l + 100 - (fontRendererObj.getStringWidth(entry.getName(entryName)) / 2);
 
 		int x_start_line = l + 35;
 		int y_start_line = page == 0 ? i1 + 65 : i1 + 50;
@@ -681,9 +787,30 @@ public class GuiArcaneCompendium extends GuiScreen{
 
 		if (entry != null){
 			if (page == 0)
-				fontRendererObj.drawString(entry.getName(entryName), x_start_title, y_start_title, 0x000000);
+				drawEntryTitle(entry.getName(entryName), l + 105, i1 + 50);
 			AMGuiHelper.drawCompendiumText(lines.get(page), x_start_line, y_start_line, lineWidth, 0x000000, fontRendererObj);
 		}
+	}
+
+	/** Centers long titles on two lines (shrinking if still needed) instead of leaving the page. */
+	private void drawEntryTitle(String title, int centerX, int y){
+		float scale = 1.0f;
+		java.util.List<?> parts = fontRendererObj.listFormattedStringToWidth(title, lineWidth);
+		while (parts.size() > 2 && scale > 0.55f){
+			scale -= 0.1f;
+			parts = fontRendererObj.listFormattedStringToWidth(title, (int)(lineWidth / scale));
+		}
+		GL11.glPushMatrix();
+		GL11.glTranslatef(centerX, y - (parts.size() > 1 ? 5 : 0), 0);
+		GL11.glScalef(scale, scale, 1);
+		int lineY = 0;
+		for (Object part : parts){
+			String text = (String)part;
+			fontRendererObj.drawString(text, -fontRendererObj.getStringWidth(text) / 2, lineY, 0x000000);
+			lineY += fontRendererObj.FONT_HEIGHT;
+		}
+		GL11.glPopMatrix();
+		GL11.glColor3f(1.0f, 1.0f, 1.0f);
 	}
 
 	private void drawRightPage(int l, int i1, int mousex, int mousey){
@@ -757,7 +884,7 @@ public class GuiArcaneCompendium extends GuiScreen{
 
 		if (count > 0){
 			String s = StatCollector.translateToLocal("am2.gui.relatedItems");
-			fontRendererObj.drawString(s, cx - this.xSize / 6, y, 0x00000);
+			fontRendererObj.drawString(s, cx - this.xSize / 6, y, ink());
 		}
 	}
 
@@ -777,13 +904,13 @@ public class GuiArcaneCompendium extends GuiScreen{
 		int x = cx - fontRendererObj.getStringWidth(label) / 2;
 		int y = cy - this.ySize / 2 + 28;
 
-		fontRendererObj.drawString(label, x, y, 0x000000);
+		fontRendererObj.drawString(label, x, y, ink());
 
 		y += 12;
 		x = cx - (int)(modifiers.size() / 2.0f * step);
 		// The Tornado supports many aspects, including optional addon modifiers.
 		// Keep its list inside the right-hand leaf instead of crossing both pages.
-		boolean wrapTornadoModifiers = "Tornado".equals(entryName) && modifiers.size() > 7;
+		boolean wrapTornadoModifiers = ("Tornado".equals(entryName) || am2.interop.CinematicsRitualGuide.appliesTo(entryName)) && modifiers.size() > 7;
 		int modifierIndex = 0;
 		int firstRowY = y;
 
@@ -796,6 +923,13 @@ public class GuiArcaneCompendium extends GuiScreen{
 					y = firstRowY + row * step;
 				}
 				AMGuiHelper.instance.DrawItemAtXY(mod, x, y, this.zLevel);
+				if (mod.stackSize > 1){
+					String count = String.valueOf(mod.stackSize);
+					GL11.glDisable(GL11.GL_LIGHTING);
+					GL11.glDisable(GL11.GL_DEPTH_TEST);
+					fontRendererObj.drawStringWithShadow(count, x + 17 - fontRendererObj.getStringWidth(count), y + 9, 0xFFFFFF);
+					GL11.glEnable(GL11.GL_DEPTH_TEST);
+				}
 				if (mouseX > x && mouseX < x + 16){
 					if (mouseY > y && mouseY < y + 16){
 						stackTip = mod;
@@ -830,11 +964,10 @@ public class GuiArcaneCompendium extends GuiScreen{
 			GL11.glPopMatrix();
 		}
 
-		int l = (width - xSize) / 2;
 		int i1 = (height - ySize) / 2;
 
 		String renderString = StatCollector.translateToLocal("am2.compendium.rotate");
-		fontRendererObj.drawString(renderString, cx - fontRendererObj.getStringWidth(renderString) / 2, i1 + 20, 0x000000);
+		fontRendererObj.drawString(renderString, cx - fontRendererObj.getStringWidth(renderString) / 2, i1 + 20, ink());
 	}
 
 	private void renderEntityIntoUI(){
@@ -1080,7 +1213,7 @@ public class GuiArcaneCompendium extends GuiScreen{
 
 		String label = String.format("%s: %s", StatCollector.translateToLocal("am2.gui.layer"), curLayer == -1 ? StatCollector.translateToLocal("am2.gui.all") : "" + curLayer);
 
-		fontRendererObj.drawString(label, cx - fontRendererObj.getStringWidth(label) / 2, cy - 90, 0x000000);
+		fontRendererObj.drawString(label, cx - fontRendererObj.getStringWidth(label) / 2, cy - 90, ink());
 
 		GL11.glPushMatrix();
 		GL11.glPushAttrib(GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_COLOR_BUFFER_BIT | GL11.GL_TEXTURE_BIT | GL11.GL_LIGHTING_BIT);
@@ -1319,6 +1452,7 @@ public class GuiArcaneCompendium extends GuiScreen{
 			stack = new ItemStack(stack.getItem(), stack.stackSize, forcedMetas.get(stack.getItem()));
 
 		try{
+			if (grimoire != null) grimoire.slot(sx, sy);
 			AMGuiHelper.instance.DrawItemAtXY(stack, sx, sy, this.zLevel);
 			RenderHelper.disableStandardItemLighting();
 		}catch (Throwable t){

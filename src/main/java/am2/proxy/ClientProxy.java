@@ -162,6 +162,7 @@ public class ClientProxy extends CommonProxy{
 
 		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.spell, SpellScrollRenderer.instance);
 		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.spellBook, SpellScrollRenderer.instance);
+		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.arcaneCompendium, new am2.items.renderers.CompendiumBookRenderer());
 		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.astralCompass, new am2.items.renderers.AstralCompassRenderer());
         MinecraftForgeClient.registerItemRenderer(Item.getItemFromBlock(BlocksCommonProxy.arcaneStriker), new am2.items.renderers.ArcaneStrikerItemRenderer());
 

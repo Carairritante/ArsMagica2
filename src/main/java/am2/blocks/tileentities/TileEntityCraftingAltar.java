@@ -482,6 +482,36 @@ public class TileEntityCraftingAltar extends TileEntityAMPower implements IMulti
 		return this.isCrafting;
 	}
 
+	public int getAddedItemCount(){
+		return this.allAddedItems.size();
+	}
+
+	public int getTotalPlannedItems(){
+		return spellGuide == null ? 0 : (spellGuide.length / 3) + 1;
+	}
+
+	public int getMaxEffects(){
+		return this.maxEffects;
+	}
+
+	public int getPlannedPartCount(){
+		return getNumPartsInSpell();
+	}
+
+	public String getCurrentSpellName(){
+		return this.currentSpellName;
+	}
+
+	public int getCurrentConsumedPower(){
+		return this.currentConsumedPower;
+	}
+
+	public TileEntityLectern getLinkedLectern(){
+		if (podiumLocation == null || worldObj == null) return null;
+		net.minecraft.tileentity.TileEntity te = worldObj.getTileEntity(xCoord + podiumLocation.getX(), yCoord + podiumLocation.getY(), zCoord + podiumLocation.getZ());
+		return te instanceof TileEntityLectern ? (TileEntityLectern)te : null;
+	}
+
 	@Override
 	public void updateEntity(){
 		super.updateEntity();

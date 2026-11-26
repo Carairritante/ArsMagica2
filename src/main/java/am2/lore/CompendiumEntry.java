@@ -69,6 +69,10 @@ public abstract class CompendiumEntry implements Comparable<CompendiumEntry>{
 	}
 
 	public final String getDescription(){
+		if (am2.interop.CinematicsRitualGuide.WORLD_FUSION.equals(this.id)){
+			String replaced = am2.interop.CinematicsRitualGuide.description();
+			if (replaced != null) return replaced;
+		}
 		if (this.description == null || this.description.equals("")){
 			if (this.parent != null){
 				return this.parent.getDescription();
@@ -80,7 +84,7 @@ public abstract class CompendiumEntry implements Comparable<CompendiumEntry>{
 	public final String getDescription(String subItemID){
 		for (CompendiumEntry entry : subItems){
 			if (entry.getID().equals(subItemID)){
-				if ("true_soulbound".equals(subItemID) || "true_soulbound_seal".equals(subItemID) || "astral_divination".equals(subItemID) || "vocal_resonance".equals(subItemID) || description == null || description.isEmpty()){
+				if (am2.interop.CinematicsRitualGuide.appliesTo(subItemID) || "true_soulbound".equals(subItemID) || "true_soulbound_seal".equals(subItemID) || "astral_divination".equals(subItemID) || "vocal_resonance".equals(subItemID) || description == null || description.isEmpty()){
 					return entry.getDescription();
 				}
 				return description + " " + ArcaneCompendium.KEYWORD_NEWLINE + " " + ArcaneCompendium.KEYWORD_NEWLINE + " " + entry.getDescription();

@@ -59,6 +59,10 @@ public class GuiRitualArchitect extends GuiScreen {
     }
 
     public static String ritualActivation(RitualArchitect.Entry entry) {
+        if (am2.interop.CinematicsRitualGuide.appliesTo(entry.id)) {
+            String activation = am2.interop.CinematicsRitualGuide.activation();
+            if (activation != null) return activation;
+        }
         if (entry.playground && entry.compat.key.startsWith("potionBuff_")
                 && !StatCollector.canTranslate(entry.activationKey))
             return StatCollector.translateToLocalFormatted("am2.architect.pg.dynamic_activation", entry.controller);

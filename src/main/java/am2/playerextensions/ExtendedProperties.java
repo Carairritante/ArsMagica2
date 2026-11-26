@@ -306,7 +306,11 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 	}
 
 	public float getMaxFatigue(){
-		return (float)(this.maxFatigue + this.entity.getAttributeMap().getAttributeInstance(ArsMagicaApi.maxBurnoutBonus).getAttributeValue());
+		double bonus = 0;
+		if (this.entity != null && this.entity.getAttributeMap() != null && this.entity.getAttributeMap().getAttributeInstance(ArsMagicaApi.maxBurnoutBonus) != null){
+			bonus = this.entity.getAttributeMap().getAttributeInstance(ArsMagicaApi.maxBurnoutBonus).getAttributeValue();
+		}
+		return (float)(this.maxFatigue + bonus);
 	}
 
 	@Override
@@ -374,7 +378,7 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 	}
 
 	public void setMaxMana(float maxMana){
-		if (AMCore.config.getManaCap() > 0){
+		if (AMCore.config != null && AMCore.config.getManaCap() > 0){
 			this.maxMana = (float)Math.min(maxMana, AMCore.config.getManaCap());
 		}else{
 			this.maxMana = maxMana;
@@ -572,17 +576,22 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 		this.previousBreath = breath;
 	}
 
+	public static float calculateBaseMaxManaForLevel(int level){
+		if (level > maxMagicLevel) level = maxMagicLevel;
+		if (level < 0) level = 0;
+		// Base max mana without bosses, talents, rituals or attribute bonuses (~42k at max level).
+		return (float)(Math.pow(level, 1.5f) * (85f * ((float)level / maxMagicLevel)) + 500f) / 2F;
+	}
+
 	@Override
 	public boolean setMagicLevelWithMana(int level){
 
 		if (level > maxMagicLevel) level = maxMagicLevel;
 		if (level < 0) level = 0;
 		setMagicLevel(level);
-		if (getMaxMana() > ((float)(Math.pow(level, 1.5f) * (85f * ((float)level / maxMagicLevel)) + 500f) / 2F) + 17000) {
-			setMaxMana(((float)(Math.pow(level, 1.5f) * (85f * ((float)level / maxMagicLevel)) + 500f) / 2F) + 23000); // keep world fusion ritual effect
-		} else {
-			setMaxMana((float)(Math.pow(level, 1.5f) * (85f * ((float)level / maxMagicLevel)) + 500f) / 2F); // max mana without bosses, talents or rituals is 42k
-		}
+		// Guardian (+2k each), talent, World Fusion ritual (hasRitual: +23k), potion and attribute
+		// (maxManaBonus) bonuses are applied dynamically in getMaxMana(); never bake +23k into base maxMana.
+		setMaxMana(calculateBaseMaxManaForLevel(level));
 		setCurrentMana(getMaxMana());
 		setCurrentFatigue(0);
 		setMaxFatigue(level * 10 + 1);
@@ -722,7 +731,7 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 		else
 			this.bitFlag &= ~BIT_SHRUNK;
 
-		if (!entity.worldObj.isRemote){
+		if (entity != null && entity.worldObj != null && !entity.worldObj.isRemote){
 			this.setUpdateFlag(UPD_BITFLAG);
 			this.forceSync();
 		}
@@ -1101,6 +1110,19 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 
 	@Override
 	public void loadNBTData(NBTTagCompound compound){
+		guardian1 = compound.getBoolean("guardian1");
+		guardian2 = compound.getBoolean("guardian2");
+		guardian3 = compound.getBoolean("guardian3");
+		guardian4 = compound.getBoolean("guardian4");
+		guardian5 = compound.getBoolean("guardian5");
+		guardian6 = compound.getBoolean("guardian6");
+		guardian7 = compound.getBoolean("guardian7");
+		guardian8 = compound.getBoolean("guardian8");
+		guardian9 = compound.getBoolean("guardian9");
+		guardian10 = compound.getBoolean("guardian10");
+
+		hasRitual = compound.getBoolean("hasRitual");
+
 		setMagicLevelWithMana(compound.getShort("magicLevel"));
 		setCurrentMana(compound.getFloat("curMana"));
 		setCurrentFatigue(compound.getFloat("curFatigue"));
@@ -1123,19 +1145,6 @@ public class ExtendedProperties implements IExtendedProperties, IExtendedEntityP
 		isCritical = compound.getBoolean("isCritical");
 
 		magicXP = compound.getFloat("magicXP");
-
-		guardian1 = compound.getBoolean("guardian1");
-		guardian2 = compound.getBoolean("guardian2");
-		guardian3 = compound.getBoolean("guardian3");
-		guardian4 = compound.getBoolean("guardian4");
-		guardian5 = compound.getBoolean("guardian5");
-		guardian6 = compound.getBoolean("guardian6");
-		guardian7 = compound.getBoolean("guardian7");
-		guardian8 = compound.getBoolean("guardian8");
-		guardian9 = compound.getBoolean("guardian9");
-		guardian10 = compound.getBoolean("guardian10");
-
-		hasRitual = compound.getBoolean("hasRitual");
 
 		for (int i = 0; i < 4; ++i){
 			if (armorProcCooldowns[i] > 0){

@@ -220,6 +220,12 @@ public class AMPacketProcessorClient extends AMPacketProcessorServer{
                     am2.playerextensions.VoiceVaultStorage.For(Minecraft.getMinecraft().thePlayer).handleClientSyncPacket(remaining);
                 }
                 break;
+            case AMPacketIDs.COMPENDIUM_BOOK_STATE:
+                if (remaining.length >= 5) {
+                    AMDataReader book = new AMDataReader(remaining, false);
+                    am2.items.renderers.CompendiumBookState.onRemoteState(book.getInt(), book.getBoolean());
+                }
+                break;
             case AMPacketIDs.VOICE_CAST_FX:
                 am2.interop.voice.VoiceSpellController.spawnClientVoiceCastParticles(remaining);
                 break;

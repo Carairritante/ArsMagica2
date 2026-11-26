@@ -55,9 +55,50 @@ public class CompendiumEntryRitual extends CompendiumEntry{
 		return new GuiArcaneCompendium(searchID);
 	}
 
+	public String getRitualController(){
+		return this.ritualController;
+	}
+
+	public String getRitualShape(){
+		return this.ritualShape;
+	}
+
+	/** Returns the reagents required by this ritual for preview icons, or null if overview/unavailable. */
+	public ItemStack[] getPreviewReagents(){
+		if (this.ritualShape == null || this.ritualShape.isEmpty()) return null;
+		try{
+			if ("worldFusion".equals(this.ritualShape) && am2.interop.CinematicsRitualGuide.active()){
+				return am2.interop.CinematicsRitualGuide.previewReagents();
+			}
+			if ("trueSoulbound".equals(this.ritualShape)){
+				return am2.soulbound.TrueSoulboundRitual.INSTANCE.getReagents();
+			}
+			if ("astralDivination".equals(this.ritualShape)){
+				return am2.compass.AstralCompassRitual.INSTANCE.getReagents();
+			}
+			if ("vocalResonance".equals(this.ritualShape)){
+				return am2.interop.voice.VocalAuraRitual.INSTANCE.getReagents();
+			}
+			if (this.ritualController != null && !this.ritualController.isEmpty()){
+				ISkillTreeEntry entry = SkillManager.instance.getSkill(this.ritualController);
+				if (entry instanceof IRitualInteraction){
+					return ((IRitualInteraction)entry).getReagents();
+				}
+			}
+		}catch (Throwable ignored){
+		}
+		return null;
+	}
+
 	@Override
 	public ItemStack getRepresentItemStack(String searchID, int meta){
-		return null;
+		if (this.ritualController != null && !this.ritualController.isEmpty()){
+			am2.api.SkillTreeEntry entry = am2.spell.SkillTreeManager.instance.getSkillTreeEntry(SkillManager.instance.getSkill(this.ritualController));
+			if (entry != null){
+				return new ItemStack(am2.items.ItemsCommonProxy.spell_component, 1, SkillManager.instance.getShiftedPartID(entry.registeredItem));
+			}
+		}
+		return new ItemStack(am2.items.ItemsCommonProxy.wizardChalk);
 	}
 
 }

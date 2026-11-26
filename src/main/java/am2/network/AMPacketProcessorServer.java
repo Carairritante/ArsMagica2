@@ -152,6 +152,8 @@ public class AMPacketProcessorServer{
 				break;
 			case AMPacketIDs.ASTRAL_COMPASS_ACTION:
 				handleAstralCompassAction(remaining, player); break;
+			case AMPacketIDs.COMPENDIUM_BOOK_STATE:
+				CompendiumBookSync.handle(remaining, player); break;
 			case AMPacketIDs.VOICE_SPELL_CAST:
 				am2.interop.voice.VoiceSpellServerHandler.handlePacket(remaining, player); break;
 			case AMPacketIDs.VOICE_VAULT_ACTION:

@@ -44,6 +44,10 @@ public class SkillTreeManager implements ISkillTreeManager{
 		return goldenSkills.contains(shiftedId);
 	}
 
+	public boolean isSilverSkill(ISkillTreeEntry part){
+		return part != null && !isGoldenSkill(part) && getSkillPointTypeForPart(part) == SkillPointTypes.SILVER;
+	}
+
 	public SkillPointTypes getSkillPointTypeForPart(ISkillTreeEntry part){
 		int id = SkillManager.instance.getShiftedPartID(part);
 		return getSkillPointTypeForPart(id);

@@ -383,7 +383,8 @@ public final class RitualArchitect {
             else status.blocked++;
         }
         status.structureReady = !status.cells.isEmpty() && status.correct == status.cells.size();
-        ItemStack[] required = entry.interaction().getReagents();
+        boolean cinematicFusion = am2.interop.CinematicsRitualGuide.appliesTo(entry.id);
+        ItemStack[] required = cinematicFusion ? am2.interop.CinematicsRitualGuide.groundReagents() : entry.interaction().getReagents();
         if (entry.dynamicReagents) {
             // These are combination placeholders, not a prescribed rune color/sequence.
             status.reagents.add(new Reagent(new ItemStack(ItemsCommonProxy.rune,
@@ -427,6 +428,8 @@ public final class RitualArchitect {
         if (entry.id.equals("recall_to_gateway")) status.extraItems += Math.max(0, status.reagents.get(0).present - 3);
         if (entry.id.equals("true_soulbound")) {
             status.reagentsReady = status.extraItems == 1;
+        } else if (cinematicFusion) {
+            status.reagentsReady = true; // extra items on the ground do not stop the new ritual
         } else {
             status.reagentsReady = !entry.dynamicReagents && status.extraItems == 0;
         }

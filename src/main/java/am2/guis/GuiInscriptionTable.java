@@ -74,6 +74,15 @@ public class GuiInscriptionTable extends GuiContainer{
 	int IIconStep = 17;
 
 	private ValidationResult result;
+	private am2.spell.SpellInscriptionAnalyzer.Analysis analysis;
+	private final am2.guis.grimoire.InscriptionPreviewPanel previewPanel = new am2.guis.grimoire.InscriptionPreviewPanel();
+	private final am2.guis.grimoire.InscriptionBrowserOverlay browserOverlay = new am2.guis.grimoire.InscriptionBrowserOverlay();
+	private am2.guis.grimoire.InscriptionBrowserOverlay.Tab activeTab = am2.guis.grimoire.InscriptionBrowserOverlay.Tab.ALL;
+	private am2.api.spell.enums.Affinity activeAffinity = null;
+	private final ArrayList<am2.api.spell.enums.Affinity> presentAffinities = new ArrayList<am2.api.spell.enums.Affinity>();
+	private final java.util.HashMap<Integer, Boolean> modifierUsefulCache = new java.util.HashMap<Integer, Boolean>();
+	private int scrollRow = 0;
+	private int maxScrollRow = 0;
 
 	private GuiTextField searchBar;
 	private GuiTextField nameBar;
@@ -136,6 +145,69 @@ public class GuiInscriptionTable extends GuiContainer{
 		searchBar.setText(defaultSearchLabel);
 
 		result = ((ContainerInscriptionTable)this.inventorySlots).validateCurrentDefinition();
+		rebuildPresentAffinities();
+		refreshAnalysis();
+	}
+
+	private void rebuildPresentAffinities(){
+		presentAffinities.clear();
+		am2.api.spell.enums.Affinity[] order = {
+				am2.api.spell.enums.Affinity.ARCANE, am2.api.spell.enums.Affinity.FIRE, am2.api.spell.enums.Affinity.WATER,
+				am2.api.spell.enums.Affinity.AIR, am2.api.spell.enums.Affinity.EARTH, am2.api.spell.enums.Affinity.LIGHTNING,
+				am2.api.spell.enums.Affinity.ICE, am2.api.spell.enums.Affinity.NATURE, am2.api.spell.enums.Affinity.LIFE,
+				am2.api.spell.enums.Affinity.ENDER
+		};
+		java.util.EnumSet<am2.api.spell.enums.Affinity> found = java.util.EnumSet.noneOf(am2.api.spell.enums.Affinity.class);
+		for (Integer id : knownComponents){
+			ISkillTreeEntry part = SkillManager.instance.getSkill(id);
+			if (part instanceof ISpellComponent && !SkillTreeManager.instance.isSkillDisabled(part)){
+				java.util.EnumSet<am2.api.spell.enums.Affinity> affs = ((ISpellComponent)part).getAffinity();
+				if (affs != null) found.addAll(affs);
+			}
+		}
+		for (am2.api.spell.enums.Affinity aff : order){
+			if (found.contains(aff)) presentAffinities.add(aff);
+		}
+		if (activeAffinity != null && !found.contains(activeAffinity)){
+			activeAffinity = null;
+		}
+	}
+
+	private void refreshAnalysis(){
+		ContainerInscriptionTable container = (ContainerInscriptionTable)this.inventorySlots;
+		ArrayList<ArrayList<ISpellPart>> groups = new ArrayList<ArrayList<ISpellPart>>();
+		for (int g = 0; g < container.getNumStageGroups(); ++g){
+			ArrayList<ISpellPart> list = new ArrayList<ISpellPart>();
+			for (int n = 0; n < container.getShapeGroupSize(g); ++n){
+				list.add(container.getShapeGroupPartAt(g, n));
+			}
+			groups.add(list);
+		}
+		ArrayList<ISpellPart> recipe = new ArrayList<ISpellPart>();
+		for (int i = 0; i < container.getCurrentRecipeSize(); ++i){
+			recipe.add(container.getRecipeItemAt(i));
+		}
+		analysis = am2.spell.SpellInscriptionAnalyzer.analyze(groups, recipe, usingPlayer);
+		modifierUsefulCache.clear();
+		if (analysis != null && analysis.totalParts > 0){
+			for (Integer id : knownModifiers){
+				ISkillTreeEntry part = SkillManager.instance.getSkill(id);
+				if (part instanceof ISpellModifier){
+					boolean useful = am2.spell.SpellInscriptionAnalyzer.isModifierUsefulForLastStage(
+							(ISpellModifier)part, groups, recipe, am2.spell.SpellInscriptionAnalyzer.COMPENDIUM_LOOKUP);
+					modifierUsefulCache.put(part.getID(), useful);
+				}
+			}
+		}
+	}
+
+	@Override
+	public void handleMouseInput(){
+		super.handleMouseInput();
+		int wheel = org.lwjgl.input.Mouse.getEventDWheel();
+		if (wheel != 0 && maxScrollRow > 0 && lastMouseX >= 35 && lastMouseX <= 202 && lastMouseY >= 0 && lastMouseY <= 58){
+			scrollRow = Math.max(0, Math.min(maxScrollRow, scrollRow + (wheel > 0 ? -1 : 1)));
+		}
 	}
 
 	@Override
@@ -155,9 +227,40 @@ public class GuiInscriptionTable extends GuiContainer{
 		par1 -= l;
 		par2 -= i1;
 
+		// Left-docked category tabs, affinity filter, and upper-grid scroll arrows
+		am2.guis.grimoire.InscriptionBrowserOverlay.Tab clickedTab = browserOverlay.tabAt(l, par1, par2);
+		if (clickedTab != null){
+			activeTab = clickedTab;
+			if (activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.SHAPES || activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.MODIFIERS){
+				activeAffinity = null;
+			}
+			scrollRow = 0;
+			return;
+		}
+		int affSlot = browserOverlay.affinitySlotAt(l, activeTab, presentAffinities, par1, par2);
+		if (affSlot >= 0){
+			if (affSlot == 0){
+				activeAffinity = null;
+			}else{
+				am2.api.spell.enums.Affinity picked = presentAffinities.get(affSlot - 1);
+				activeAffinity = (activeAffinity == picked) ? null : picked;
+			}
+			scrollRow = 0;
+			return;
+		}
+		int scrollDelta = browserOverlay.scrollClick(maxScrollRow, par1, par2);
+		if (scrollDelta != 0){
+			scrollRow = Math.max(0, Math.min(maxScrollRow, scrollRow + scrollDelta));
+			return;
+		}
+
 		if (hoveredItem != null && hoveredIcon != null){
 			if (spellPartIsValidAddition(hoveredItem) && !lowerHover){
-				dragging = true;
+				if (isShiftKeyDown() && hoveredItem instanceof ISpellPart){
+					quickAddPart((ISpellPart)hoveredItem);
+				}else{
+					dragging = true;
+				}
 			}else if (lowerHover){
 				if (lowerHoverShapeGroup == -1 && ((ContainerInscriptionTable)this.inventorySlots).currentRecipeContains(hoveredItem)){
 					if (hoveredItem instanceof ISpellShape){
@@ -174,6 +277,7 @@ public class GuiInscriptionTable extends GuiContainer{
 						((ContainerInscriptionTable)this.inventorySlots).removeSingleRecipePart(lowerHoverIndex);
 					}
 					result = ((ContainerInscriptionTable)this.inventorySlots).validateCurrentDefinition();
+					refreshAnalysis();
 				}else if (lowerHoverShapeGroup >= 0){
 					if (hoveredItem instanceof ISpellShape){
 						int index = lowerHoverIndex;
@@ -190,6 +294,7 @@ public class GuiInscriptionTable extends GuiContainer{
 						((ContainerInscriptionTable)this.inventorySlots).removeSingleRecipePartFromGroup(lowerHoverShapeGroup, lowerHoverIndex);
 					}
 					result = ((ContainerInscriptionTable)this.inventorySlots).validateCurrentDefinition();
+					refreshAnalysis();
 				}
 			}
 		}else{
@@ -247,6 +352,7 @@ public class GuiInscriptionTable extends GuiContainer{
 					if (y >= IIconYStart_lower && y <= IIconYStart_lower + 18){
 						((ContainerInscriptionTable)this.inventorySlots).addRecipePart((ISpellPart)hoveredItem);
 						result = ((ContainerInscriptionTable)this.inventorySlots).validateCurrentDefinition();
+						refreshAnalysis();
 					}
 				}
 				//spell stage groups
@@ -258,6 +364,7 @@ public class GuiInscriptionTable extends GuiContainer{
 						if (y >= SGY && y <= SGY + shapeGroupWidth){
 							((ContainerInscriptionTable)this.inventorySlots).addRecipePartToGroup(i, (ISpellPart)hoveredItem);
 							result = ((ContainerInscriptionTable)this.inventorySlots).validateCurrentDefinition();
+							refreshAnalysis();
 						}
 					}
 				}
@@ -292,12 +399,32 @@ public class GuiInscriptionTable extends GuiContainer{
 	@Override
 	protected void keyTyped(char par1, int par2){
 		if (searchBar.textboxKeyTyped(par1, par2)){
-
+			scrollRow = 0;
 		}else if (nameBar.textboxKeyTyped(par1, par2)){
 			((ContainerInscriptionTable)this.inventorySlots).setSpellName(nameBar.getText());
 		}else{
 			super.keyTyped(par1, par2);
 		}
+	}
+
+	private void quickAddPart(ISpellPart part){
+		ContainerInscriptionTable container = (ContainerInscriptionTable)this.inventorySlots;
+		boolean anyGroupHasShape = false;
+		for (int g = 0; g < container.getNumStageGroups(); ++g){
+			for (int n = 0; n < container.getShapeGroupSize(g); ++n){
+				if (container.getShapeGroupPartAt(g, n) instanceof ISpellShape){
+					anyGroupHasShape = true;
+					break;
+				}
+			}
+		}
+		if (part instanceof ISpellShape && !anyGroupHasShape && container.getNumStageGroups() > 0 && container.getShapeGroupSize(0) < 4){
+			container.addRecipePartToGroup(0, part);
+		}else{
+			container.addRecipePart(part);
+		}
+		result = container.validateCurrentDefinition();
+		refreshAnalysis();
 	}
 
 	@Override
@@ -352,10 +479,11 @@ public class GuiInscriptionTable extends GuiContainer{
 		searchBar.drawTextBox();
 		nameBar.drawTextBox();
 
+		boolean bookOut = false;
 		if (result.valid){
 			if (((ContainerInscriptionTable)this.inventorySlots).slotHasStack(0)){
 				if (((ContainerInscriptionTable)this.inventorySlots).slotIsBook(0)){
-					Minecraft.getMinecraft().fontRenderer.drawSplitString(StatCollector.translateToLocal("am2.gui.bookOut"), 225, 5, 100, 0xFF7700);
+					bookOut = true;
 				}else{
 					resetSpellButton.visible = true;
 				}
@@ -370,13 +498,30 @@ public class GuiInscriptionTable extends GuiContainer{
 			}else{
 				resetSpellButton.visible = false;
 			}
-			Minecraft.getMinecraft().fontRenderer.drawSplitString(result.message, 225, 5, 100, 0xFF7700);
 			createSpellButton.enabled = false;
+		}
+
+		int availRight = width - (l + xSize + 4);
+		List<String> browserTip = browserOverlay.draw(Minecraft.getMinecraft(), Minecraft.getMinecraft().fontRenderer, l,
+				activeTab, activeAffinity, presentAffinities, scrollRow, maxScrollRow, lastMouseX, lastMouseY);
+		List<String> panelTip = previewPanel.draw(Minecraft.getMinecraft().fontRenderer, xSize + 5, 2, availRight,
+				analysis, result, bookOut, usingPlayer, lastMouseX, lastMouseY);
+		if (availRight < 74){
+			// Narrow screen fallback: preserve original status string
+			if (bookOut){
+				Minecraft.getMinecraft().fontRenderer.drawSplitString(StatCollector.translateToLocal("am2.gui.bookOut"), 225, 5, 100, 0xFF7700);
+			}else if (!result.valid){
+				Minecraft.getMinecraft().fontRenderer.drawSplitString(result.message, 225, 5, 100, 0xFF7700);
+			}
 		}
 
 		if (!dragging){
 			if (hovering){
 				drawHoveringText(label, lastMouseX, lastMouseY, Minecraft.getMinecraft().fontRenderer);
+			}else if (panelTip != null && !panelTip.isEmpty()){
+				drawHoveringText(panelTip, lastMouseX, lastMouseY, Minecraft.getMinecraft().fontRenderer);
+			}else if (browserTip != null && !browserTip.isEmpty()){
+				drawHoveringText(browserTip, lastMouseX, lastMouseY, Minecraft.getMinecraft().fontRenderer);
 			}else{
 				hoveredItem = null;
 				hoveredIcon = null;
@@ -410,6 +555,7 @@ public class GuiInscriptionTable extends GuiContainer{
 		boolean hovering = false;
 		int index = 0;
 
+		ArrayList<ISpellPart> mainRecipeParts = new ArrayList<ISpellPart>();
 		//main recipe
 		for (int i = 0; i < ((ContainerInscriptionTable)this.inventorySlots).getCurrentRecipeSize(); ++i){
 			ISpellPart part = ((ContainerInscriptionTable)this.inventorySlots).getRecipeItemAt(i);
@@ -417,16 +563,24 @@ public class GuiInscriptionTable extends GuiContainer{
 			if (SkillManager.instance.getSkillName(part) == null){
 				continue;
 			}
+			mainRecipeParts.add(part);
 			String name = SkillManager.instance.getDisplayName(part);
 
+			int drawAtX = iconX;
+			int drawAtY = iconY;
 			if (drawIcon(part, false)){
 				appendPartTooltip(part, name, labelText, true, index);
 				hovering = true;
 				lowerHoverIndex = index;
 				lowerHoverShapeGroup = -1;
 			}
+			if (analysis != null && part instanceof ISpellModifier && analysis.isUnused((ISpellModifier) part)){
+				am2.guis.grimoire.InscriptionPreviewPanel.drawUnusedWarningMarker(drawAtX, drawAtY);
+			}
 			index++;
 		}
+		am2.guis.grimoire.InscriptionBrowserOverlay.drawStageBrackets(
+				Minecraft.getMinecraft().fontRenderer, mainRecipeParts, IIconXStart_lower, IIconYStart_lower, IIconStep);
 
 		//shape groups
 		for (int i = 0; i < ((ContainerInscriptionTable)this.inventorySlots).getNumStageGroups(); ++i){
@@ -444,11 +598,16 @@ public class GuiInscriptionTable extends GuiContainer{
 				iconX = SGX + (n % 2) * IIconStep;
 				iconY = SGY + (int)Math.floor(n / 2) * IIconStep;
 
+				int drawAtX = iconX;
+				int drawAtY = iconY;
 				if (drawIcon(part, false)){
-					labelText.add(name);
+					appendPartTooltip(part, name, labelText, true, -1);
 					hovering = true;
 					lowerHoverIndex = n;
 					lowerHoverShapeGroup = i;
+				}
+				if (analysis != null && part instanceof ISpellModifier && analysis.isUnused((ISpellModifier) part)){
+					am2.guis.grimoire.InscriptionPreviewPanel.drawUnusedWarningMarker(drawAtX, drawAtY);
 				}
 			}
 		}
@@ -462,37 +621,60 @@ public class GuiInscriptionTable extends GuiContainer{
 	}
 
 	private boolean drawPartIcons(ArrayList<String> labelText){
-		boolean hovering = false;
-		hovering |= drawIconSet(knownShapes, labelText);
-		hovering |= drawIconSet(knownComponents, labelText);
-		hovering |= drawIconSet(knownModifiers, labelText);
-		return hovering;
-	}
+		ArrayList<ISkillTreeEntry> filtered = new ArrayList<ISkillTreeEntry>();
+		if (activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.ALL || activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.SHAPES || activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.SILVER){
+			if (activeAffinity == null) collectFilteredParts(knownShapes, filtered);
+		}
+		if (activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.ALL || activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.COMPONENTS || activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.SILVER){
+			collectFilteredParts(knownComponents, filtered);
+		}
+		if (activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.ALL || activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.MODIFIERS || activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.SILVER){
+			if (activeAffinity == null) collectFilteredParts(knownModifiers, filtered);
+		}
 
-	private boolean drawIconSet(Integer[] ids, ArrayList<String> labelText){
-		boolean hovering = false;
-		for (Integer i : ids){
-			ISkillTreeEntry part = SkillManager.instance.getSkill(i);
+		int cols = 8;
+		int visibleRows = 3;
+		int totalRows = (filtered.size() + cols - 1) / cols;
+		maxScrollRow = Math.max(0, totalRows - visibleRows);
+		if (scrollRow > maxScrollRow) scrollRow = maxScrollRow;
+		if (scrollRow < 0) scrollRow = 0;
 
-			// skip if part is null (how?), !if it's missingShape, missingComponent, missingModifier!, or disabled in config
-			if (part == null || SkillManager.instance.getSkillName(part) == null || SkillTreeManager.instance.isSkillDisabled(part)){
-				continue;
-			}
+		int startIdx = scrollRow * cols;
+		int endIdx = Math.min(filtered.size(), startIdx + cols * visibleRows);
+		boolean hovering = false;
+		for (int idx = startIdx; idx < endIdx; ++idx){
+			ISkillTreeEntry part = filtered.get(idx);
 			String name = SkillManager.instance.getDisplayName(part);
-
-			String filterText = searchBar.getText();
-			if (!filterText.equalsIgnoreCase(defaultSearchLabel)
-					&& !SpellPartSearch.INSTANCE.matches(name, SkillManager.instance.getSkillName(part), filterText)){
-				continue;
-			}
-
-			if (iconY < 0 || iconY > 42) return hovering;
 			if (drawIcon(part)){
 				hovering = true;
 				appendPartTooltip(part, name, labelText, false, -1);
 			}
 		}
 		return hovering;
+	}
+
+	private void collectFilteredParts(Integer[] ids, ArrayList<ISkillTreeEntry> out){
+		String filterText = searchBar.getText();
+		boolean searching = !filterText.equalsIgnoreCase(defaultSearchLabel) && !filterText.trim().isEmpty();
+		for (Integer i : ids){
+			ISkillTreeEntry part = SkillManager.instance.getSkill(i);
+			if (part == null || SkillManager.instance.getSkillName(part) == null || SkillTreeManager.instance.isSkillDisabled(part)){
+				continue;
+			}
+			if (activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.SILVER){
+				if (!SkillTreeManager.instance.isSilverSkill(part) && !SkillTreeManager.instance.isGoldenSkill(part)){
+					continue;
+				}
+			}
+			if (activeAffinity != null && !am2.guis.grimoire.InscriptionBrowserOverlay.matchesAffinity(part, activeAffinity)){
+				continue;
+			}
+			String name = SkillManager.instance.getDisplayName(part);
+			if (searching && !SpellPartSearch.INSTANCE.matches(name, SkillManager.instance.getSkillName(part), filterText)){
+				continue;
+			}
+			out.add(part);
+		}
 	}
 
 	private boolean spellPartIsValidAddition(ISkillTreeEntry part){
@@ -551,6 +733,15 @@ public class GuiInscriptionTable extends GuiContainer{
 		if (SkillTreeManager.instance.isGoldenSkill(part)){
 			int gColor = (AMGuiHelper.instance.getFastTicker() % 20 < 10) ? 0xFFE564 : 0xD49418;
 			drawOctagonOutline(iconX, iconY, 16, 4, gColor);
+		}else{
+			boolean hasRecipe = analysis != null && analysis.totalParts > 0;
+			boolean modUseful = (part instanceof ISpellModifier) && Boolean.TRUE.equals(modifierUsefulCache.get(part.getID()));
+			am2.guis.grimoire.InscriptionBrowserOverlay.drawSubtlePartMarker(
+					part, iconX, iconY,
+					allowDarken && activeTab == am2.guis.grimoire.InscriptionBrowserOverlay.Tab.ALL,
+					allowDarken && hasRecipe,
+					modUseful,
+					AMGuiHelper.instance.getFastTicker());
 		}
 
 		if (!dragging){
@@ -663,14 +854,52 @@ public class GuiInscriptionTable extends GuiContainer{
 
 	private void appendPartTooltip(ISkillTreeEntry part, String displayName, ArrayList<String> labelText, boolean inRecipe, int recipeIndex){
 		boolean isGolden = SkillTreeManager.instance.isGoldenSkill(part);
-		if (!isGolden){
+		boolean isSilver = SkillTreeManager.instance.isSilverSkill(part);
+		if (isGolden){
+			labelText.add("\u00a76\u2605 " + displayName);
+			labelText.add("\u00a76" + StatCollector.translateToLocal("am2.gui.goldenSkill"));
+		}else if (isSilver){
+			labelText.add("\u00a7b\u2726 " + displayName);
+			labelText.add("\u00a7b" + am2.guis.grimoire.GrimoireLang.tr("am2.inscription.silverSkill"));
+		}else{
 			labelText.add(displayName);
-			return;
 		}
-		labelText.add("\u00a76\u2605 " + displayName);
-		labelText.add("\u00a76" + StatCollector.translateToLocal("am2.gui.goldenSkill"));
-		if (part instanceof Tornado){
-			if (inRecipe){
+
+		// Live part info: cost, affinity, multiplier, and modifier compatibility
+		if (part instanceof ISpellComponent){
+			ISpellComponent comp = (ISpellComponent) part;
+			am2.api.spell.enums.Affinity aff = am2.guis.grimoire.InscriptionBrowserOverlay.primaryAffinity(part);
+			if (aff != null){
+				labelText.add("\u00a77" + am2.guis.grimoire.GrimoireLang.tr("am2.inscription.panel.affinity") + ": \u00a7f"
+						+ am2.guis.grimoire.GrimoireLang.affinityName(aff));
+			}
+			labelText.add("\u00a7b" + am2.guis.grimoire.GrimoireLang.trFmt("am2.inscription.tip.mana",
+					String.format(java.util.Locale.ROOT, "%.0f", comp.manaCost(usingPlayer)),
+					String.format(java.util.Locale.ROOT, "%.0f", comp.burnout(usingPlayer))));
+		}else if (part instanceof ISpellShape){
+			try{
+				float mult = ((ISpellShape) part).manaCostMultiplier(null);
+				labelText.add("\u00a77" + am2.guis.grimoire.GrimoireLang.trFmt("am2.inscription.tip.shapeMult",
+						String.format(java.util.Locale.ROOT, "%.2f", mult)));
+			}catch (Throwable ignored){
+			}
+		}else if (part instanceof ISpellModifier){
+			ISpellModifier mod = (ISpellModifier) part;
+			if (inRecipe && analysis != null && analysis.isUnused(mod)){
+				labelText.add("\u00a7c" + am2.guis.grimoire.GrimoireLang.tr("am2.inscription.tip.modUnused"));
+			}else if (!inRecipe && analysis != null && analysis.totalParts > 0){
+				boolean useful = Boolean.TRUE.equals(modifierUsefulCache.get(mod.getID()));
+				labelText.add((useful ? "\u00a7a" : "\u00a7e") + am2.guis.grimoire.GrimoireLang.tr(
+						useful ? "am2.inscription.tip.modUseful" : "am2.inscription.tip.modUnused"));
+			}
+		}
+
+		if (!inRecipe && !currentSpellDefIsReadOnly() && spellPartIsValidAddition(part)){
+			labelText.add("\u00a78" + am2.guis.grimoire.GrimoireLang.tr("am2.inscription.tip.shiftAdd"));
+		}
+
+		if (isGolden && part instanceof Tornado){
+			if (inRecipe && recipeIndex >= 0){
 				ContainerInscriptionTable container = (ContainerInscriptionTable) this.inventorySlots;
 				int total = container.getCurrentRecipeSize();
 				int start = 0;

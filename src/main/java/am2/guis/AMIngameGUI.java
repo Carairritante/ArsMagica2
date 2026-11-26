@@ -107,6 +107,8 @@ public class AMIngameGUI{
 			RenderSpellBookUI(i, j, mc.fontRenderer, mc.thePlayer.getCurrentEquippedItem());
 		}
 
+		am2.guis.grimoire.CraftingAltarHud.render(mc, i, j);
+
 		GL11.glPopAttrib();
 		GL11.glDisable(GL11.GL_BLEND);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);

@@ -104,6 +104,7 @@ public class PlayerTracker{
 	@SubscribeEvent
 	public void onPlayerLogout(PlayerLoggedOutEvent event){
 		pendingVoiceVaultSync.remove(event.player.getUniqueID());
+		am2.network.CompendiumBookSync.forget(event.player.getUniqueID());
 		String name = event.player.getCommandSenderName();
 		if (name != null) {
 			net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.remove(name);

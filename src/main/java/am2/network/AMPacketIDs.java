@@ -74,4 +74,5 @@ public class AMPacketIDs{
 	public static final byte VOICE_VAULT_SYNC = 84;
 	public static final byte VOICE_VAULT_ACTION = 85;
 	public static final byte VOICE_CAST_FX = 86;
+	public static final byte COMPENDIUM_BOOK_STATE = 87;
 }

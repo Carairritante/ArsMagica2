@@ -201,6 +201,16 @@ public class AMGuiHelper{
 	}
 
 	public static void OpenCompendiumGui(ItemStack stack){
+		// The held book opens first and then calls showCompendium.
+		if (am2.guis.grimoire.GrimoirePrefs.get().effects){
+			am2.items.renderers.CompendiumBookState.requestOpen(stack);
+		}else{
+			showCompendium(stack);
+		}
+	}
+
+	public static void showCompendium(ItemStack stack){
+		am2.lore.ArcaneCompendium.freshDiscovery = false;
 		if (am2.lore.ArcaneCompendium.instance.refreshLanguageIfNeeded())
 			AMGuiHelper.instance.clearCompendiumBreadcrumbs();
 		CompendiumBreadcrumb breadcrumb = AMGuiHelper.instance.popCompendiumBreadcrumb();
@@ -208,10 +218,10 @@ public class AMGuiHelper{
 			if (breadcrumb.entryType == breadcrumb.TYPE_ENTRY){
 				Minecraft.getMinecraft().displayGuiScreen(new GuiArcaneCompendium(breadcrumb));
 			}else{
-				Minecraft.getMinecraft().displayGuiScreen(new GuiCompendiumIndex(breadcrumb));
+				Minecraft.getMinecraft().displayGuiScreen(am2.guis.grimoire.CompendiumScreens.index(breadcrumb));
 			}
 		}else{
-			Minecraft.getMinecraft().displayGuiScreen(new GuiCompendiumIndex());
+			Minecraft.getMinecraft().displayGuiScreen(am2.guis.grimoire.CompendiumScreens.index(null));
 		}
 	}
 

@@ -51,6 +51,7 @@ public class GuiCompendiumIndex extends GuiScreen implements GuiYesNoCallback{
 	GuiButtonCompendiumTab backToIndex;
 
 	GuiSpellImageButton updateButton;
+	private GuiButton newBookButton;
 
 	SkillData sk;
 
@@ -104,6 +105,9 @@ public class GuiCompendiumIndex extends GuiScreen implements GuiYesNoCallback{
 		this.buttonList.add(nextPage);
 		this.buttonList.add(prevPage);
 		this.buttonList.add(backToIndex);
+
+		newBookButton = new GuiButton(idCount++, l + xSize - 92, Math.min(height - 18, i1 + ySize - 6), 86, 16, StatCollector.translateToLocal("am2.grimoire.newBook"));
+		this.buttonList.add(newBookButton);
 
 		switchCategoryAndPage();
 
@@ -172,6 +176,15 @@ public class GuiCompendiumIndex extends GuiScreen implements GuiYesNoCallback{
 
 	@Override
 	protected void actionPerformed(GuiButton buttonClicked){
+
+		if (buttonClicked == newBookButton){
+			am2.guis.grimoire.GrimoirePrefs prefs = am2.guis.grimoire.GrimoirePrefs.get();
+			prefs.classic = false;
+			prefs.save();
+			AMGuiHelper.instance.clearCompendiumBreadcrumbs();
+			Minecraft.getMinecraft().displayGuiScreen(am2.guis.grimoire.CompendiumScreens.index(null));
+			return;
+		}
 
 		if (buttonClicked.id == backToIndex.id){
 			CompendiumBreadcrumb crumb = AMGuiHelper.instance.popCompendiumBreadcrumb();
