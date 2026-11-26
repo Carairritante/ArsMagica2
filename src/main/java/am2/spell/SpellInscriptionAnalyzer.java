@@ -428,9 +428,21 @@ public final class SpellInscriptionAnalyzer {
         return unused;
     }
 
+    /**
+     * Aspects applied by the spell engine itself (SpellHelper and the shared renderers) to any
+     * spell, so they work whatever the stage holds and Compendium modifiedBy lists omit them:
+     * cloaking, colour, keystone recognition, lingering, dismembering and target filters.
+     */
+    static final EnumSet<SpellModifiers> ENGINE_WIDE = EnumSet.of(
+            SpellModifiers.CLOAKING, SpellModifiers.COLOR, SpellModifiers.KEYSTONE_REC,
+            SpellModifiers.LINGERING, SpellModifiers.DISMEMBERING_LEVEL,
+            SpellModifiers.TARGET_BLOCKS, SpellModifiers.TARGET_CREATURES,
+            SpellModifiers.TARGET_MONSTERS, SpellModifiers.TARGET_PLAYERS);
+
     private static boolean stageAcceptsModifier(List<ISpellPart> stage, ISpellModifier modifier, ModifiedByLookup lookup) {
         EnumSet<SpellModifiers> modAspects = modifier.getAspectsModified();
         if (modAspects == null || modAspects.isEmpty()) return true;
+        for (SpellModifiers aspect : modAspects) if (ENGINE_WIDE.contains(aspect)) return true;
 
         boolean hasSubject = false;
         for (ISpellPart part : stage) {

@@ -137,4 +137,23 @@ public class SpellInscriptionAnalyzerTest {
         assertEquals(4, SpellInscriptionAnalyzer.altarTierForParts(13));
         assertEquals(5, SpellInscriptionAnalyzer.altarTierForParts(14));
     }
+
+    @Test
+    public void engineWideModifiersAreNeverFlaggedUnused() {
+        ISpellShape projectile = fakeShape(1, 1f);
+        ISpellComponent fireDmg = fakeComponent(100, 120f, 20f, Affinity.FIRE);
+        ISpellModifier colour = fakeModifier(201, 1f, SpellModifiers.COLOR);
+        ISpellModifier targetPlayers = fakeModifier(202, 1f, SpellModifiers.TARGET_PLAYERS);
+        ISpellModifier healing = fakeModifier(203, 1f, SpellModifiers.HEALING);
+        SpellInscriptionAnalyzer.ModifiedByLookup onlyDamage = new SpellInscriptionAnalyzer.ModifiedByLookup() {
+            @Override public SpellModifiers[] acceptedModifiers(ISpellPart part) { return new SpellModifiers[]{SpellModifiers.DAMAGE}; }
+        };
+        List<List<ISpellPart>> groups = Collections.<List<ISpellPart>>singletonList(Collections.<ISpellPart>singletonList(projectile));
+        List<ISpellPart> recipe = Arrays.<ISpellPart>asList(fireDmg, colour, targetPlayers, healing);
+
+        SpellInscriptionAnalyzer.Analysis a = SpellInscriptionAnalyzer.analyze(groups, recipe, null, onlyDamage, false);
+        assertFalse(a.isUnused(colour));
+        assertFalse(a.isUnused(targetPlayers));
+        assertTrue(a.isUnused(healing));
+    }
 }

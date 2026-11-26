@@ -173,7 +173,27 @@ public class GuiInscriptionTable extends GuiContainer{
 		}
 	}
 
+	private int analyzedSignature = Integer.MIN_VALUE;
+
+	private int recipeSignature(){
+		ContainerInscriptionTable container = (ContainerInscriptionTable)this.inventorySlots;
+		int sig = container.getCurrentRecipeSize() * 31 + container.getNumStageGroups();
+		for (int i = 0; i < container.getCurrentRecipeSize(); ++i){
+			ISpellPart part = container.getRecipeItemAt(i);
+			sig = sig * 31 + (part == null ? 0 : SkillManager.instance.getShiftedPartID(part));
+		}
+		for (int g = 0; g < container.getNumStageGroups(); ++g){
+			sig = sig * 17 + container.getShapeGroupSize(g);
+			for (int n = 0; n < container.getShapeGroupSize(g); ++n){
+				ISpellPart part = container.getShapeGroupPartAt(g, n);
+				sig = sig * 31 + (part == null ? 0 : SkillManager.instance.getShiftedPartID(part));
+			}
+		}
+		return sig;
+	}
+
 	private void refreshAnalysis(){
+		analyzedSignature = recipeSignature();
 		ContainerInscriptionTable container = (ContainerInscriptionTable)this.inventorySlots;
 		ArrayList<ArrayList<ISpellPart>> groups = new ArrayList<ArrayList<ISpellPart>>();
 		for (int g = 0; g < container.getNumStageGroups(); ++g){
@@ -456,6 +476,10 @@ public class GuiInscriptionTable extends GuiContainer{
 	@Override
 	protected void drawGuiContainerForegroundLayer(int par1, int par2){
 		super.drawGuiContainerForegroundLayer(par1, par2);
+		if (recipeSignature() != analyzedSignature){
+			result = ((ContainerInscriptionTable)this.inventorySlots).validateCurrentDefinition();
+			refreshAnalysis();
+		}
 
 		ArrayList<String> label = new ArrayList<String>();
 

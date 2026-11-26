@@ -37,6 +37,10 @@ public final class CraftingAltarHud {
     private static final int OK = 0x5CFFC0;
     private static final int DANGER = 0xFF5A72;
 
+    private static long scannedAt = Long.MIN_VALUE;
+    private static net.minecraft.world.World scannedWorld;
+    private static java.lang.ref.WeakReference<TileEntityCraftingAltar> nearbyAltar;
+
     private CraftingAltarHud() {}
 
     public static void render(Minecraft mc, int screenW, int screenH) {
@@ -79,7 +83,8 @@ public final class CraftingAltarHud {
         } else if (isEssencePower) {
             int req = nextItem.stackSize;
             int got = Math.min(req, altar.getCurrentConsumedPower());
-            line1 = GrimoireLang.trFmt("am2.altarhud.etherium", got, req);
+            line1 = got > 0 ? GrimoireLang.trFmt("am2.altarhud.etherium", got, req)
+                    : GrimoireLang.trFmt("am2.altarhud.etheriumNeed", req);
             line1Col = CYAN;
             line2 = altar.switchIsOn()
                     ? GrimoireLang.tr("am2.altarhud.channeling")
@@ -200,7 +205,16 @@ public final class CraftingAltarHud {
             }
         }
 
-        // 2. Active crafting altar within 6.5 blocks of the player
+        // 2. Active crafting altar within 6.5 blocks of the player. Big packs load thousands of
+        //    tile entities, so this scan runs every 10 ticks instead of every frame.
+        long tick = mc.theWorld.getTotalWorldTime();
+        if (tick - scannedAt < 10 && tick >= scannedAt && mc.theWorld == scannedWorld) {
+            TileEntityCraftingAltar cached = nearbyAltar == null ? null : nearbyAltar.get();
+            return cached != null && !cached.isInvalid() && cached.isCrafting() ? cached : null;
+        }
+        scannedAt = tick;
+        scannedWorld = mc.theWorld;
+        nearbyAltar = null;
         EntityPlayer player = mc.thePlayer;
         double bestDistSq = 6.5 * 6.5;
         TileEntityCraftingAltar best = null;
@@ -219,6 +233,7 @@ public final class CraftingAltarHud {
                 best = altar;
             }
         }
+        if (best != null) nearbyAltar = new java.lang.ref.WeakReference<TileEntityCraftingAltar>(best);
         return best;
     }
 
