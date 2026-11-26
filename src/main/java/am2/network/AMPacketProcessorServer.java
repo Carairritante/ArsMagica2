@@ -339,6 +339,8 @@ public class AMPacketProcessorServer{
 	}
 
 	private void handleSyncSpellKnowledge(byte[] data, EntityPlayerMP player){
+		// Quietly drop anything else so a modified client cannot overwrite knowledge or points (or flood the log).
+		if (!SkillData.isClientLearnRequest(data)) return;
 		SkillData.For(player).handlePacketData(data);
 	}
 

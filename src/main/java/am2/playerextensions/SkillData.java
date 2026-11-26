@@ -327,6 +327,14 @@ public class SkillData implements IExtendedEntityProperties, ISkillData{
 		return talentsKnown.toArray(new Integer[talentsKnown.size()]);
 	}
 
+	/**
+	 * Clients may only ask the server to learn one entry; the server re-checks points for it.
+	 * CLIENT_SYNC carries authoritative knowledge and points and only flows server to client.
+	 */
+	public static boolean isClientLearnRequest(byte[] data){
+		return data != null && data.length > 0 && data[0] == SPELL_LEARNED;
+	}
+
 	public boolean handlePacketData(byte[] data){
 		try{
 			AMDataReader rdr = new AMDataReader(data, false);

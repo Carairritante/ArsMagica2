@@ -1,5 +1,12 @@
 # Alterações de manutenção do AM2.5 LE
 
+## CR-45 — 25 e 26/11/2026
+
+- Magia por voz: talento Ressonância Vocal (nível 90), Aura Vocal com cofre pessoal de 8 magias, reconhecimento de voz no próprio PC e integração opcional com o Akashic Voice (Silêncio também silencia o microfone).
+- Corrigido: a conjuração por voz parava depois de trocar de dimensão até a Aura ser aberta de novo. O servidor reenvia o cofre ao jogador após a viagem.
+- Corrigido: o servidor aceitava do cliente a lista completa de habilidades e pontos. Agora só aceita pedidos para aprender uma habilidade, que continuam conferidos contra os pontos.
+- Nome CR-45 mantido; identificar esta compilação pelo SHA-256 do Actions. Testado em jogo no Forbidden Series - Teste 6.5 e no teste-ars.
+
 ## CR-45 — 21/11/2026
 
 - Novos visuais de Zone, AoE e canalização, atualizações do Tornado, do Bate-Estacas e da Bússola.

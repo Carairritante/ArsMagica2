@@ -6,6 +6,7 @@ Ars Magica 2.5
 - Novos visuais para **Zone**, **AoE** e **magias canalizadas**, com modelos e círculos por afinidade.
 - **Bate-Estacas Arcano** com manequim de treino e medição de dano.
 - **Bússola Astral** com busca de estruturas, filtros por mod e dimensão e prévias 3D.
+- **Magia por voz** com o talento Ressonância Vocal e a Aura Vocal, com integração opcional ao Akashic Voice.
 
 Na branch `correcoes`, baixe o JAR e o `SHA256SUMS` separados na última execução verde do [GitHub Actions](https://github.com/Carairritante/ArsMagica2/actions/workflows/ci.yml?query=branch%3Acorrecoes). O [changelog](CHANGELOG.md) registra as correções.
 

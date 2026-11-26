@@ -103,6 +103,7 @@ public class PlayerTracker{
 
 	@SubscribeEvent
 	public void onPlayerLogout(PlayerLoggedOutEvent event){
+		pendingVoiceVaultSync.remove(event.player.getUniqueID());
 		String name = event.player.getCommandSenderName();
 		if (name != null) {
 			net.tclproject.mysteriumlib.asm.fixes.MysteriumPatchesFixesMagicka.playerModelMap.remove(name);
@@ -133,6 +134,41 @@ public class PlayerTracker{
 			ExtendedProperties.For(event.player).setDelayedSync(40);
 			AffinityData.For(event.player).setDelayedSync(40);
 			SkillData.For(event.player).setDelayedSync(40);
+			// The client recreates its player entity on dimension change, losing the Vocal Aura vault copy.
+			if (event.player instanceof EntityPlayerMP){
+				am2.playerextensions.VoiceVaultStorage.For(event.player).syncToClient((EntityPlayerMP)event.player);
+				pendingVoiceVaultSync.put(event.player.getUniqueID(), VOICE_VAULT_RESYNC_TICKS);
+			}
+		}
+	}
+
+	private static final int VOICE_VAULT_RESYNC_TICKS = 20;
+	private final Map<UUID, Integer> pendingVoiceVaultSync = new java.util.concurrent.ConcurrentHashMap<UUID, Integer>();
+
+	@SubscribeEvent
+	public void onServerTick(cpw.mods.fml.common.gameevent.TickEvent.ServerTickEvent event){
+		if (event.phase != cpw.mods.fml.common.gameevent.TickEvent.Phase.END || pendingVoiceVaultSync.isEmpty()) return;
+		net.minecraft.server.MinecraftServer server = net.minecraft.server.MinecraftServer.getServer();
+		if (server == null || server.getConfigurationManager() == null){
+			pendingVoiceVaultSync.clear();
+			return;
+		}
+		java.util.Iterator<Map.Entry<UUID, Integer>> it = pendingVoiceVaultSync.entrySet().iterator();
+		while (it.hasNext()){
+			Map.Entry<UUID, Integer> entry = it.next();
+			int left = entry.getValue() - 1;
+			if (left > 0){
+				entry.setValue(left);
+				continue;
+			}
+			it.remove();
+			for (Object o : server.getConfigurationManager().playerEntityList){
+				if (o instanceof EntityPlayerMP && entry.getKey().equals(((EntityPlayerMP)o).getUniqueID())){
+					// Resend once the client has finished rebuilding its player after the dimension change.
+					am2.playerextensions.VoiceVaultStorage.For((EntityPlayerMP)o).syncToClient((EntityPlayerMP)o);
+					break;
+				}
+			}
 		}
 	}
 
