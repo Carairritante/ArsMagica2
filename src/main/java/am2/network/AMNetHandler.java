@@ -159,6 +159,16 @@ public class AMNetHandler{
 						.generate());
 	}
 
+	public void sendSpellbookSlotSelect(EntityPlayer player, int inventoryIndex, int bookSlot){
+		sendPacketToServer(AMPacketIDs.SPELLBOOK_CHANGE_ACTIVE_SLOT,
+				new AMDataWriter()
+						.add(am2.items.ItemSpellBook.ID_SET_SPELL)
+						.add(player.getEntityId())
+						.add(inventoryIndex)
+						.add(bookSlot)
+						.generate());
+	}
+
 	public void sendShapeGroupChangePacket(int newCastingMode, int entityid){
 		byte[] packetData = new AMDataWriter().add(newCastingMode).add(entityid).generate();
 		sendPacketToServer(AMPacketIDs.SPELL_SHAPE_GROUP_CHANGE, packetData);

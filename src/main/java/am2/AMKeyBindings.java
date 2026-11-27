@@ -26,6 +26,7 @@ public class AMKeyBindings{
 	private static KeyBinding ManaToggleKey = new KeyBinding("key.ToggleManaDisplay", Keyboard.KEY_O, "key.am2.category");
 	private static KeyBinding AffinityActivationKey = new KeyBinding("key.ActivateAffinityAbility", Keyboard.KEY_X, "key.am2.category");
 	public static KeyBinding VoiceCastKey = new KeyBinding("key.VoiceCast", Keyboard.KEY_V, "key.am2.category");
+	private static KeyBinding SpellBookWheelKey = new KeyBinding("key.SpellBookWheel", Keyboard.KEY_LMENU, "key.am2.category");
 
 	public AMKeyBindings(){
 		ClientRegistry.registerKeyBinding(ShapeGroupKey);
@@ -35,6 +36,7 @@ public class AMKeyBindings{
 		ClientRegistry.registerKeyBinding(ManaToggleKey);
 		ClientRegistry.registerKeyBinding(AffinityActivationKey);
 		ClientRegistry.registerKeyBinding(VoiceCastKey);
+		ClientRegistry.registerKeyBinding(SpellBookWheelKey);
 	}
 
 	@SubscribeEvent
@@ -90,6 +92,12 @@ public class AMKeyBindings{
 			if (curItem.getItem() == ItemsCommonProxy.spellBook || curItem.getItem() == ItemsCommonProxy.arcaneSpellbook){
 				//send packet to server
 				AMNetHandler.INSTANCE.sendSpellbookSlotChange(player, player.inventory.currentItem, ItemSpellBook.ID_PREV_SPELL);
+			}
+		}else if (SpellBookWheelKey.isPressed()){
+			EntityPlayer player = Minecraft.getMinecraft().thePlayer;
+			ItemStack curItem = player.inventory.getStackInSlot(player.inventory.currentItem);
+			if (am2.guis.GuiSpellBookWheel.worthOpening(curItem)){
+				Minecraft.getMinecraft().displayGuiScreen(new am2.guis.GuiSpellBookWheel(SpellBookWheelKey, player.inventory.currentItem, curItem));
 			}
 		}else if (AuraCustomizationKey.isPressed()){
 			if (AMCore.proxy.playerTracker.hasAA(clientPlayer)){

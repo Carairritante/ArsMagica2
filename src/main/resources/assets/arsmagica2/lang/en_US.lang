@@ -1650,3 +1650,5 @@ am2.inscription.aff.all=All affinities
 am2.inscription.silverSkill=Silver Spell
 am2.inscription.tip.shiftAdd=Shift+Click: quick add
 am2.altarhud.etheriumNeed=Etherium needed: %s
+key.SpellBookWheel=Spell book, Wheel (hold)
+am2.gui.spellwheel.mana=Mana: %s

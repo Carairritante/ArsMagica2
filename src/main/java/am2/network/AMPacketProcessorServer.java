@@ -378,6 +378,15 @@ public class AMPacketProcessorServer{
 			newIndex = ItemsCommonProxy.spellBook.SetNextSlot(stack);
 		else if (subID == ItemSpellBook.ID_PREV_SPELL)
 			newIndex = ItemsCommonProxy.spellBook.SetPrevSlot(stack);
+		else if (subID == ItemSpellBook.ID_SET_SPELL){
+			// Wheel choice: only for the book in hand, a valid slot, and a slot that holds a spell.
+			int bookSlot = rdr.getInt();
+			if (inventorySlot != player.inventory.currentItem || bookSlot < 0 || bookSlot > 7) return;
+			if (stack.getItem() != ItemsCommonProxy.spellBook && stack.getItem() != ItemsCommonProxy.arcaneSpellbook) return;
+			ItemStack[] scrolls = ((ItemSpellBook)stack.getItem()).getActiveScrollInventory(stack);
+			if (bookSlot >= scrolls.length || scrolls[bookSlot] == null) return;
+			((ItemSpellBook)stack.getItem()).SetActiveSlot(stack, bookSlot);
+		}
 		else
 			return;
 	}

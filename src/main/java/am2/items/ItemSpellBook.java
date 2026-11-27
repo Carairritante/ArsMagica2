@@ -36,6 +36,8 @@ public class ItemSpellBook extends ArsMagicaItem{
 
 	public static final byte ID_NEXT_SPELL = 0;
 	public static final byte ID_PREV_SPELL = 1;
+	/** Picks a slot directly (spell book wheel); followed by the slot index. */
+	public static final byte ID_SET_SPELL = 2;
 
 	@SideOnly(Side.CLIENT)
 	private IIcon[] npc_icons;

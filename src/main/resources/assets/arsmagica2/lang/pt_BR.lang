@@ -1313,3 +1313,5 @@ am2.inscription.aff.all=Todas as afinidades
 am2.inscription.silverSkill=Magia Prateada
 am2.inscription.tip.shiftAdd=Shift+Clique: adicionar rápido
 am2.altarhud.etheriumNeed=Etherium necessário: %s
+key.SpellBookWheel=Livro de feitiços, Roda (segurar)
+am2.gui.spellwheel.mana=Mana: %s
