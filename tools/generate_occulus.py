@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""Generate the Faithful AM2.5 Remastered Oculus 3D Blockbench model (.bbmodel) — V3 Sculpted Sphere:
-Addresses every visual craft detail while staying 100% true to the classic AM2 Oculus palette:
-  1. True multi-layered rounded voxel sphere (octagonal 3D cross-sections with 45-deg bevels) —
-     looks genuinely spherical from front, side, back, top, and 3/4 (ZERO boxy cube corners!)
-  2. 4 larger, gracefully curved navy -> indigo -> sapphire cradle claws wrapping snugly around
-     and above the eye's equator so the eye truly looks held/cradled by the pedestal!
-  3. Curved arched crimson eyelids (3-part contour) + gentle drowsy rest pose — ZERO "angry robot"
-     straight visor look!
-  4. Real subtle amber glow sprite ('textures/blocks/custom/occulus_glow.png') rendered both in-game
-     by OcculusStyle.java and honestly matched in the preview (no fake preview-only halo!).
+"""Generate the AM2.5 Oculus 3D Blockbench model (.bbmodel) — V5 Bright Floating Arcane Relic:
+100% pure Ars Magica 2 aesthetic (ZERO dark/eldritch Thaumcraft look!):
+  - Bright, clean carved stone pedestal matching the classic AM2 Oculus lightness (#9E9EA8 -> #D4D4DE)
+  - NO dark claws grabbing the eye! Instead, an open luminous sapphire-cobalt arcane cradle dish
+    at the top of the pillar emits levitation energy upward
+  - The Oculus Eye is a flat almond lens (vesica) that FLOATS FREELY above the pedestal: a sapphire
+    frame with a carved stone edge, a glowing lens body (chalk rune on the back), a radiant
+    amber-gold iris (#FF9E18 -> #FFE078) and an oval arcane pupil. (The old octagonal red ball
+    read as raw flesh; the EYE_* shell colours are kept in the atlas but no longer used.)
+  - Real floating AM2 WizardChalk runes orbiting gently around the levitating eye + delicate
+    WizardChalk rune circle hovering cleanly over the bright stone base + subtle starlight motes!
+  - Clean eye-movement bone rig preserved ('eye_pivot' -> 'eye_body' -> 'eye_iris' -> 'eye_pupil').
 
-Exact classic AM2 Occulus.png RGB palette only (zero invented gold/cyan/etc.).
 Front faces -Z, grounded at y=0, fits cleanly in 16x16 (1x1 block).
 Run: python ArsMagica2/tools/generate_occulus.py
 """
@@ -25,43 +26,41 @@ from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / 'src/main/resources/assets/arsmagica2'
+CHALK = ASSETS / 'textures/blocks/wizardchalk'
 
 # ----------------------------------------------------------------------
-# EXACT CLASSIC AM2 OCCULUS PALETTE (extracted directly from Occulus.png!)
+# BRIGHT, CLEAN ARS MAGICA 2 OCCULUS PALETTE (Light Stone + Bright Cobalt + Luminous Eye)
 # ----------------------------------------------------------------------
-STONE_OUTLINE = (44, 44, 48, 255)
-STONE_DEEP = (64, 64, 68, 255)
-STONE_DARK = (82, 82, 86, 255)
-STONE_MID = (98, 98, 102, 255)
-STONE_BASE = (112, 112, 116, 255)
-STONE_HI = (132, 132, 138, 255)
+STONE_OUTLINE = (78, 80, 90, 255)
+STONE_DEEP = (104, 108, 120, 255)
+STONE_DARK = (128, 132, 144, 255)
+STONE_MID = (154, 158, 170, 255)
+STONE_BASE = (176, 180, 192, 255)
+STONE_HI = (208, 212, 224, 255)
 
-DARK_DEEP = (16, 16, 20, 255)
-DARK_MID = (28, 28, 33, 255)
-DARK_HI = (46, 46, 52, 255)
+# Clean cool sapphire-cobalt trim (honoring the classic AM2 Oculus blue, bright & arcane!)
+BLUE_DEEP = (30, 44, 88, 255)
+BLUE_DARK = (46, 68, 130, 255)
+BLUE_MID = (68, 100, 178, 255)
+BLUE_HI = (104, 144, 224, 255)
+BLUE_GLOW = (156, 198, 255, 255)
+BLUE_CORE = (224, 240, 255, 255)
 
-CLAW_OUTLINE = (10, 14, 26, 255)
-CLAW_BASE_DARK = (14, 20, 36, 255)
-CLAW_BASE = (21, 29, 51, 255)
-CLAW_MID_DARK = (25, 35, 62, 255)
-CLAW_MID = (35, 49, 88, 255)
-CLAW_TIP_DARK = (42, 58, 104, 255)
-CLAW_TIP = (55, 76, 135, 255)
-CLAW_TIP_HI = (78, 104, 174, 255)
+# Bright magical crimson-ruby eye shell (faithful to classic AM2 red, luminous & clean — not dark horror!)
+EYE_DEEP = (128, 36, 42, 255)
+EYE_DARK = (158, 48, 52, 255)
+EYE_MID = (188, 62, 64, 255)
+EYE_HI = (222, 92, 90, 255)
+EYE_SPEC = (248, 152, 142, 255)
 
-EYE_OUTLINE = (72, 18, 20, 255)
-EYE_DEEP = (96, 24, 26, 255)
-EYE_DARK = (122, 34, 35, 255)
-EYE_MID = (148, 44, 44, 255)
-EYE_HI = (176, 62, 60, 255)
-
-IRIS_RIM = (168, 72, 4, 255)
-IRIS_DARK = (224, 116, 2, 255)
-IRIS_BASE = (255, 150, 1, 255)
-IRIS_HI = (255, 196, 52, 255)
-IRIS_CORE = (255, 236, 148, 255)
-PUPIL_BLACK = (6, 4, 8, 255)
-PUPIL_EDGE = (26, 14, 10, 255)
+# Radiant crystalline amber-gold iris (classic AM2 #FF9601, luminous & magical!)
+IRIS_RIM = (206, 98, 8, 255)
+IRIS_DARK = (242, 138, 12, 255)
+IRIS_BASE = (255, 172, 24, 255)
+IRIS_HI = (255, 218, 92, 255)
+IRIS_CORE = (255, 248, 196, 255)
+PUPIL_DARK = (16, 12, 26, 255)
+PUPIL_GLOW = (88, 128, 224, 255)  # faint astral sheen on inner pupil edge!
 
 
 def lerp_col(a, b, t):
@@ -69,20 +68,29 @@ def lerp_col(a, b, t):
     return tuple(int(round(a[i] + (b[i] - a[i]) * t)) for i in range(4))
 
 
+def paste_rune(canvas, index, x, y, size, color):
+    path = CHALK / ('WizardChalk%d.png' % index)
+    if not path.exists():
+        return
+    glyph = Image.open(path).convert('RGBA').resize((size, size), Image.NEAREST)
+    solid = Image.new('RGBA', glyph.size, color)
+    canvas.paste(solid, (x, y), glyph.getchannel('A').point(lambda a: 255 if a > 80 else 0))
+
+
 def build_atlas():
-    """128x128 clean directional pixel-art atlas strictly using the classic AM2 Oculus palette."""
+    """128x128 bright, clean Ars Magica 2 pixel-art atlas."""
     atlas = Image.new('RGBA', (128, 128), (0, 0, 0, 0))
     draw = ImageDraw.Draw(atlas)
 
-    # 1. Carved Stone Pedestal Top (0..32, 0..32)
+    # 1. Bright Carved Stone Pedestal Top (0..32, 0..32) + delicate inlaid stone runes
     for y in range(32):
         ny = abs(y / 31.0 - 0.5) * 2.0
         for x in range(32):
             nx = abs(x / 31.0 - 0.5) * 2.0
             edge = max(nx, ny)
-            chisel = ((x * 5 + y * 13) % 17 == 0) * -0.07 + ((x * 3 + y * 7) % 23 == 0) * 0.05
-            light = (1.0 - (x + y) / 62.0) * 0.22
-            val = 0.56 + light - (edge ** 2.4) * 0.30 + chisel
+            chisel = ((x * 5 + y * 13) % 19 == 0) * -0.05 + ((x * 3 + y * 7) % 23 == 0) * 0.05
+            light = (1.0 - (x + y) / 62.0) * 0.24
+            val = 0.60 + light - (edge ** 2.4) * 0.26 + chisel
             if x in (0, 31) or y in (0, 31):
                 col = STONE_OUTLINE
             elif x == 1 or y == 1:
@@ -95,8 +103,10 @@ def build_atlas():
     draw.rectangle((4, 4, 27, 27), outline=STONE_DEEP)
     draw.line((5, 5, 26, 5), fill=STONE_HI)
     draw.line((5, 5, 5, 26), fill=STONE_HI)
+    for idx, (rx, ry) in enumerate(((6, 6), (20, 6), (6, 20), (20, 20))):
+        paste_rune(atlas, 1 + idx * 3, rx, ry, 6, STONE_DARK)
 
-    # 2. Carved Stone Step Side (34..66, 0..16)
+    # 2. Bright Carved Stone Step Side (34..66, 0..16)
     for y in range(16):
         ny = y / 15.0
         for x in range(34, 66):
@@ -112,11 +122,11 @@ def build_atlas():
             elif y == 8:
                 col = STONE_HI if (lx not in (1, 30)) else STONE_MID
             else:
-                seam = -0.10 if (lx in (8, 16, 24) and 2 < y < 13) else 0.0
-                col = lerp_col(STONE_BASE, STONE_DARK, max(0.0, min(1.0, ny * 0.65 - seam)))
+                seam = -0.08 if (lx in (8, 16, 24) and 2 < y < 13) else 0.0
+                col = lerp_col(STONE_BASE, STONE_DARK, max(0.0, min(1.0, ny * 0.55 - seam)))
             draw.point((x, y), col)
 
-    # 3. Fluted Classic Stone Pillar (34..50, 18..42)
+    # 3. Bright Fluted Stone Pillar (34..50, 18..42)
     for y in range(18, 42):
         ny = (y - 18) / 23.0
         for x in range(34, 50):
@@ -128,91 +138,68 @@ def build_atlas():
             elif lx in (5, 12):
                 col = STONE_HI
             else:
-                v = ny * 0.40 + abs(lx - 7.5) / 14.0
-                col = lerp_col(STONE_BASE, STONE_DEEP, max(0.0, min(1.0, v)))
+                v = ny * 0.35 + abs(lx - 7.5) / 14.0
+                col = lerp_col(STONE_HI, STONE_DARK, max(0.0, min(1.0, v)))
             draw.point((x, y), col)
 
-    # 4. Dark Obsidian-Stone Accent (52..66, 18..34)
-    for y in range(18, 34):
-        ny = (y - 18) / 15.0
-        for x in range(52, 66):
-            lx = x - 52
-            if lx in (0, 13) or y in (18, 33):
-                col = DARK_DEEP
-            elif lx == 1 or y == 19:
-                col = DARK_HI
-            else:
-                col = lerp_col(DARK_HI, DARK_DEEP, (lx / 13.0 + ny) * 0.48)
-            draw.point((x, y), col)
-
-    # 5-7. Classic Prong 3-stage Navy -> Indigo -> Sapphire Gradient
-    for y in range(16):
-        ny = y / 15.0
+    # 4. Luminous Sapphire-Cobalt Dish & Accents (68..84, 0..24) — bright classic AM2 blue!
+    for y in range(24):
+        ny = y / 23.0
         for x in range(68, 84):
             lx = x - 68
-            if lx in (0, 15) or y in (0, 15):
-                col = CLAW_OUTLINE
-            elif lx == 1 or y == 1:
-                col = CLAW_MID_DARK
-            else:
-                col = lerp_col(CLAW_BASE, CLAW_BASE_DARK, ny * 0.72 + abs(lx - 7.5) / 22.0)
-            draw.point((x, y), col)
-
-    for y in range(18, 34):
-        ny = (y - 18) / 15.0
-        for x in range(68, 84):
-            lx = x - 68
-            if lx in (0, 15) or y in (18, 33):
-                col = CLAW_OUTLINE
-            elif lx == 1 or y == 19:
-                col = CLAW_TIP_DARK
-            else:
-                col = lerp_col(CLAW_MID, CLAW_MID_DARK, ny * 0.68 + abs(lx - 7.5) / 22.0)
-            draw.point((x, y), col)
-
-    for y in range(36, 52):
-        ny = (y - 36) / 15.0
-        for x in range(68, 84):
-            lx = x - 68
-            if lx in (0, 15) or y in (36, 51):
-                col = CLAW_BASE_DARK
-            elif y == 37:
-                col = CLAW_TIP_HI
+            if lx in (0, 15) or y in (0, 23):
+                col = BLUE_DEEP
+            elif y == 1:
+                col = BLUE_GLOW
             elif lx == 1:
-                col = lerp_col(CLAW_TIP, CLAW_TIP_HI, 0.55)
+                col = BLUE_HI
             else:
-                col = lerp_col(CLAW_TIP, CLAW_TIP_DARK, ny * 0.72 + abs(lx - 7.5) / 24.0)
+                v = (1.0 - ny) * 0.65 + (1.0 - abs(lx - 7.5) / 8.0) * 0.35
+                col = lerp_col(BLUE_DARK, BLUE_HI, max(0.0, min(1.0, v)))
             draw.point((x, y), col)
 
-    # 8. Smooth Seamless Crimson Eye Sclera (0..32, 36..68)
-    #    NO hard dark border edges so adjacent rounded sphere facets blend into ONE organic globe!
+    # 5. Radiant Levitation Core Well (68..84, 26..42) — glowing astral pool inside the dish!
+    for y in range(26, 42):
+        ny = (y - 26) / 15.0 - 0.5
+        for x in range(68, 84):
+            nx = (x - 68) / 15.0 - 0.5
+            r = math.hypot(nx * 2.0, ny * 2.0)
+            if r < 0.35:
+                col = lerp_col(BLUE_CORE, BLUE_GLOW, r / 0.35)
+            elif r < 0.78:
+                col = lerp_col(BLUE_GLOW, BLUE_HI, (r - 0.35) / 0.43)
+            else:
+                col = lerp_col(BLUE_HI, BLUE_DARK, min(1.0, (r - 0.78) / 0.25))
+            draw.point((x, y), col)
+
+    # 6. Emissive Sapphire Pillar Glyph (86..102, 0..16) — clean WizardChalk rune (immutable mask!)
+    paste_rune(atlas, 7, 89, 3, 10, BLUE_CORE)
+    p_mask = {(x, y) for y in range(0, 16) for x in range(86, 102) if atlas.getpixel((x, y))[3] > 200}
+    for y in range(1, 15):
+        for x in range(87, 101):
+            if (x, y) not in p_mask:
+                if any((x + dx, y + dy) in p_mask for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1))):
+                    draw.point((x, y), BLUE_HI)
+
+    # 7. Bright Magical Crimson-Ruby Eye Sphere (0..32, 36..68) — luminous, smooth, magical!
     for y in range(36, 68):
         ny = (y - 36) / 31.0 - 0.5
         for x in range(32):
             nx = x / 31.0 - 0.5
             r = math.hypot(nx * 2.0, ny * 2.0)
-            hl = max(0.0, 1.0 - math.hypot((nx + 0.22) * 2.0, (ny + 0.22) * 2.0))
-            v = max(0.0, min(1.0, 0.68 - r * 0.42 + hl * 0.30))
-            if v > 0.66:
-                col = lerp_col(EYE_MID, EYE_HI, (v - 0.66) / 0.34)
-            elif v > 0.32:
-                col = lerp_col(EYE_DARK, EYE_MID, (v - 0.32) / 0.34)
+            hl = max(0.0, 1.0 - math.hypot((nx + 0.24) * 2.0, (ny + 0.24) * 2.0))
+            v = max(0.0, min(1.0, 0.62 - r * 0.34 + hl * 0.42))
+            if v > 0.78:
+                col = lerp_col(EYE_HI, EYE_SPEC, (v - 0.78) / 0.22)
+            elif v > 0.48:
+                col = lerp_col(EYE_MID, EYE_HI, (v - 0.48) / 0.30)
+            elif v > 0.22:
+                col = lerp_col(EYE_DARK, EYE_MID, (v - 0.22) / 0.26)
             else:
-                col = lerp_col(EYE_DEEP, EYE_DARK, v / 0.32)
+                col = lerp_col(EYE_DEEP, EYE_DARK, v / 0.22)
             draw.point((x, y), col)
 
-    # 9. Seamless Curved Crimson Eyelid Skin (0..24, 72..88) — soft dark rim only along closing edge!
-    for y in range(72, 88):
-        ly = y - 72
-        for x in range(24):
-            if ly in (0, 15):
-                col = EYE_DEEP
-            else:
-                curve = 1.0 - abs(ly - 7.5) / 7.5
-                col = lerp_col(EYE_DARK, EYE_MID, curve * 0.90)
-            draw.point((x, y), col)
-
-    # 10. Circular Classic Amber-Orange Iris (34..66, 46..78) — transparent outside circle!
+    # 8. Luminous Crystalline Amber-Gold Oculus Iris (34..66, 46..78) — bright, magical, clear!
     icx, icy = 34 + 15.5, 46 + 15.5
     for y in range(46, 78):
         for x in range(34, 66):
@@ -220,42 +207,88 @@ def build_atlas():
             dy = (y - icy) / 15.0
             r = math.hypot(dx, dy)
             ang = math.atan2(dy, dx)
-            rays = 0.5 + 0.5 * math.sin(ang * 12.0 + r * 5.0)
+            rays = 0.5 + 0.5 * math.sin(ang * 16.0)
+            ring = max(0.0, 1.0 - abs(r - 0.62) / 0.12)
             if r > 0.98:
-                col = EYE_DEEP
-            elif r > 0.86:
-                col = lerp_col(IRIS_RIM, IRIS_DARK, (0.98 - r) / 0.12)
-            elif r > 0.54:
-                col = lerp_col(IRIS_BASE, IRIS_DARK, (r - 0.54) / 0.32)
-            elif r > 0.24:
-                col = lerp_col(IRIS_HI, IRIS_BASE, (r - 0.24) / 0.30)
+                col = BLUE_DEEP
+            elif r > 0.88:
+                col = lerp_col(IRIS_RIM, IRIS_DARK, (0.98 - r) / 0.10)
+            elif r > 0.52:
+                col = lerp_col(IRIS_BASE, IRIS_DARK, (r - 0.52) / 0.36)
+            elif r > 0.22:
+                col = lerp_col(IRIS_HI, IRIS_BASE, (r - 0.22) / 0.30)
             else:
-                col = lerp_col(IRIS_CORE, IRIS_HI, r / 0.24)
-            if r <= 0.86:
-                col = lerp_col(col, IRIS_CORE, rays * 0.18)
-            if math.hypot(dx + 0.34, dy + 0.34) < 0.13:
+                col = lerp_col(IRIS_CORE, IRIS_HI, r / 0.22)
+            if r <= 0.88:
+                col = lerp_col(col, IRIS_CORE, rays * 0.16 + ring * 0.26)
+            # Crisp glossy crystal lens highlights (gives clear magical orb feel!)
+            if math.hypot(dx + 0.38, dy + 0.36) < 0.16:
+                col = (255, 255, 240, 255)
+            elif math.hypot(dx - 0.34, dy - 0.40) < 0.09:
                 col = IRIS_CORE
             draw.point((x, y), col)
 
-    # 11. Independent Vertical Black Slit Pupil (68..80, 56..78)
+    # 9. Clean Arcane Vertical-Oval Pupil (68..80, 56..78) — magical crystal pupil, NOT monster slit!
     for y in range(56, 78):
         ny = (y - 56) / 21.0 - 0.5
         for x in range(68, 80):
             nx = (x - 68) / 11.0 - 0.5
-            half_w = 0.44 * max(0.0, 1.0 - (ny * 2.0) ** 2)
-            if abs(nx) <= half_w * 0.72:
-                col = PUPIL_BLACK
-            elif abs(nx) <= half_w:
-                col = PUPIL_EDGE
+            # Smooth arcane almond/oval vertical pupil (wider & cleaner, with soft sapphire cosmic sheen!)
+            d = math.hypot(nx / 0.34, ny / 0.45)
+            if d < 0.72:
+                col = PUPIL_DARK
+            elif d < 0.94:
+                col = lerp_col(PUPIL_DARK, PUPIL_GLOW, (d - 0.72) / 0.22 * 0.55)
             else:
                 col = (0, 0, 0, 0)
+            # Tiny starlight glint inside the pupil!
+            if math.hypot(nx + 0.10, ny + 0.16) < 0.09:
+                col = (240, 248, 255, 255)
             draw.point((x, y), col)
+
+    # 10. 4 Glowing Floating WizardChalk Runes directly in the .bbmodel atlas (0..64, 96..112)
+    #     Pure cut-out floating glyphs with crisp 1px rim (using immutable mask snapshot — NO flood fill!)
+    orbit_specs = (
+        (0,  1, BLUE_CORE,  BLUE_HI),
+        (16, 5, IRIS_CORE,  IRIS_BASE),
+        (32, 9, BLUE_CORE,  BLUE_HI),
+        (48, 13, IRIS_CORE, IRIS_BASE),
+    )
+    for ox, r_id, core_col, rim_col in orbit_specs:
+        paste_rune(atlas, r_id, ox + 2, 98, 12, core_col)
+        core_mask = {(x, y) for y in range(96, 112) for x in range(ox, ox + 16)
+                     if atlas.getpixel((x, y))[3] > 200}
+        for y in range(97, 111):
+            for x in range(ox + 1, ox + 15):
+                if (x, y) not in core_mask:
+                    if any((x + dx, y + dy) in core_mask for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1))):
+                        draw.point((x, y), (rim_col[0], rim_col[1], rim_col[2], 190))
+
+    # 11. Delicate glowing levitation halo ring in the .bbmodel atlas (68..100, 84..116)
+    cx_h, cy_h = 68 + 16, 84 + 16
+    draw.ellipse((cx_h - 15, cy_h - 15, cx_h + 15, cy_h + 15), outline=BLUE_GLOW)
+    draw.ellipse((cx_h - 13, cy_h - 13, cx_h + 13, cy_h + 13), outline=BLUE_HI)
+    for i in range(8):
+        a = i * math.tau / 8.0
+        px = int(round(cx_h + math.cos(a) * 14.0))
+        py = int(round(cy_h + math.sin(a) * 14.0))
+        draw.point((px, py), IRIS_CORE if i % 2 == 0 else BLUE_CORE)
+
+    # 12. Tiny glowing starlight diamond textures (104..120, 84..100 & 100..116)
+    for (sx, sy, c_mid, c_out) in ((104, 84, BLUE_CORE, BLUE_GLOW), (104, 100, IRIS_CORE, IRIS_BASE)):
+        for y in range(sy, sy + 16):
+            for x in range(sx, sx + 16):
+                d = abs((x - sx) - 7.5) + abs((y - sy) - 7.5)
+                if d <= 3.5:
+                    draw.point((x, y), c_mid)
+                elif d <= 6.5:
+                    draw.point((x, y), c_out)
 
     return atlas
 
 
 def build_glow_sprite():
-    """32x32 soft radial amber glow texture used IN-GAME by OcculusStyle.java (additive blend)."""
+    """32x32 soft radial white-alpha glow sprite tinted in OpenGL."""
     size = 32
     img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     c = (size - 1) / 2.0
@@ -265,28 +298,80 @@ def build_glow_sprite():
             r = math.hypot((x - c) / c, (y - c) / c)
             if r >= 1.0:
                 continue
-            falloff = (1.0 - r) ** 2.35
-            col = lerp_col(IRIS_BASE, IRIS_CORE, max(0.0, 1.0 - r * 1.4))
-            px[x, y] = (col[0], col[1], col[2], int(round(falloff * 255)))
+            falloff = (1.0 - r) ** 2.15
+            px[x, y] = (255, 255, 255, int(round(falloff * 255)))
     return img
+
+
+def build_rune_circle():
+    """128x128 crisp white-alpha AM2 WizardChalk rune circle for the bright stone base."""
+    size = 128
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    c = size // 2
+    draw.ellipse((c - 60, c - 60, c + 60, c + 60), outline=(255, 255, 255, 235))
+    draw.ellipse((c - 58, c - 58, c + 58, c + 58), outline=(255, 255, 255, 115))
+    draw.ellipse((c - 42, c - 42, c + 42, c + 42), outline=(255, 255, 255, 200))
+    for i in range(8):
+        a = i * math.tau / 8.0
+        sx = int(round(c + math.cos(a) * 59.5))
+        sy = int(round(c + math.sin(a) * 59.5))
+        draw.polygon([(sx, sy - 2), (sx + 2, sy), (sx, sy + 2), (sx - 2, sy)], fill=(255, 255, 255, 245))
+        ra = a + math.tau / 16.0
+        rx = int(round(c + math.cos(ra) * 51.0 - 6))
+        ry = int(round(c + math.sin(ra) * 51.0 - 6))
+        paste_rune(img, 1 + (i * 2) % 15, rx, ry, 12, (255, 255, 255, 250))
+        dx = int(round(c + math.cos(a) * 48.0))
+        dy = int(round(c + math.sin(a) * 48.0))
+        draw.rectangle((dx - 1, dy - 1, dx + 1, dy + 1), fill=(255, 255, 255, 190))
+    return img
+
+
+def build_orbit_runes_sheet():
+    """64x16 horizontal strip of 4 distinct glowing AM2 WizardChalk runes (16x16 each)
+    that float and orbit magically around the levitating Oculus eye in-game!"""
+    sheet = Image.new('RGBA', (64, 16), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(sheet)
+    rune_indices = (1, 5, 9, 13)
+    for idx, r_id in enumerate(rune_indices):
+        ox = idx * 16
+        # Delicate magical frame halo + authentic WizardChalk glyph
+        paste_rune(sheet, r_id, ox + 2, 2, 12, (255, 255, 255, 255))
+        # Subtle glow pixel softening around the glyph
+        for y in range(1, 15):
+            for x in range(ox + 1, ox + 15):
+                if sheet.getpixel((x, y))[3] == 0:
+                    nb = sum(1 for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1))
+                             if sheet.getpixel((x + dx, y + dy))[3] > 200)
+                    if nb >= 1:
+                        draw.point((x, y), (255, 255, 255, 95))
+    return sheet
 
 
 STONE_TOP = [0, 0, 32, 32]
 STONE_SIDE = [34, 0, 66, 16]
 PILLAR_UV = [34, 18, 50, 42]
-DARK_UV = [52, 18, 66, 34]
-CLAW1_UV = [68, 0, 84, 16]
-CLAW2_UV = [68, 18, 84, 34]
-CLAW3_UV = [68, 36, 84, 52]
+BLUE_UV = [68, 0, 84, 24]
+POOL_UV = [68, 26, 84, 42]
+PILLAR_RUNE_UV = [86, 0, 102, 16]
 EYE_UV = [0, 36, 32, 68]
-LID_UV = [0, 72, 24, 88]
 IRIS_UV = [34, 46, 66, 78]
 PUPIL_UV = [68, 56, 80, 78]
+ORBIT_RUNE_UVS = (
+    [0, 96, 16, 112],
+    [16, 96, 32, 112],
+    [32, 96, 48, 112],
+    [48, 96, 64, 112],
+)
+LEV_HALO_UV = [68, 84, 100, 116]
+STAR_BLUE_UV = [104, 84, 120, 100]
+STAR_AMBER_UV = [104, 100, 120, 116]
+EMPTY_UV = [120, 120, 121, 121]
 DIRECTIONS = ('north', 'south', 'east', 'west', 'up', 'down')
 
 
 def ident(name):
-    return str(uuid.uuid5(uuid.NAMESPACE_URL, 'am2/occulus_faithful_v3/' + name))
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, 'am2/occulus_arcane_v5/' + name))
 
 
 def cube(name, start, end, default, rotation=(0, 0, 0), origin=None, **faces):
@@ -326,51 +411,45 @@ def build_animations():
             'keyframes': kfs,
         }
 
-    # 1. Idle: calm levitation + gentle look around + natural organic blink
+    # 1. Idle: smooth magical levitation + curious gentle looking around + orbiting runes!
     idle_anim = {
         'uuid': ident('anim/idle'),
         'name': 'idle',
         'loop': 'loop',
         'override': False,
-        'length': 5.0,
+        'length': 4.8,
         'snapping': 24,
         'selected': True,
         'animators': dict([
             anim_bone('eye_pivot', [
                 kf(0.0, 'position', (0, 0.0, 0)),
-                kf(2.5, 'position', (0, 0.30, 0)),
-                kf(5.0, 'position', (0, 0.0, 0)),
+                kf(2.4, 'position', (0, 0.75, 0)),
+                kf(4.8, 'position', (0, 0.0, 0)),
+            ]),
+            anim_bone('floating_runes', [
+                kf(0.0, 'rotation', (0, 0, 0), 'linear'),
+                kf(4.8, 'rotation', (0, 360, 0), 'linear'),
+            ]),
+            anim_bone('levitation_halo', [
+                kf(0.0, 'rotation', (0, 0, 0), 'linear'),
+                kf(4.8, 'rotation', (0, -360, 0), 'linear'),
             ]),
             anim_bone('eye_body', [
                 kf(0.0, 'rotation', (0, -14, 0)),
-                kf(1.6, 'rotation', (5, 16, 0)),
-                kf(3.2, 'rotation', (-4, 8, 0)),
-                kf(5.0, 'rotation', (0, -14, 0)),
+                kf(1.6, 'rotation', (6, 18, 0)),
+                kf(3.2, 'rotation', (-5, 8, 0)),
+                kf(4.8, 'rotation', (0, -14, 0)),
             ]),
             anim_bone('eye_pupil', [
                 kf(0.0, 'position', (-0.12, 0.0, 0)),
                 kf(1.6, 'position', (0.14, 0.06, 0)),
                 kf(3.2, 'position', (0.04, -0.05, 0)),
-                kf(5.0, 'position', (-0.12, 0.0, 0)),
-            ]),
-            anim_bone('eyelid_top', [
-                kf(0.0, 'rotation', (34, 0, 0), 'linear'),
-                kf(3.7, 'rotation', (34, 0, 0), 'linear'),
-                kf(3.88, 'rotation', (-22, 0, 0), 'linear'),
-                kf(4.06, 'rotation', (34, 0, 0), 'linear'),
-                kf(5.0, 'rotation', (34, 0, 0), 'linear'),
-            ]),
-            anim_bone('eyelid_bot', [
-                kf(0.0, 'rotation', (-34, 0, 0), 'linear'),
-                kf(3.7, 'rotation', (-34, 0, 0), 'linear'),
-                kf(3.88, 'rotation', (18, 0, 0), 'linear'),
-                kf(4.06, 'rotation', (-34, 0, 0), 'linear'),
-                kf(5.0, 'rotation', (-34, 0, 0), 'linear'),
+                kf(4.8, 'position', (-0.12, 0.0, 0)),
             ]),
         ]),
     }
 
-    # 2. Look / Track demo
+    # 2. Look around demo: full tracking range of the floating magical eye + faster orbiting runes!
     look_anim = {
         'uuid': ident('anim/look_around'),
         'name': 'look_around',
@@ -380,60 +459,42 @@ def build_animations():
         'snapping': 24,
         'selected': False,
         'animators': dict([
+            anim_bone('eye_pivot', [
+                kf(0.0, 'position', (0, 0.35, 0)),
+                kf(1.8, 'position', (0, 0.95, 0)),
+                kf(3.6, 'position', (0, 0.35, 0)),
+            ]),
+            anim_bone('floating_runes', [
+                kf(0.0, 'rotation', (0, 0, 0), 'linear'),
+                kf(3.6, 'rotation', (0, 360, 0), 'linear'),
+            ]),
+            anim_bone('levitation_halo', [
+                kf(0.0, 'rotation', (0, 0, 0), 'linear'),
+                kf(3.6, 'rotation', (0, -360, 0), 'linear'),
+            ]),
             anim_bone('eye_body', [
                 kf(0.0, 'rotation', (0, 0, 0)),
-                kf(0.9, 'rotation', (14, -38, 0)),
-                kf(1.8, 'rotation', (-10, 38, 0)),
+                kf(0.9, 'rotation', (14, -40, 0)),
+                kf(1.8, 'rotation', (-10, 40, 0)),
                 kf(2.7, 'rotation', (18, 12, 0)),
                 kf(3.6, 'rotation', (0, 0, 0)),
             ]),
             anim_bone('eye_pupil', [
                 kf(0.0, 'scale', (1.0, 1.0, 1.0)),
-                kf(0.9, 'scale', (0.68, 1.06, 1.0)),
-                kf(1.8, 'scale', (0.75, 1.04, 1.0)),
-                kf(2.7, 'scale', (1.15, 0.96, 1.0)),
+                kf(0.9, 'scale', (0.78, 1.04, 1.0)),
+                kf(1.8, 'scale', (0.82, 1.03, 1.0)),
+                kf(2.7, 'scale', (1.12, 0.98, 1.0)),
                 kf(3.6, 'scale', (1.0, 1.0, 1.0)),
             ]),
         ]),
     }
 
-    # 3. Quick Blink clip
-    blink_anim = {
-        'uuid': ident('anim/blink'),
-        'name': 'blink',
-        'loop': 'once',
-        'override': False,
-        'length': 0.35,
-        'snapping': 24,
-        'selected': False,
-        'animators': dict([
-            anim_bone('eyelid_top', [
-                kf(0.0, 'rotation', (36, 0, 0), 'linear'),
-                kf(0.16, 'rotation', (-22, 0, 0), 'linear'),
-                kf(0.35, 'rotation', (36, 0, 0), 'linear'),
-            ]),
-            anim_bone('eyelid_bot', [
-                kf(0.0, 'rotation', (-36, 0, 0), 'linear'),
-                kf(0.16, 'rotation', (18, 0, 0), 'linear'),
-                kf(0.35, 'rotation', (-36, 0, 0), 'linear'),
-            ]),
-        ]),
-    }
-
-    return [idle_anim, look_anim, blink_anim]
+    return [idle_anim, look_anim]
 
 
 def build_octa_slice_z(prefix, cy, z0, z1, radius, uv):
-    """Build a truly octagonal (rounded) slice perpendicular to Z with ZERO square corners!
-    For a regular octagon of apothem `radius`, flat edge length = 2 * radius * tan(22.5 deg) = 0.8284 * radius.
-    Composed of 2 orthogonal bars + 1 rotated 45-deg bar (all slightly micro-offset in Z to avoid z-fighting).
-    """
     a = radius
-    b = radius * 0.41421356 * 2.0  # full flat face width (~0.8284 * R)
-    # 45-deg rotated square with apothem `a` has half-side `a`, and its corners sit at sqrt(2)*a = 1.414*a
-    # Wait: to stay INSIDE the octagon (circumradius = a / cos(22.5) = 1.0824*a), the 45-deg bar has
-    # half-width = b/2 and half-height = a! Two orthogonal 45-deg bars (+45 and -45) form the 4 diagonal flats!
-    hw = b * 0.5
+    hw = radius * 0.41421356
     eps = 0.012
     return [
         cube(prefix + '_h', (-a, cy - hw, z0), (a, cy + hw, z1), uv, origin=(0, cy, (z0 + z1) * 0.5)),
@@ -465,141 +526,145 @@ def build_model(atlas):
         return node
 
     # ------------------------------------------------------------------
-    # 1. PEDESTAL: Classic 3-tier carved grey stone plinth + fluted pillar + Stand17 dark accent
+    # 1. BRIGHT CLASSIC STONE PEDESTAL + OPEN SAPPHIRE LEVITATION BASIN (ZERO CLAWS!)
     # ------------------------------------------------------------------
     ped_cubes = [
-        cube('stand_1', (-7.8, 0.0, -7.8), (7.8, 2.0, 7.8), STONE_SIDE, up=STONE_TOP, down=STONE_TOP),
-        cube('stand_2', (-5.6, 2.0, -5.6), (5.6, 3.5, 5.6), STONE_SIDE, up=STONE_TOP, down=STONE_TOP),
-        cube('stand_3', (-3.7, 3.5, -3.7), (3.7, 4.5, 3.7), STONE_SIDE, up=STONE_TOP, down=STONE_TOP),
-        cube('stand_collar_dark', (-3.2, 4.5, -3.2), (3.2, 4.9, 3.2), DARK_UV),
-        cube('stand_4_pillar', (-2.1, 4.9, -2.1), (2.1, 9.1, 2.1), PILLAR_UV, up=STONE_TOP, down=STONE_TOP),
-        cube('stand_17_back', (-1.1, 5.5, 2.1), (1.1, 8.1, 2.7), DARK_UV),
-        cube('stand_17_front', (-1.1, 5.5, -2.7), (1.1, 8.1, -2.1), DARK_UV),
-        cube('stand_capital', (-2.6, 8.8, -2.6), (2.6, 9.6, 2.6), DARK_UV),
+        # Classic 3-tier light carved stone plinth (grounded at y = 0)
+        cube('stand_1', (-7.6, 0.0, -7.6), (7.6, 1.9, 7.6), STONE_SIDE, up=STONE_TOP, down=STONE_TOP),
+        cube('stand_2', (-5.5, 1.9, -5.5), (5.5, 3.3, 5.5), STONE_SIDE, up=STONE_TOP, down=STONE_TOP),
+        cube('stand_3', (-3.7, 3.3, -3.7), (3.7, 4.3, 3.7), STONE_SIDE, up=STONE_TOP, down=STONE_TOP),
+        # Clean cobalt-sapphire trim ring separating base and fluted column
+        cube('stand_collar_blue', (-3.2, 4.3, -3.2), (3.2, 4.8, 3.2), BLUE_UV),
+        # Fluted bright stone central column
+        cube('stand_4_pillar', (-2.1, 4.8, -2.1), (2.1, 8.2, 2.1), PILLAR_UV, up=STONE_TOP, down=STONE_TOP),
+        # Subtle cobalt-blue rune housing plates on front & back of column (replaces dark block!)
+        cube('pillar_plate_f', (-1.05, 5.4, -2.45), (1.05, 7.5, -2.10), BLUE_UV),
+        cube('pillar_plate_b', (-1.05, 5.4,  2.10), (1.05, 7.5,  2.45), BLUE_UV),
+        # Open shallow arcane levitation dish at top of column (y = 8.2 .. 9.5) — NO grabbing claws!
+        cube('dish_base', (-3.2, 8.2, -3.2), (3.2, 8.95, 3.2), STONE_SIDE, up=STONE_TOP, down=STONE_TOP),
+        cube('dish_rim_n', (-3.6, 8.75, -3.6), ( 3.6, 9.55, -2.7), BLUE_UV),
+        cube('dish_rim_s', (-3.6, 8.75,  2.7), ( 3.6, 9.55,  3.6), BLUE_UV),
+        cube('dish_rim_w', (-3.6, 8.75, -2.7), (-2.7, 9.55,  2.7), BLUE_UV),
+        cube('dish_rim_e', ( 2.7, 8.75, -2.7), ( 3.6, 9.55,  2.7), BLUE_UV),
     ]
 
+    # Clean carved light-stone corner piers on Stand1
     for idx, (sx, sz) in enumerate(((-1, -1), (1, -1), (-1, 1), (1, 1))):
-        x0, x1 = sorted((sx * 7.95, sx * 6.15))
-        z0, z1 = sorted((sz * 7.95, sz * 6.15))
-        ped_cubes.append(cube('stone_pier_%d' % idx, (x0, 0.0, z0), (x1, 2.25, z1), STONE_SIDE, up=STONE_TOP))
+        x0, x1 = sorted((sx * 7.80, sx * 6.05))
+        z0, z1 = sorted((sz * 7.80, sz * 6.05))
+        ped_cubes.append(cube('stone_pier_%d' % idx, (x0, 0.0, z0), (x1, 2.15, z1), STONE_SIDE, up=STONE_TOP))
+
+    # Emissive elements on pedestal: glowing sapphire levitation pool inside the open dish + column runes!
+    pedestal_glow = bone('pedestal_glow', [
+        cube('levitation_pool', (-2.68, 8.92, -2.68), (2.68, 9.20, 2.68), BLUE_UV, up=POOL_UV),
+        cube('pillar_glyph_f', (-0.80, 5.65, -2.48), (0.80, 7.25, -2.45), EMPTY_UV, north=PILLAR_RUNE_UV),
+        cube('pillar_glyph_b', (-0.80, 5.65,  2.45), (0.80, 7.25,  2.48), EMPTY_UV, south=PILLAR_RUNE_UV),
+    ], origin=(0, 8.5, 0))
+
+    pedestal = bone('pedestal', ped_cubes, [pedestal_glow], origin=(0, 0, 0))
 
     # ------------------------------------------------------------------
-    # 2. THE 4 LARGER, CURVED INDIGO CRADLE CLAWS ACTUALLY HUGGING THE EYE!
-    #    Positioned symmetrically at 45, 135, 225, 315 deg so ALL 4 claws rise tall and curve
-    #    snugly around the spherical globe (from y=8.2 up to y=15.4!) like a true arcane cradle,
-    #    while keeping the front (-Z) gaze 100% unobstructed!
+    # 2. FREE-FLOATING MAGICAL OCULUS EYE (~3.0 px clear levitation gap above dish!)
+    #    True rounded 3D sphere in bright magical crimson + luminous amber-gold crystal iris
+    #    + clean arcane oval pupil (ZERO creepy eyelids, ZERO claws!)
     # ------------------------------------------------------------------
-    EYE_Y = 12.85
-    prong_cubes = []
+    EYE_Y = 14.35
+    eye_body_cubes = []
+
+    def seg(name, p0, p1, thick, z0, z1, uv):
+        """Bar from p0 to p1 (x, y) in the XY plane, rotated around Z."""
+        cx, cy = (p0[0] + p1[0]) / 2.0, (p0[1] + p1[1]) / 2.0
+        length = math.hypot(p1[0] - p0[0], p1[1] - p0[1]) + 0.12
+        ang = math.degrees(math.atan2(p1[1] - p0[1], p1[0] - p0[0]))
+        return cube(name, (cx - length / 2, cy - thick / 2, z0), (cx + length / 2, cy + thick / 2, z1), uv,
+                    rotation=(0, 0, ang), origin=(cx, cy, (z0 + z1) / 2.0))
+
+    # Almond lens (vesica): the overlap of two circles of radius LENS_R whose centres sit LENS_D
+    # above and below the eye centre. 7.2 px wide, 4.1 px tall, pointed at the sides.
+    LENS_R, LENS_D = 4.3, 2.25
+    arc0 = math.asin(LENS_D / LENS_R)
+
+    def lens_point(t):
+        if t < math.pi:  # upper arc, from the right tip to the left tip
+            th = arc0 + (math.pi - 2 * arc0) * (t / math.pi)
+            return LENS_R * math.cos(th), -LENS_D + LENS_R * math.sin(th)
+        th = math.pi + arc0 + (math.pi - 2 * arc0) * ((t - math.pi) / math.pi)
+        return LENS_R * math.cos(th), LENS_D + LENS_R * math.sin(th)
+
+    n = 20
+    pts = [lens_point(2 * math.pi * i / n) for i in range(n)]
+    for i in range(n):
+        (x0, y0), (x1, y1) = pts[i], pts[(i + 1) % n]
+        # Sapphire frame, then a thinner carved-stone edge just outside it
+        eye_body_cubes.append(seg('lens_rim_%d' % i, (x0, EYE_Y + y0), (x1, EYE_Y + y1), 0.7, -0.95, 0.95, BLUE_UV))
+        k = 1.13
+        eye_body_cubes.append(seg('lens_edge_%d' % i, (x0 * k, EYE_Y + y0 * k), (x1 * k, EYE_Y + y1 * k),
+                                  0.45, -0.55, 0.55, STONE_SIDE))
+
+    # Lens body: horizontal bars filling the almond (glowing pool in front, chalk rune on the back)
+    y = -(LENS_R - LENS_D) + 0.2
+    i = 0
+    while y < (LENS_R - LENS_D) - 0.2:
+        hw = math.sqrt(max(0.0, LENS_R * LENS_R - (abs(y) + LENS_D) ** 2))
+        eye_body_cubes.append(cube('lens_fill_%d' % i, (-hw, EYE_Y + y - 0.26, -0.45), (hw, EYE_Y + y + 0.26, 0.45),
+                                   BLUE_UV, north=POOL_UV, south=PILLAR_RUNE_UV))
+        y += 0.5
+        i += 1
+
+    # Independent oval pupil bone (eye movement & focus narrowing), in front of the iris
+    IRIS_Z = -0.62
+    eye_pupil = bone('eye_pupil', [
+        cube('pupil_lens', (-0.55, EYE_Y - 1.19, IRIS_Z - 0.06), (0.55, EYE_Y + 1.19, IRIS_Z), PUPIL_UV, north=PUPIL_UV),
+    ], origin=(0, EYE_Y, IRIS_Z - 0.03))
+
+    # Emissive amber iris disc set into the lens
+    eye_iris = bone('eye_iris', [
+        cube('iris_plane', (-1.7, EYE_Y - 1.7, IRIS_Z), (1.7, EYE_Y + 1.7, IRIS_Z + 0.4), EMPTY_UV, north=IRIS_UV),
+    ], [eye_pupil], origin=(0, EYE_Y, 0))
+
+    # 3. FLOATING WIZARDCHALK RUNES, STARLIGHT MOTES & LEVITATION HALO RIGHT INSIDE THE .BBMODEL!
+    floating_rune_cubes = []
     for i in range(4):
         ang_deg = 45.0 + i * 90.0
         ang = math.radians(ang_deg)
-        sa, ca = math.sin(ang), math.cos(ang)
-
-        # Segment 1 (Navy base): sweeps firmly outward from the dark stone capital under the eye
-        r1 = 2.75
-        x1, z1 = sa * r1, ca * r1
-        prong_cubes.append(
-            cube('claw_base_%d' % i,
-                 (x1 - 0.92, 8.05, z1 - 0.72), (x1 + 0.92, 10.65, z1 + 0.72),
-                 CLAW1_UV, rotation=(36, ang_deg, 0), origin=(x1, 9.35, z1))
+        orb_r = 5.05
+        rx = math.sin(ang) * orb_r
+        rz = math.cos(ang) * orb_r
+        ry = EYE_Y + (0.65 if i % 2 == 0 else -0.65)
+        uv_r = ORBIT_RUNE_UVS[i]
+        floating_rune_cubes.append(
+            cube('orbit_rune_%d' % i,
+                 (rx - 1.35, ry - 1.35, rz - 0.04),
+                 (rx + 1.35, ry + 1.35, rz + 0.04),
+                 EMPTY_UV, rotation=(0, ang_deg, 0), origin=(rx, ry, rz),
+                 north=uv_r, south=uv_r)
         )
-        # Segment 2 (Indigo mid): rises snugly alongside the eye's equator (~0.75px clearance to turn!)
-        r2 = 3.92
-        x2, z2 = sa * r2, ca * r2
-        prong_cubes.append(
-            cube('claw_mid_%d' % i,
-                 (x2 - 0.76, 10.30, z2 - 0.62), (x2 + 0.76, 13.35, z2 + 0.62),
-                 CLAW2_UV, rotation=(6, ang_deg, 0), origin=(x2, 11.82, z2))
+        # Delicate floating starlight crystal mote midway between runes!
+        s_ang_deg = i * 90.0 + 18.0
+        s_ang = math.radians(s_ang_deg)
+        sr = 5.55
+        sx, sz = math.sin(s_ang) * sr, math.cos(s_ang) * sr
+        sy = EYE_Y + (-1.35 if i % 2 == 0 else 1.45)
+        s_uv = STAR_AMBER_UV if i % 2 == 0 else STAR_BLUE_UV
+        floating_rune_cubes.append(
+            cube('orbit_star_%d' % i,
+                 (sx - 0.28, sy - 0.28, sz - 0.28),
+                 (sx + 0.28, sy + 0.28, sz + 0.28),
+                 s_uv, rotation=(45, s_ang_deg, 45), origin=(sx, sy, sz))
         )
-        # Segment 3 (Sapphire upper claw): curves INWARD around the upper hemisphere of the globe!
-        r3 = 3.55
-        x3, z3 = sa * r3, ca * r3
-        prong_cubes.append(
-            cube('claw_tip_%d' % i,
-                 (x3 - 0.56, 13.05, z3 - 0.50), (x3 + 0.56, 15.30, z3 + 0.50),
-                 CLAW3_UV, rotation=(-28, ang_deg, 0), origin=(x3, 14.18, z3))
-        )
-        # Subtle inner sapphire talon point hugging the crown curve
-        r4 = 2.98
-        x4, z4 = sa * r4, ca * r4
-        prong_cubes.append(
-            cube('claw_point_%d' % i,
-                 (x4 - 0.36, 14.85, z4 - 0.36), (x4 + 0.36, 15.72, z4 + 0.36),
-                 CLAW3_UV, rotation=(-46, ang_deg, 0), origin=(x4, 15.28, z4))
-        )
+    floating_runes = bone('floating_runes', floating_rune_cubes, origin=(0, EYE_Y, 0))
 
-    prongs = bone('cradle_prongs', prong_cubes, origin=(0, 9.2, 0))
-    pedestal = bone('pedestal', ped_cubes, [prongs], origin=(0, 0, 0))
+    # Delicate levitation rune halo hovering cleanly between the open sapphire dish and floating eye!
+    levitation_halo = bone('levitation_halo', [
+        cube('lev_ring_mid', (-3.45, 10.65, -3.45), (3.45, 10.69, 3.45), EMPTY_UV,
+             up=LEV_HALO_UV, down=LEV_HALO_UV),
+        cube('lev_ring_base', (-7.25, 2.04, -7.25), (7.25, 2.08, 7.25), EMPTY_UV,
+             up=LEV_HALO_UV, down=LEV_HALO_UV),
+    ], origin=(0, 10.67, 0))
 
-    # ------------------------------------------------------------------
-    # 3. TRUE 3D SPHERICAL CRIMSON EYE (ZERO BOX CORNERS FROM ANY ANGLE!)
-    #    Constructed from 6 true octagonal Z-slices following exact sphere radius r(z) = sqrt(R^2 - z^2),
-    #    R = 3.05! Viewed from front, side, back, top or 3/4, it reads unmistakably as a smooth globe!
-    # ------------------------------------------------------------------
-    eye_body_cubes = []
-    # Equator band: z in [-1.05, +1.05], r = 2.95
-    eye_body_cubes.extend(build_octa_slice_z('sp_eq', EYE_Y, -1.05, 1.05, 2.95, EYE_UV))
-    # Rear mid band: z in [+1.05, +1.95], r = 2.52
-    eye_body_cubes.extend(build_octa_slice_z('sp_b1', EYE_Y, 1.05, 1.95, 2.52, EYE_UV))
-    # Rear upper cap: z in [+1.95, +2.62], r = 1.88
-    eye_body_cubes.extend(build_octa_slice_z('sp_b2', EYE_Y, 1.95, 2.62, 1.88, EYE_UV))
-    # Rear pole cap: z in [+2.62, +3.02], r = 1.08
-    eye_body_cubes.extend(build_octa_slice_z('sp_b3', EYE_Y, 2.62, 3.02, 1.08, EYE_UV))
-    # Front mid band: z in [-1.95, -1.05], r = 2.54
-    eye_body_cubes.extend(build_octa_slice_z('sp_f1', EYE_Y, -1.95, -1.05, 2.54, EYE_UV))
-
-    # Rounded 8-segment crimson ocular rim framing the recessed circular amber iris!
-    # Radius 2.02 around (0, EYE_Y, -2.28), leaving a clean circular 1.72-radius window for the iris!
-    rim_r = 2.04
-    rim_seg_w = 2.0 * rim_r * math.tan(math.pi / 8.0) + 0.16
-    for i in range(8):
-        ang_deg = i * 45.0
-        ang = math.radians(ang_deg)
-        rx = math.sin(ang) * rim_r
-        ry = EYE_Y + math.cos(ang) * rim_r
-        eye_body_cubes.append(
-            cube('rim_%d' % i,
-                 (rx - rim_seg_w * 0.5, ry - 0.30, -2.56),
-                 (rx + rim_seg_w * 0.5, ry + 0.30, -1.90),
-                 EYE_UV, rotation=(0, 0, -ang_deg), origin=(rx, ry, -2.23))
-        )
-
-    # Independent vertical black slit pupil bone (can shift & narrow/dilate independently!)
-    eye_pupil = bone('eye_pupil', [
-        cube('pupil_slit', (-0.48, EYE_Y - 1.32, -2.50), (0.48, EYE_Y + 1.32, -2.44), PUPIL_UV, north=PUPIL_UV),
-    ], origin=(0, EYE_Y, -2.47))
-
-    # Emissive vibrant circular amber-orange iris nestled cleanly inside the octagonal crimson socket!
-    # Uses circular alpha mask inside IRIS_UV so even the iris itself has ZERO square corners!
-    eye_iris = bone('eye_iris', [
-        cube('iris_plane', (-1.82, EYE_Y - 1.82, -2.44), (1.82, EYE_Y + 1.82, -1.95), EYE_UV, north=IRIS_UV),
-    ], [eye_pupil], origin=(0, EYE_Y, 0))
-
-    # Organic CURVED 3-segment crimson eyelids (arched contour wrapping the sphere -> ZERO robot visor!)
-    # Base open rotation: +34 / -34 (clears the circular iris completely; gentle droop = +18, blink = -22!)
-    eyelid_top = bone('eyelid_top', [
-        # Center brow arch
-        cube('lid_t_mid', (-1.15, EYE_Y + 0.30, -2.74), (1.15, EYE_Y + 1.45, -2.30), LID_UV),
-        # Curved left & right eyelid wings hugging the spherical curvature
-        cube('lid_t_l', ( 0.85, EYE_Y + 0.10, -2.66), (1.92, EYE_Y + 1.25, -2.18), LID_UV,
-             rotation=(0, 0, -24), origin=(1.38, EYE_Y + 0.68, -2.42)),
-        cube('lid_t_r', (-1.92, EYE_Y + 0.10, -2.66), (-0.85, EYE_Y + 1.25, -2.18), LID_UV,
-             rotation=(0, 0,  24), origin=(-1.38, EYE_Y + 0.68, -2.42)),
-    ], origin=(0, EYE_Y, 0), rotation=(34, 0, 0))
-
-    eyelid_bot = bone('eyelid_bot', [
-        cube('lid_b_mid', (-1.15, EYE_Y - 1.45, -2.74), (1.15, EYE_Y - 0.30, -2.30), LID_UV),
-        cube('lid_b_l', ( 0.85, EYE_Y - 1.25, -2.66), (1.92, EYE_Y - 0.10, -2.18), LID_UV,
-             rotation=(0, 0,  24), origin=(1.38, EYE_Y - 0.68, -2.42)),
-        cube('lid_b_r', (-1.92, EYE_Y - 1.25, -2.66), (-0.85, EYE_Y - 0.10, -2.18), LID_UV,
-             rotation=(0, 0, -24), origin=(-1.38, EYE_Y - 0.68, -2.42)),
-    ], origin=(0, EYE_Y, 0), rotation=(-34, 0, 0))
-
-    eye_body = bone('eye_body', eye_body_cubes, [eye_iris, eyelid_top, eyelid_bot], origin=(0, EYE_Y, 0))
-    eye_pivot = bone('eye_pivot', [], [eye_body], origin=(0, EYE_Y, 0))
-
-    root = bone('root', [], [pedestal, eye_pivot], origin=(0, 0, 0))
+    eye_body = bone('eye_body', eye_body_cubes, [eye_iris], origin=(0, EYE_Y, 0))
+    eye_pivot = bone('eye_pivot', [], [eye_body, floating_runes], origin=(0, EYE_Y, 0))
+    root = bone('root', [], [pedestal, levitation_halo, eye_pivot], origin=(0, 0, 0))
 
     buffer = io.BytesIO()
     atlas.save(buffer, 'PNG')
@@ -621,7 +686,7 @@ def build_model(atlas):
 
 
 # ----------------------------------------------------------------------
-# Honest pixel-accurate Z-buffered 3D preview renderer (matches in-game!)
+# Honest pixel-accurate Z-buffered 3D preview renderer (exact in-game match!)
 # ----------------------------------------------------------------------
 def rot_x(p, deg):
     r = math.radians(deg); c, s = math.cos(r), math.sin(r)
@@ -647,7 +712,8 @@ def apply_xf(p, origin, rot, scale=(1, 1, 1), trans=(0, 0, 0)):
     return (x + origin[0] + trans[0], y + origin[1] + trans[1], z + origin[2] + trans[2])
 
 
-def rasterize_tri(pixels, zbuf, w, h, atlas_px, aw, ah, v0, v1, v2, uv0, uv1, uv2, shade):
+def rasterize_tri(pixels, zbuf, w, h, tex_px, tw, th, v0, v1, v2, uv0, uv1, uv2, shade,
+                  additive=False, tint=(1.0, 1.0, 1.0), alpha_mul=1.0):
     minx = max(0, int(math.floor(min(v0[0], v1[0], v2[0]))))
     maxx = min(w - 1, int(math.ceil(max(v0[0], v1[0], v2[0]))))
     miny = max(0, int(math.floor(min(v0[1], v1[1], v2[1]))))
@@ -680,70 +746,89 @@ def rasterize_tri(pixels, zbuf, w, h, atlas_px, aw, ah, v0, v1, v2, uv0, uv1, uv
                 continue
             u = w0 * u0 + w1 * u1 + w2 * u2
             v = w0 * t0 + w1 * t1 + w2 * t2
-            tx = max(0, min(aw - 1, int(u)))
-            ty = max(0, min(ah - 1, int(v)))
-            rc, gc, bc, ac = atlas_px[tx, ty]
-            if ac < 20:
+            tx = max(0, min(tw - 1, int(u)))
+            ty = max(0, min(th - 1, int(v)))
+            rc, gc, bc, ac = tex_px[tx, ty]
+            if ac < 16:
                 continue
-            zbuf[idx] = z
-            pixels[px, py] = (
-                min(255, int(rc * shade)),
-                min(255, int(gc * shade)),
-                min(255, int(bc * shade)),
-                255,
-            )
+            if additive:
+                f = (ac / 255.0) * alpha_mul
+                br, bg, bb, _ = pixels[px, py]
+                pixels[px, py] = (
+                    min(255, int(br + rc * tint[0] * f)),
+                    min(255, int(bg + gc * tint[1] * f)),
+                    min(255, int(bb + bc * tint[2] * f)),
+                    255,
+                )
+            else:
+                zbuf[idx] = z
+                pixels[px, py] = (
+                    min(255, int(rc * shade)),
+                    min(255, int(gc * shade)),
+                    min(255, int(bc * shade)),
+                    255,
+                )
 
 
-def additive_composite_glow(img, glow_sprite, cx, cy, diameter, strength):
-    """Exact software preview of the real in-game GL_SRC_ALPHA, GL_ONE occulus_glow.png quad."""
-    spr = glow_sprite.resize((diameter, diameter), Image.BILINEAR)
-    px = img.load()
-    spx = spr.load()
-    w, h = img.size
-    x0 = cx - diameter // 2
-    y0 = cy - diameter // 2
-    for sy in range(diameter):
-        py = y0 + sy
-        if py < 0 or py >= h:
-            continue
-        for sx in range(diameter):
-            px_i = x0 + sx
-            if px_i < 0 or px_i >= w:
+def draw_additive_sprite(pixels, zbuf, w, h, spr_px, sx0, sy0, sw, sh, cx, cy, z_val, diam, rgb, strength):
+    r_half = diam * 0.5
+    minx = max(0, int(cx - r_half))
+    maxx = min(w - 1, int(cx + r_half))
+    miny = max(0, int(cy - r_half))
+    maxy = min(h - 1, int(cy + r_half))
+    for py in range(miny, maxy + 1):
+        v = (py - (cy - r_half)) / max(1.0, diam)
+        ty = sy0 + max(0, min(sh - 1, int(v * sh)))
+        row_off = py * w
+        for px in range(minx, maxx + 1):
+            if z_val >= zbuf[row_off + px]:
                 continue
-            sr, sg, sb, sa = spx[sx, sy]
+            u = (px - (cx - r_half)) / max(1.0, diam)
+            tx = sx0 + max(0, min(sw - 1, int(u * sw)))
+            _, _, _, sa = spr_px[tx, ty]
             if sa == 0:
                 continue
             f = (sa / 255.0) * strength
-            br, bg, bb, _ = px[px_i, py]
-            px[px_i, py] = (
-                min(255, int(br + sr * f)),
-                min(255, int(bg + sg * f)),
-                min(255, int(bb + sb * f)),
+            br, bg, bb, _ = pixels[px, py]
+            pixels[px, py] = (
+                min(255, int(br + rgb[0] * f)),
+                min(255, int(bg + rgb[1] * f)),
+                min(255, int(bb + rgb[2] * f)),
                 255,
             )
 
 
-def render_view(model, atlas, glow_sprite, yaw, pitch, night, eye_look=(0, 0), lid_top_d=0.0, lid_bot_d=0.0,
-                pupil_dx=0.0, pupil_sx=1.0, glow_strength=0.0, size=(320, 320)):
+def render_view(model, atlas, glow_sprite, rune_circle, orbit_runes, yaw, pitch, night, awake_amt,
+                eye_look=(0, 0), pupil_dx=0.0, pupil_sx=1.0, size=(320, 320)):
     w, h = size
-    bg = (11, 13, 21, 255) if night else (28, 32, 46, 255)
+    bg = (12, 15, 26, 255) if night else (36, 42, 62, 255)
     img = Image.new('RGBA', size, bg)
-    cx0, cy0 = w // 2, int(h * 0.57)
+    cx0, cy0 = w // 2, int(h * 0.60)
 
     pixels = img.load()
     atlas_px = atlas.load()
     aw, ah = atlas.size
+    glow_px = glow_sprite.load()
+    gsize = glow_sprite.size[0]
+    rune_px = rune_circle.load()
+    rsize = rune_circle.size[0]
+    orbit_px = orbit_runes.load()
     zbuf = [1e9] * (w * h)
 
     elem_by_id = {e['uuid']: e for e in model['elements']}
     poses = {
+        'eye_pivot': ((0, 0.35 * awake_amt, 0), (0, 0, 0), (1, 1, 1)),
         'eye_body': ((0, 0, 0), (eye_look[1], -eye_look[0], 0), (1, 1, 1)),
         'eye_pupil': ((pupil_dx, 0, 0), (0, 0, 0), (pupil_sx, 1, 1)),
-        'eyelid_top': ((0, 0, 0), (lid_top_d, 0, 0), (1, 1, 1)),
-        'eyelid_bot': ((0, 0, 0), (lid_bot_d, 0, 0), (1, 1, 1)),
     }
-    emissive_bones = {'eye_iris'}
-    scale_px = 11.8
+    emissive_bones = {'eye_iris', 'pedestal_glow', 'floating_runes', 'levitation_halo'}
+    scale_px = 11.2
+
+    def proj(p):
+        q = (p[0], p[1] - 9.0, p[2])
+        q = rot_y(q, yaw)
+        q = rot_x(q, pitch)
+        return (cx0 - q[0] * scale_px, cy0 - q[1] * scale_px, q[2])
 
     def walk(node, chain, in_emissive):
         name = node['name']
@@ -773,7 +858,7 @@ def render_view(model, atlas, glow_sprite, yaw, pitch, night, eye_look=(0, 0), l
                         q = apply_xf(pt, c['origin'], c['rotation'])
                         for bo, br, bs, bt, _ in reversed(cur):
                             q = apply_xf(q, bo, br, bs, bt)
-                        q = (q[0], q[1] - 8.5, q[2])
+                        q = (q[0], q[1] - 9.0, q[2])
                         q = rot_y(q, yaw)
                         q = rot_x(q, pitch)
                         tpts.append(q)
@@ -782,13 +867,13 @@ def render_view(model, atlas, glow_sprite, yaw, pitch, night, eye_look=(0, 0), l
                     nx, ny, nz = uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx
                     nlen = math.sqrt(nx * nx + ny * ny + nz * nz) + 1e-6
                     nx, ny, nz = nx / nlen, ny / nlen, nz / nlen
-                    if nz > 0.05:
+                    if nz > 0.05 and name not in ('floating_runes', 'levitation_halo'):
                         continue
                     if em:
-                        shade = 1.06
+                        shade = 1.08
                     else:
-                        ndl = max(0.0, -nx * 0.28 + ny * 0.48 - nz * 0.82)
-                        shade = (0.34 + 0.36 * ndl) if night else (0.58 + 0.48 * ndl)
+                        ndl = max(0.0, -nx * 0.25 + ny * 0.52 - nz * 0.82)
+                        shade = (0.42 + 0.38 * ndl) if night else (0.64 + 0.44 * ndl)
                     u0, v0, u1, v1 = c['faces'][d]['uv']
                     uvs = [(u0, v1), (u1, v1), (u1, v0), (u0, v0)]
                     scr = [(cx0 - p[0] * scale_px, cy0 - p[1] * scale_px, p[2]) for p in tpts]
@@ -798,42 +883,34 @@ def render_view(model, atlas, glow_sprite, yaw, pitch, night, eye_look=(0, 0), l
     for root_b in model['outliner']:
         walk(root_b, [], False)
 
-    # Render ONLY the honest in-game occulus_glow.png additive sprite (exact match to OcculusStyle.java!)
-    if glow_strength > 0.01:
-        p = (0.0, 12.85 - 8.5, -2.45)
-        p = rot_y(p, yaw)
-        p = rot_x(p, pitch)
-        gx = int(cx0 - p[0] * scale_px)
-        gy = int(cy0 - p[1] * scale_px)
-        additive_composite_glow(img, glow_sprite, gx, gy, int(scale_px * 7.2), glow_strength)
-
+    # Pure .bbmodel preview — shows EXACTLY what opens in Blockbench right now!
     return img
 
 
-def build_preview_sheet(model, atlas, glow_sprite, out_path):
-    v1 = render_view(model, atlas, glow_sprite, yaw=26, pitch=-18, night=False,
-                     eye_look=(-22, 6), lid_top_d=2.0, lid_bot_d=-2.0, pupil_dx=-0.12, glow_strength=0.14)
-    v2 = render_view(model, atlas, glow_sprite, yaw=0, pitch=-10, night=True,
-                     eye_look=(0, 0), lid_top_d=4.0, lid_bot_d=-4.0, pupil_sx=0.80, glow_strength=0.34)
-    v3 = render_view(model, atlas, glow_sprite, yaw=-146, pitch=-20, night=False,
-                     eye_look=(0, 0), lid_top_d=0.0, lid_bot_d=0.0, glow_strength=0.0)
-    v4 = render_view(model, atlas, glow_sprite, yaw=-24, pitch=-14, night=False,
-                     eye_look=(26, -6), lid_top_d=-14.0, lid_bot_d=6.0, pupil_dx=0.14, glow_strength=0.08)
+def build_preview_sheet(model, atlas, glow_sprite, rune_circle, orbit_runes, out_path):
+    v1 = render_view(model, atlas, glow_sprite, rune_circle, orbit_runes, yaw=26, pitch=-18, night=False, awake_amt=1.0,
+                     eye_look=(-20, 6), pupil_dx=-0.10)
+    v2 = render_view(model, atlas, glow_sprite, rune_circle, orbit_runes, yaw=0, pitch=-12, night=True, awake_amt=1.0,
+                     eye_look=(0, 0), pupil_sx=0.88)
+    v3 = render_view(model, atlas, glow_sprite, rune_circle, orbit_runes, yaw=-146, pitch=-20, night=False, awake_amt=1.0,
+                     eye_look=(0, 0))
+    v4 = render_view(model, atlas, glow_sprite, rune_circle, orbit_runes, yaw=-24, pitch=-15, night=False, awake_amt=0.0,
+                     eye_look=(24, -6), pupil_dx=0.10)
 
-    sheet = Image.new('RGBA', (660, 680), (14, 17, 30, 255))
+    sheet = Image.new('RGBA', (660, 680), (18, 22, 38, 255))
     sheet.paste(v1, (10, 26))
     sheet.paste(v2, (330, 26))
     sheet.paste(v3, (10, 356))
     sheet.paste(v4, (330, 356))
     d = ImageDraw.Draw(sheet)
     labels = [
-        (16, 8, 'Oculus V3 - 1. Esfera Real + Garras Abracando o Globo'),
-        (336, 8, 'Oculus V3 - 2. Noite (Brilho Real In-Game: Iris + Aura Sutil)'),
-        (16, 338, 'Oculus V3 - 3. Traseira 3/4 (Globo Redondo sem Cantos de Caixa)'),
-        (336, 338, 'Oculus V3 - 4. Repouso Calmo (Palpebras Curvas, Zero Robo)'),
+        (16, 8, 'Oculus V5 - 1. Claro, Flutuante + Runas em Volta (Zero Garras!)'),
+        (336, 8, 'Oculus V5 - 2. Noite (Lente Ambar + Runas Orbitais + Selo Base)'),
+        (16, 338, 'Oculus V5 - 3. Traseira 3/4 (Pedra Clara + Bacia Safira Aberta)'),
+        (336, 338, 'Oculus V5 - 4. Repouso Calmo (Flutuacao Suave + Rastreio)'),
     ]
     for lx, ly, txt in labels:
-        d.text((lx, ly), txt, fill=(255, 200, 96, 255))
+        d.text((lx, ly), txt, fill=(255, 218, 120, 255))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(out_path)
 
@@ -841,6 +918,8 @@ def build_preview_sheet(model, atlas, glow_sprite, out_path):
 def main():
     atlas = build_atlas()
     glow_sprite = build_glow_sprite()
+    rune_circle = build_rune_circle()
+    orbit_runes = build_orbit_runes_sheet()
     model = build_model(atlas)
 
     bb_path = ASSETS / 'models/blocks/occulus.bbmodel'
@@ -851,10 +930,18 @@ def main():
     glow_path.parent.mkdir(parents=True, exist_ok=True)
     glow_sprite.save(glow_path)
 
+    rune_path = ASSETS / 'textures/blocks/custom/occulus_runes.png'
+    rune_path.parent.mkdir(parents=True, exist_ok=True)
+    rune_circle.save(rune_path)
+
+    orbit_path = ASSETS / 'textures/blocks/custom/occulus_orbit_runes.png'
+    orbit_path.parent.mkdir(parents=True, exist_ok=True)
+    orbit_runes.save(orbit_path)
+
     preview_path = Path(r'C:\Users\PC\.gemini\antigravity\brain\a1b93fce-c876-4df6-b69b-f3d1bce44b1d\occulus_preview.png')
-    build_preview_sheet(model, atlas, glow_sprite, preview_path)
-    print('GENERATED V3 SPHERICAL OCULUS:', bb_path)
-    print('GENERATED REAL GLOW SPRITE:', glow_path)
+    build_preview_sheet(model, atlas, glow_sprite, rune_circle, orbit_runes, preview_path)
+    print('GENERATED V5 BRIGHT FLOATING OCULUS:', bb_path)
+    print('GENERATED ORBIT RUNES:', orbit_path)
     print('PREVIEW:', preview_path)
 
 
