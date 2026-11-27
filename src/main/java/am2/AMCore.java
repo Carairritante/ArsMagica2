@@ -108,6 +108,7 @@ public class AMCore{
 		am2.ritual.RitualArchitectServer.register();
 		proxy.InitializeAndRegisterHandlers();
 		proxy.preinit();
+		am2.cinematics.AMCinematics.preInit(event);
 	}
 
 	private String popPathFolder(String path){
@@ -134,6 +135,7 @@ public class AMCore{
 			BiomeDictionary.registerBiomeType(BiomeWitchwoodForest.instance, Type.FOREST, Type.MAGICAL);
 			BiomeManager.addBiome(BiomeType.WARM, new BiomeEntry(BiomeWitchwoodForest.instance, 6));
 		}
+		am2.cinematics.AMCinematics.init();
 	}
 
 	@EventHandler
@@ -177,6 +179,7 @@ public class AMCore{
 		AMEventHandler.enabled_timeFortified = AMCore.skillConfig.isSkillEnabled("FortifyTime");
 		AMEventHandler.enabled_shield = AMCore.skillConfig.isSkillEnabled("Shield");
 		AMEventHandler.enable_spatialVortex = AMCore.config.enableSpatialVortex();
+		am2.cinematics.AMCinematics.postInit();
 	}
 
 	private void registerFlickerOperators(){
@@ -255,6 +258,7 @@ public class AMCore{
 		serverCommandManager.registerCommand(new UnlockCompendiumEntry());
 		serverCommandManager.registerCommand(new CommandTrueSoulboundUnbind());
 		serverCommandManager.registerCommand(new CommandTrueSoulboundDestroy());
+		am2.cinematics.AMCinematics.serverStarting(event);
 	}
 
 	@EventHandler
@@ -265,6 +269,7 @@ public class AMCore{
 
 	@EventHandler
 	public void serverStopping(FMLServerStoppingEvent event){
+		am2.cinematics.AMCinematics.serverStopping();
 		for (WorldServer ws : MinecraftServer.getServer().worldServers){
 			PowerNodeCache.instance.saveWorldToFile(ws);
 		}

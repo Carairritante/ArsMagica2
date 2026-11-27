@@ -1,0 +1,84 @@
+{
+  "duration": 120,
+  "letterbox": 0.12,
+  "collide": true,
+  "hideGear": true,
+  "stand": [0, 1, 0],
+  "altar": "minecraft:emerald_block",
+  "camera": [
+    {"t": 0, "pos": [-3.0, 2.6, 5.0], "look": [0, 2.6, 0], "fov": 58},
+    {"t": 30, "pos": [-4.6, 3.4, 6.8], "look": [0, 2.0, 0], "fov": 66, "ease": "out"},
+    {"t": 31, "pos": [5.5, 6.5, -8.0], "look": [0, 0.8, 0], "fov": 66, "cut": true},
+    {"t": 78, "pos": [4.0, 4.5, -6.0], "look": [0, 1.4, 0], "fov": 62},
+    {"t": 79, "pos": [1.6, 2.6, 3.4], "look": [0, 1.9, 0], "fov": 60, "cut": true},
+    {"t": 120, "pos": [0.8, 2.4, 3.0], "look": [0, 1.8, 0], "fov": 58, "ease": "inOut"}
+  ],
+  "pose": [
+    {"t": 0, "w": 1, "head": -30, "tremor": 3, "lift": 1.35, "right": [-30, 0, 100, -10], "left": [-30, 0, -100, -10]},
+    {"t": 18},
+    {"t": 30, "head": 30, "tremor": 1.5, "lift": 0.8, "right": [-10, -40, 25, -90], "left": [-10, 40, -25, -90]},
+    {"t": 50, "lift": 0, "tremor": 0.6},
+    {"t": 80, "head": 24, "tremor": 0.3},
+    {"t": 96, "head": 14, "tremor": 0, "right": [-50, 0, 8, -40], "left": [0, 0, -8, -10]},
+    {"t": 110, "right": [-10, 0, 8, -20]},
+    {"t": 119, "w": 0}
+  ],
+  "actors": [
+    {"type": "night", "keys": [
+      {"t":0,"alpha":1},
+      {"t":60},
+      {"t":112,"alpha":0}
+    ]},
+    {"type": "rain", "color": "FF7A6A", "keys": [
+      {"t":0,"pos":[0,0,0],"alpha":1},
+      {"t":60},
+      {"t":108,"alpha":0}
+    ]},
+    {"type": "orb", "color": "FF3030", "keys": [
+      {"t":0,"pos":[0,0,0],"attach":"heart","scale":0.4,"alpha":1},
+      {"t":16,"scale":1.4},
+      {"t":28,"scale":0.1,"alpha":0}
+    ]},
+    {"type": "veins", "color": "FF3838", "keys": [
+      {"t":0,"open":1,"alpha":1},
+      {"t":30},
+      {"t":74,"open":0.2,"alpha":0}
+    ]},
+    {"type": "worldveins", "color": "FF3030", "pulseColor": "FF9080", "keys": [
+      {"t":0,"pos":[0,0,0],"scale":60,"open":0.5,"alpha":1,"pulse":-1},
+      {"t":62,"open":0,"alpha":0}
+    ]},
+    {"type": "glow", "color": "FF2020", "keys": [
+      {"t":0,"pos":[0,0.6,0],"scale":2.4,"alpha":0.9},
+      {"t":24,"scale":3.4,"alpha":0.6},
+      {"t":74,"scale":1.0,"alpha":0}
+    ]},
+    {"type": "wave", "color": "FF6060", "keys": [
+      {"t":17,"pos":[0,0,0],"scale":0.5,"alpha":1},
+      {"t":30,"scale":14},
+      {"t":58,"scale":28,"alpha":0}
+    ]},
+    {"type": "item", "item": "arsmagica2:rune", "meta": 19, "color": "FF5040", "keys": [
+      {"t":60,"pos":[0,0,0],"attach":"heart","scale":0.1,"alpha":0},
+      {"t":74,"scale":0.4,"alpha":1},
+      {"t":98,"pos":[0,0.12,0],"attach":"right_hand","scale":0.35},
+      {"t":110},
+      {"t":119,"alpha":0}
+    ]}
+  ],
+  "events": [
+    {"t": 0, "type": "shake", "duration": 30, "strength": 2.0},
+    {"t": 0, "type": "sound", "name": "mob.wither.hurt", "pitch": 0.5},
+    {"t": 2, "type": "lightning", "pos": [6, 0, 5]},
+    {"t": 2, "type": "sound", "name": "ambient.weather.thunder", "pitch": 0.8},
+    {"t": 8, "type": "lightning", "pos": [-7, 0, 3]},
+    {"t": 16, "type": "fade", "from": 0, "to": 0.7, "duration": 4, "color": "B01818"},
+    {"t": 17, "type": "sound", "name": "random.explode", "pitch": 0.7},
+    {"t": 17, "type": "sound", "name": "dig.glass", "pitch": 0.5},
+    {"t": 18, "type": "lightning", "pos": [0, 0, -9]},
+    {"t": 18, "type": "particles", "name": "largesmoke", "duration": 40, "count": 6, "pos": [0, 1.5, 0], "spread": [1.2, 0.8, 1.2]},
+    {"t": 20, "type": "fade", "from": 0.7, "to": 0, "duration": 14, "color": "B01818"},
+    {"t": 40, "type": "title", "text": "A FUSÃO FALHOU", "subtitle": "O mundo rejeitou {player}", "duration": 64, "y": 0.76},
+    {"t": 74, "type": "sound", "name": "random.orb", "pitch": 0.5}
+  ]
+}
