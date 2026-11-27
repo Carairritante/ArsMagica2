@@ -42,7 +42,7 @@ public class AMConfig extends Configuration{
 	private final String KEY_DamageMultiplier = "DamageMultiplier";
 
 	private final String KEY_UseSpecialRenderers = "Use_Special_Renderers";
-	private final String KEY_ClassicBlockModels = "Classic_Block_Models";
+	private final String KEY_ClassicModels = "Classic_Models";
 	private final String KEY_SpawnHugeTrees = "SpawnHugeTrees";
 	private final String KEY_LowResParticles = "Low_Res_Particles";
 	private final String KEY_FrictionCoefficient = "FrictionCoefficient";
@@ -210,7 +210,7 @@ public class AMConfig extends Configuration{
 	private boolean TornadoDropsItems;
 	private float DamageMultiplier;
 	private boolean UseSpecialRenderers;
-	private boolean ClassicBlockModels;
+	private boolean ClassicModels;
 	private boolean SpawnHugeTrees;
 	private boolean useDimWhitelist;
 	private boolean DisplayManaInInventory;
@@ -349,7 +349,7 @@ public class AMConfig extends Configuration{
 		DamageMultiplier = (float)get(CATEGORY_GENERAL, KEY_DamageMultiplier, 1.0, "How much the damage in Ars Magica is scaled.").getDouble(1.0);
 
 		UseSpecialRenderers = get(CATEGORY_GENERAL, KEY_UseSpecialRenderers, true, "Render spell effects on equipped scrolls rather than the scroll itself (only applies to the in-game one, the one on your hotbar remains unchanged)").getBoolean(true);
-		ClassicBlockModels = get(CATEGORY_GENERAL, KEY_ClassicBlockModels, false, "Client only: draw the Oculus and the Inscription Table with the original AM2 models instead of the remastered ones.").getBoolean(false);
+		ClassicModels = get(CATEGORY_GENERAL, KEY_ClassicModels, false, "Client only: draw the Oculus, the Inscription Table and the Arcane Guardian Spellbook with the original AM2 models instead of the remastered ones.").getBoolean(false);
 		enableGlobalTime = get(CATEGORY_GENERAL, KEY_GlobalTime, true, "Enable time manipulation spells working globally. If false, only the local parts retain functionality (similar to time-in-a-bottle).").getBoolean(true);
 		SpawnHugeTrees =  get(CATEGORY_GENERAL, KEY_SpawnHugeTrees, false, "Spawn big witchwood trees. If disabled, will only spawn normal witchwood trees. May cause minor lag on chunkloading.").getBoolean(false);
 
@@ -624,8 +624,8 @@ public class AMConfig extends Configuration{
 		return 0;
 	}
 
-	public boolean classicBlockModels(){
-		return ClassicBlockModels;
+	public boolean classicModels(){
+		return ClassicModels;
 	}
 
 	public boolean useSpecialRenderers(){

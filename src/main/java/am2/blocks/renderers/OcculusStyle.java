@@ -8,7 +8,7 @@ import org.lwjgl.opengl.GL11;
 /**
  * Look of the Oculus block. Purely visual: it receives an {@link OcculusView} and draws,
  * with the block texture already bound and the origin at the block's bottom centre
- * (no rotation applied). The classic look stays in {@link #drawClassic}.
+ * (no rotation applied). The classic look (Classic_Models) stays in {@link #drawClassic}.
  * The remastered look starts as the classic model with an eye that follows the player;
  * a new model can replace {@link #drawRemaster} freely.
  */

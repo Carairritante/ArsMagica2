@@ -279,13 +279,20 @@ public class SpellScrollRenderer implements IItemRenderer{
 				float scale = 0.85f + 0.10f * open;
 				GL11.glScalef(scale, scale, scale);
 			}
-			ResourceLocation tex = (bookStack != null && bookStack.getItem() == ItemsCommonProxy.arcaneSpellbook) ? arcaneBookTexture : bookTexture;
-			mc.renderEngine.bindTexture(tex);
-			GL11.glPushMatrix();
-			// ModelBook opens towards +X. Turn that face towards the reader's +Z.
-			GL11.glRotatef(-90.0f * open, 0, 1, 0);
-			modelBook.render((Entity)null, age, pageLeft, pageRight, open, 0.0f, 0.0625f);
-			GL11.glPopMatrix();
+			boolean arcane = bookStack != null && bookStack.getItem() == ItemsCommonProxy.arcaneSpellbook;
+			if (arcane && ArcaneSpellbook3D.active()){
+				ArcaneSpellbook3D.renderHeld(open, age / 20f);
+				GL11.glEnable(GL11.GL_BLEND);
+				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+				GL11.glColor4f(1, 1, 1, 1);
+			}else{
+				mc.renderEngine.bindTexture(arcane ? arcaneBookTexture : bookTexture);
+				GL11.glPushMatrix();
+				// ModelBook opens towards +X. Turn that face towards the reader's +Z.
+				GL11.glRotatef(-90.0f * open, 0, 1, 0);
+				modelBook.render((Entity)null, age, pageLeft, pageRight, open, 0.0f, 0.0625f);
+				GL11.glPopMatrix();
+			}
 			if (scrollStack != null && open > 0.15f){
 				GL11.glPushMatrix();
 				float hover = (float)Math.sin(age * 0.2f) * 0.025f;
@@ -315,10 +322,17 @@ public class SpellScrollRenderer implements IItemRenderer{
 				GL11.glScalef(1.7f, 1.7f, 1.7f);
 				GL11.glTranslatef(0.3125f, -0.125f, 0);
 				mc.renderEngine.bindTexture(mc.thePlayer.getLocationSkin());
-				modelBipedMain.bipedRightArm.rotateAngleX = 0;
-				modelBipedMain.bipedRightArm.rotateAngleY = 0;
-				modelBipedMain.bipedRightArm.rotateAngleZ = 0;
-				modelBipedMain.bipedRightArm.render(0.0625f);
+				net.minecraft.client.renderer.entity.Render armRenderer = net.minecraft.client.renderer.entity.RenderManager.instance.getEntityRenderObject(mc.thePlayer);
+				GL11.glPushAttrib(GL11.GL_ENABLE_BIT | GL11.GL_CURRENT_BIT | GL11.GL_TEXTURE_BIT);
+				if (armRenderer instanceof net.minecraft.client.renderer.entity.RenderPlayer){
+					((net.minecraft.client.renderer.entity.RenderPlayer)armRenderer).renderFirstPersonArm(mc.thePlayer);
+				}else{
+					modelBipedMain.bipedRightArm.rotateAngleX = 0;
+					modelBipedMain.bipedRightArm.rotateAngleY = 0;
+					modelBipedMain.bipedRightArm.rotateAngleZ = 0;
+					modelBipedMain.bipedRightArm.render(0.0625f);
+				}
+				GL11.glPopAttrib();
 				GL11.glPopMatrix();
 			}
 		} finally {

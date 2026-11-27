@@ -15,7 +15,7 @@ import org.lwjgl.opengl.GL12;
 public class InscriptionTableRenderer extends TileEntitySpecialRenderer{
 
 	public static final ResourceLocation inscriptionTableTexture = new ResourceLocation("arsmagica2", ResourceManager.getCustomBlockTexturePath("InscriptionTable.png"));
-	/** Original texture, for Classic_Block_Models (the remaster replaced InscriptionTable.png). */
+	/** Original texture, for Classic_Models (the remaster replaced InscriptionTable.png). */
 	private static final ResourceLocation classicTexture = new ResourceLocation("arsmagica2", ResourceManager.getCustomBlockTexturePath("InscriptionTable_classic.png"));
 
 	public InscriptionTableRenderer(){
@@ -32,7 +32,7 @@ public class InscriptionTableRenderer extends TileEntitySpecialRenderer{
 		int j = (i & ~0x8) * 90;
 		int upgradeState = tile.getUpgradeState();
 
-		if (am2.AMCore.config.classicBlockModels()){
+		if (am2.AMCore.config.classicModels()){
 			renderClassic(tile, d, d1, d2, i, j);
 			return;
 		}

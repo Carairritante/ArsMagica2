@@ -40,7 +40,7 @@ public class OcculusRenderer extends TileEntitySpecialRenderer{
 		bindTexture(rLoc);
 		GL11.glPushMatrix();
 		GL11.glTranslatef((float)d + 0.5F, (float)d1, (float)d2 + 0.5F);
-		if (AMCore.config.classicBlockModels())
+		if (AMCore.config.classicModels())
 			OcculusStyle.drawClassic(view);
 		else
 			OcculusStyle.drawRemaster(view);

@@ -150,7 +150,7 @@ public class ClientProxy extends CommonProxy{
 
 		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.scythe, CustomItemRenderer.instance);
 		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.magicBroom, CustomItemRenderer.instance);
-		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.arcaneSpellbook, CustomItemRenderer.instance);
+		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.arcaneSpellbook, new am2.items.renderers.ArcaneSpellbookRenderer());
 		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.winterGuardianArm, CustomItemRenderer.instance);
 		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.airGuardianLower, CustomItemRenderer.instance);
 		MinecraftForgeClient.registerItemRenderer(ItemsCommonProxy.fireEars, CustomItemRenderer.instance);
