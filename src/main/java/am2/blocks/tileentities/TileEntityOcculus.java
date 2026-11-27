@@ -2,6 +2,7 @@ package am2.blocks.tileentities;
 
 import am2.api.math.AMVector3;
 import am2.lore.Story;
+import am2.playerextensions.ExtendedProperties;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
@@ -25,9 +26,47 @@ public class TileEntityOcculus extends TileEntity implements IInventory{
 		MinecraftForge.EVENT_BUS.register(this);
 	}
 
+	/** Client only, for the renderer: eye direction (degrees, model space), openness and awareness. */
+	public float eyeYaw, eyePitch, prevEyeYaw, prevEyePitch, open, prevOpen, awake, prevAwake;
+	private static final double SIGHT = 8;
+	private static final float MAX_YAW = 70, MAX_PITCH = 40, FOLLOW = 0.25F;
+
 	@Override
 	public void updateEntity(){
 		if (!hasBook() && log.size() > 0) log.clear();
+		if (worldObj != null && worldObj.isRemote) followNearestPlayer();
+	}
+
+	private void followNearestPlayer(){
+		prevEyeYaw = eyeYaw;
+		prevEyePitch = eyePitch;
+		prevOpen = open;
+		prevAwake = awake;
+		double ex = xCoord + 0.5, ey = yCoord + 0.83, ez = zCoord + 0.5;
+		EntityPlayer player = worldObj.getClosestPlayer(ex, ey, ez, SIGHT);
+		float yaw = 0, pitch = 0, wantOpen = 0, wantAwake = 0;
+		if (player != null){
+			double dx = player.posX - ex, dy = player.boundingBox.minY + 1.62 - ey, dz = player.posZ - ez;
+			// Into the model's space: undo the block turn, then the renderer's (1, -1, -1) and 0.6 squash.
+			double turn = Math.toRadians(getBlockMetadata() * 90);
+			double c = Math.cos(turn), s = Math.sin(turn);
+			double lx = dx * c - dz * s, lz = -(dx * s + dz * c), ly = -dy / 0.6;
+			float wantYaw = (float)Math.toDegrees(Math.atan2(lx, lz));
+			if (Math.abs(wantYaw) <= 110){
+				yaw = clamp(wantYaw, MAX_YAW);
+				pitch = clamp((float)-Math.toDegrees(Math.atan2(ly, Math.sqrt(lx * lx + lz * lz))), MAX_PITCH);
+			}
+			wantOpen = 1;
+			wantAwake = ExtendedProperties.For(player).getMagicLevel() > 0 ? 1 : 0;
+		}
+		eyeYaw += (yaw - eyeYaw) * FOLLOW;
+		eyePitch += (pitch - eyePitch) * FOLLOW;
+		open += (wantOpen - open) * 0.15F;
+		awake += (wantAwake - awake) * 0.1F;
+	}
+
+	private static float clamp(float value, float limit){
+		return Math.max(-limit, Math.min(limit, value));
 	}
 
 	private boolean eventIsCloseEnough(AMVector3 eventSource){

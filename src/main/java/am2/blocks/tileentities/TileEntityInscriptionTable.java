@@ -969,4 +969,10 @@ public class TileEntityInscriptionTable extends TileEntity implements IInventory
 			}
 		}
 	}
+
+	@Override
+	@cpw.mods.fml.relauncher.SideOnly(cpw.mods.fml.relauncher.Side.CLIENT)
+	public AxisAlignedBB getRenderBoundingBox(){
+		return AxisAlignedBB.getBoundingBox(xCoord - 1, yCoord, zCoord - 1, xCoord + 2, yCoord + 2, zCoord + 2);
+	}
 }

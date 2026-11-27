@@ -203,6 +203,15 @@ public class ModelOcculus extends ModelBase{
 		Eye.render(f5);
 	}
 
+	/** Same as {@link #renderModel(float)}, with the eye turned (degrees, model space). */
+	public void renderModel(float f5, float eyeYaw, float eyePitch){
+		Eye.rotateAngleY = (float)Math.toRadians(eyeYaw);
+		Eye.rotateAngleX = (float)Math.toRadians(eyePitch);
+		renderModel(f5);
+		Eye.rotateAngleY = 0;
+		Eye.rotateAngleX = 0;
+	}
+
 	private void setRotation(ModelRenderer model, float x, float y, float z){
 		model.rotateAngleX = x;
 		model.rotateAngleY = y;
