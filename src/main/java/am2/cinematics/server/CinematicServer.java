@@ -160,6 +160,26 @@ public final class CinematicServer {
     }
 
     /**
+     * Cena ancorada no jogador e virada para {@code yaw} (por exemplo, para onde um
+     * Guardião caiu). O jogador também vira, para a pose e os efeitos no corpo baterem.
+     */
+    public int playFacing(EntityPlayerMP anchor, String sceneJson, int radius, float yaw, boolean onlyAnchor) {
+        String name = anchor.getCommandSenderName().replaceAll("[^A-Za-z0-9_ ]", "");
+        String json = sceneJson.replace("{player}", name);
+        if (anchor.ridingEntity != null) anchor.mountEntity(null);
+        anchor.playerNetServerHandler.setPlayerLocation(anchor.posX, anchor.posY, anchor.posZ, yaw, 10);
+        int id = play(anchor.dimension, anchor.posX, anchor.boundingBox.minY, anchor.posZ, yaw, json, radius,
+                onlyAnchor ? anchor.getUniqueID() : null);
+        sessions.get(sessions.size() - 1).subject = anchor.getEntityId();
+        return id;
+    }
+
+    /** Se o jogador está assistindo a alguma cinemática agora. */
+    public boolean watching(EntityPlayer player) {
+        return isWatching(player.getUniqueID());
+    }
+
+    /**
      * Âncora no bloco de altar mais próximo do jogador, como no ritual de verdade.
      *
      * @throws IllegalArgumentException se não houver um por perto

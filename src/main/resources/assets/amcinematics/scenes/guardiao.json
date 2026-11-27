@@ -1,0 +1,84 @@
+{
+  "duration": 150,
+  "letterbox": 0.1,
+  "collide": true,
+  "camera": [
+    {"t": 0, "pos": [2.4, 1.9, -2.4], "look": [0, 1.3, 3.0], "fov": 62},
+    {"t": 40, "pos": [3.0, 1.6, -1.2], "look": [0, 1.3, 2.2], "fov": 56, "ease": "inOut"},
+    {"t": 41, "pos": [1.7, 1.5, 6.4], "look": [0, 1.35, 0], "fov": 54, "cut": true},
+    {"t": 80, "pos": [2.3, 1.75, 5.5], "look": [0, 1.35, 0], "fov": 50},
+    {"t": 81, "pos": [-2.3, 1.3, 2.2], "look": [0, 1.4, 0], "fov": 50, "cut": true},
+    {"t": 120, "pos": [-3.2, 2.0, 2.9], "look": [0, 1.5, 0], "fov": 58, "ease": "inOut"},
+    {"t": 150, "pos": [0, 2.3, -3.0], "look": [0, 1.6, 4], "fov": 70, "ease": "inOut"}
+  ],
+  "pose": [
+    {"t": 0, "w": 0, "head": 0, "tremor": 0, "right": [-20, 0, 8, -20], "left": [-20, 0, -8, -20]},
+    {"t": 14, "w": 1},
+    {"t": 44, "head": -8, "right": [-38, 0, 14, -16], "left": [-38, 0, -14, -16]},
+    {"t": 80, "head": -12, "tremor": 0.8},
+    {"t": 86, "head": -44, "tremor": 1.6, "right": [-16, 0, 30, -18], "left": [-16, 0, -30, -18]},
+    {"t": 118, "head": -36, "tremor": 0.3},
+    {"t": 134, "head": 0, "tremor": 0, "right": [0, 0, 3, 0], "left": [0, 0, -3, 0]},
+    {"t": 148, "w": 0}
+  ],
+  "actors": [
+    {"type": "glow", "color": "9A5CFF", "keys": [
+      {"t": 0, "pos": [0, 1.4, 4], "scale": 1.2, "alpha": 0.9},
+      {"t": 20, "scale": 1.7, "alpha": 0.7},
+      {"t": 60, "scale": 0.6, "alpha": 0.4},
+      {"t": 76, "scale": 0.3, "alpha": 0}
+    ]},
+    {"type": "ring", "color": "9A5CFF", "spin": 6, "keys": [
+      {"t": 0, "pos": [0, 1.4, 4], "scale": 1.4, "open": 0, "alpha": 0.8},
+      {"t": 16, "open": 1},
+      {"t": 60, "scale": 0.9, "alpha": 0.3},
+      {"t": 72, "scale": 0.4, "alpha": 0}
+    ]},
+    {"type": "orb", "color": "9A5CFF", "keys": [
+      {"t": 28, "pos": [0, 1.4, 4], "scale": 0.05, "alpha": 0},
+      {"t": 38, "scale": 0.28, "alpha": 0.95},
+      {"t": 72, "pos": [0, 1.25, 0.45], "scale": 0.32},
+      {"t": 82, "attach": "heart", "pos": [0, 0, 0], "scale": 0.45, "alpha": 1},
+      {"t": 94, "scale": 0.1, "alpha": 0}
+    ]},
+    {"type": "glow", "color": "D9C2FF", "keys": [
+      {"t": 80, "pos": [0, 1.2, 0], "scale": 0.3, "alpha": 0},
+      {"t": 88, "scale": 0.9, "alpha": 0.7},
+      {"t": 125, "scale": 0.6, "alpha": 0.35},
+      {"t": 140, "alpha": 0}
+    ]},
+    {"type": "ring", "color": "D9C2FF", "spin": -5, "keys": [
+      {"t": 84, "pos": [0, 0.1, 0], "scale": 0.6, "open": 1, "alpha": 0.8},
+      {"t": 110, "scale": 2.6, "alpha": 0.35},
+      {"t": 130, "scale": 3.2, "alpha": 0}
+    ]},
+    {"type": "wave", "color": "D9C2FF", "keys": [
+      {"t": 86, "pos": [0, 0, 0], "scale": 1, "alpha": 0.8},
+      {"t": 112, "scale": 10, "alpha": 0}
+    ]},
+    {"type": "veins", "color": "9A5CFF", "keys": [
+      {"t": 84, "open": 0, "alpha": 1},
+      {"t": 104, "open": 1},
+      {"t": 124},
+      {"t": 140, "alpha": 0}
+    ]}
+  ],
+  "events": [
+    {"t": 0, "type": "fade", "from": 0.55, "to": 0, "duration": 12, "color": "D9C2FF"},
+    {"t": 2, "type": "sound", "name": "portal.trigger", "pitch": 0.7},
+    {"t": 0, "type": "particles", "name": "witchMagic", "duration": 30, "count": 6, "pos": [0, 1.4, 4], "spread": [0.6, 0.6, 0.6], "velocitySpread": [0.08, 0.08, 0.08]},
+    {"t": 24, "type": "runes", "duration": 50, "travel": 24, "count": 40, "color": "9A5CFF", "pos": [0, 1.4, 4], "spread": [0.6, 0.5, 0.4], "to": [0, 1.25, 0.1], "arc": 0.9, "scale": 0.28},
+    {"t": 30, "type": "runes", "duration": 40, "travel": 28, "count": 14, "color": "D9C2FF", "pos": [0, 1.4, 4], "spread": [0.5, 0.4, 0.3], "to": [0, 1.25, 0.1], "arc": 1.4, "scale": 0.2},
+    {"t": 30, "type": "sound", "name": "random.orb", "pitch": 0.7},
+    {"t": 42, "type": "sound", "name": "random.orb", "pitch": 0.85},
+    {"t": 54, "type": "sound", "name": "random.orb", "pitch": 1.0},
+    {"t": 66, "type": "sound", "name": "random.orb", "pitch": 1.2},
+    {"t": 84, "type": "shake", "duration": 10, "strength": 0.7},
+    {"t": 84, "type": "fade", "from": 0, "to": 0.6, "duration": 6, "color": "D9C2FF"},
+    {"t": 90, "type": "fade", "from": 0.6, "to": 0, "duration": 14, "color": "D9C2FF"},
+    {"t": 84, "type": "sound", "name": "arsmagica2:misc.event.magic_level_up", "pitch": 1.1},
+    {"t": 84, "type": "particles", "name": "witchMagic", "duration": 8, "count": 8, "pos": [0, 1.2, 0.2], "spread": [0.3, 0.4, 0.3], "velocitySpread": [0.15, 0.12, 0.15]},
+    {"t": 84, "type": "particles", "name": "fireworksSpark", "duration": 6, "count": 6, "pos": [0, 1.2, 0.25], "spread": [0.1, 0.1, 0.1], "velocitySpread": [0.12, 0.1, 0.12]},
+    {"t": 90, "type": "title", "text": "{guardiao}", "subtitle": "vencido por {player}", "duration": 52, "y": 0.74}
+  ]
+}

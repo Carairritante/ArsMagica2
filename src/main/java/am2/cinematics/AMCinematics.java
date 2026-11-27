@@ -6,6 +6,7 @@ import am2.cinematics.ritual.FusionRitual;
 import am2.cinematics.server.CinemaCommand;
 import am2.cinematics.server.CinematicServer;
 import am2.cinematics.server.FirstBookTrigger;
+import am2.cinematics.server.GuardianVictoryTrigger;
 import am2.cinematics.server.SceneStore;
 import am2.cinematics.server.WorldFusionTrigger;
 import cpw.mods.fml.common.FMLCommonHandler;
@@ -35,10 +36,11 @@ public final class AMCinematics {
     public static CommonProxy proxy = new CommonProxy();
     public static Logger log = LogManager.getLogger("AM2.5 Cinematics");
 
-    private static boolean loaded, triggersEnabled, firstBookEnabled, worldFusionEnabled, ritualEnabled;
+    private static boolean loaded, triggersEnabled, firstBookEnabled, worldFusionEnabled, guardiansEnabled, ritualEnabled;
     private static int ritualLevel;
     private static FirstBookTrigger firstBook;
     private static WorldFusionTrigger worldFusion;
+    private static GuardianVictoryTrigger guardians;
     private static FusionRitual ritual;
 
     private AMCinematics() {}
@@ -65,6 +67,8 @@ public final class AMCinematics {
         worldFusionEnabled = config.getBoolean("fusaoComOMundo", "gatilhos", true,
                 "Toca a cena 'fusao' quando o ritual original de World Fusion dá certo pela primeira vez "
                         + "(o ritual novo sempre mostra a cena)");
+        guardiansEnabled = config.getBoolean("guardioes", "gatilhos", true,
+                "Toca a cena 'guardiao' na primeira vez que um jogador derrota cada Guardião");
         ritualEnabled = config.getBoolean("ativado", "ritual", true,
                 "Troca o ritual de World Fusion pelo difícil: agachado, clique na esmeralda com o "
                         + "Orbe Infinito vermelho");
@@ -101,6 +105,11 @@ public final class AMCinematics {
                 MinecraftForge.EVENT_BUS.register(worldFusion);
             }
         }
+        if (triggersEnabled && guardiansEnabled) {
+            guardians = new GuardianVictoryTrigger();
+            FMLCommonHandler.instance().bus().register(guardians);
+            MinecraftForge.EVENT_BUS.register(guardians);
+        }
         proxy.init();
     }
 
@@ -131,5 +140,6 @@ public final class AMCinematics {
         CinematicServer.INSTANCE.reset();
         if (firstBook != null) firstBook.reset();
         if (worldFusion != null) worldFusion.reset();
+        if (guardians != null) guardians.reset();
     }
 }

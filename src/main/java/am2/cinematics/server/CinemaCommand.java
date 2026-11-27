@@ -10,7 +10,7 @@ import net.minecraft.command.WrongUsageException;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.ChatComponentText;
 
-/** /cinema play|preview|reset|ritual|stop|list (nível de operador 2). */
+/** /cinema play|preview|guardiao|reset|ritual|stop|list (nível de operador 2). */
 public class CinemaCommand extends CommandBase {
     @Override
     public String getCommandName() {
@@ -19,7 +19,7 @@ public class CinemaCommand extends CommandBase {
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/cinema play <cena> [raio 1-50] [jogador] | preview <cena> | reset [jogador] "
+        return "/cinema play <cena> [raio 1-50] [jogador] | preview <cena> | guardiao <nome> | reset [jogador] "
                 + "| ritual treino|dar|reset [jogador] | stop | list";
     }
 
@@ -58,6 +58,12 @@ public class CinemaCommand extends CommandBase {
             if (AMCinematics.ritual() == null) throw new CommandException("O ritual novo está desligado ou indisponível");
             AMCinematics.ritual().forget(player);
             reply(sender, player.getCommandSenderName() + " pode fazer o ritual de novo (a fusão atual foi desfeita)");
+        } else if (args.length == 2 && "guardiao".equals(args[0])) {
+            GuardianVictoryTrigger.Guardian guardian = GuardianVictoryTrigger.Guardian.byId(args[1]);
+            if (guardian == null) throw new CommandException("Guardiões: " + guardianIds());
+            EntityPlayerMP player = getCommandSenderAsPlayer(sender);
+            GuardianVictoryTrigger.play(player, guardian, player.rotationYaw, true);
+            reply(sender, "Cena do " + guardian.title + " (só para você; nada é marcado)");
         } else if (args.length == 1 && "stop".equals(args[0])) {
             reply(sender, "Cinemáticas encerradas: " + CinematicServer.INSTANCE.stopAll());
         } else if (args.length >= 2 && args.length <= 4 && "play".equals(args[0])) {
@@ -85,6 +91,15 @@ public class CinemaCommand extends CommandBase {
                 + (preview ? " (só para você)" : " (raio " + radius + ")"));
     }
 
+    private static String guardianIds() {
+        StringBuilder ids = new StringBuilder();
+        for (GuardianVictoryTrigger.Guardian g : GuardianVictoryTrigger.Guardian.values()) {
+            if (ids.length() > 0) ids.append(", ");
+            ids.append(g.id);
+        }
+        return ids.toString();
+    }
+
     private static void reply(ICommandSender sender, String text) {
         sender.addChatMessage(new ChatComponentText(text));
     }
@@ -92,7 +107,10 @@ public class CinemaCommand extends CommandBase {
     @Override
     public List addTabCompletionOptions(ICommandSender sender, String[] args) {
         if (args.length == 1) {
-            return getListOfStringsMatchingLastWord(args, "play", "preview", "reset", "ritual", "stop", "list");
+            return getListOfStringsMatchingLastWord(args, "play", "preview", "guardiao", "reset", "ritual", "stop", "list");
+        }
+        if (args.length == 2 && "guardiao".equals(args[0])) {
+            return getListOfStringsMatchingLastWord(args, guardianIds().split(", "));
         }
         if (args.length == 2 && "ritual".equals(args[0])) {
             return getListOfStringsMatchingLastWord(args, "treino", "dar", "reset");

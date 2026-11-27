@@ -18,7 +18,7 @@ import am2.cinematics.scene.Scene;
 
 /** Cenas em config/amcinematics/scenes, relidas a cada execução (edição a quente). */
 public final class SceneStore {
-    private static final String[] BUNDLED = { "orbita", "demo", FirstBookTrigger.SCENE, "fusao", "fusao_falha" };
+    private static final String[] BUNDLED = { "orbita", "demo", FirstBookTrigger.SCENE, "fusao", "fusao_falha", GuardianVictoryTrigger.SCENE };
     private static File folder;
 
     private SceneStore() {}

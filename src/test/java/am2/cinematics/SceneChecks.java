@@ -34,7 +34,8 @@ public final class SceneChecks {
             checkActors(file.getName(), scene);
             checkRunes(file.getName(), scene);
             if ("despertar.json".equals(file.getName())) checkAwakening(scene);
-            boolean acts = "despertar.json".equals(file.getName()) || file.getName().startsWith("fusao");
+            boolean acts = "despertar.json".equals(file.getName()) || file.getName().startsWith("fusao")
+                    || "guardiao.json".equals(file.getName());
             require(scene.actsOnBody() == acts, file.getName() + ": uso do dublê inesperado");
             if ("fusao.json".equals(file.getName())) {
                 checkFusion(scene);
