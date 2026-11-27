@@ -29,7 +29,7 @@ public class TileEntityOcculus extends TileEntity implements IInventory{
 	/** Client only, for the renderer: eye direction (degrees, model space), openness and awareness. */
 	public float eyeYaw, eyePitch, prevEyeYaw, prevEyePitch, open, prevOpen, awake, prevAwake;
 	private static final double SIGHT = 8;
-	private static final float MAX_YAW = 70, MAX_PITCH = 40, FOLLOW = 0.25F;
+	private static final float MAX_YAW = 70, MAX_PITCH = 35, FOLLOW = 0.25F;
 
 	@Override
 	public void updateEntity(){
@@ -42,15 +42,16 @@ public class TileEntityOcculus extends TileEntity implements IInventory{
 		prevEyePitch = eyePitch;
 		prevOpen = open;
 		prevAwake = awake;
-		double ex = xCoord + 0.5, ey = yCoord + 0.83, ez = zCoord + 0.5;
+		double ex = xCoord + 0.5, ey = yCoord + 0.8, ez = zCoord + 0.5;
 		EntityPlayer player = worldObj.getClosestPlayer(ex, ey, ez, SIGHT);
 		float yaw = 0, pitch = 0, wantOpen = 0, wantAwake = 0;
 		if (player != null){
 			double dx = player.posX - ex, dy = player.boundingBox.minY + 1.62 - ey, dz = player.posZ - ez;
-			// Into the model's space: undo the block turn, then the renderer's (1, -1, -1) and 0.6 squash.
+			// Into the eye's frame: undo the block turn and the classic model's (1, -1, -1) flip. The pitch is
+			// the real angle to the player's eyes (no squash), which is what the remastered eye needs.
 			double turn = Math.toRadians(getBlockMetadata() * 90);
 			double c = Math.cos(turn), s = Math.sin(turn);
-			double lx = dx * c - dz * s, lz = -(dx * s + dz * c), ly = -dy / 0.6;
+			double lx = dx * c - dz * s, lz = -(dx * s + dz * c), ly = -dy;
 			float wantYaw = (float)Math.toDegrees(Math.atan2(lx, lz));
 			if (Math.abs(wantYaw) <= 110){
 				yaw = clamp(wantYaw, MAX_YAW);
