@@ -1,5 +1,15 @@
 # Alterações de manutenção do AM2.5 LE
 
+## CR-46 — 27/11/2026 (Plano de evolução)
+
+- Servidor: aprender habilidades, o cofre de voz, os rituais e os disfarces passam a ser conferidos no servidor, sem confiar no que o cliente envia.
+- Mesa de Inscrição: modificadores genéricos, lista atualizada na hora e custo do altar mostrado no HUD. Grimório, Compêndio 3D e guia de rituais.
+- Roda radial do Livro de Feitiços (segure Alt esquerdo) para escolher a magia sem abrir o livro.
+- Cinemáticas dentro do AM2.5 (antigo mod AMCinematics): primeiro livro, Fusão com o Mundo, ritual difícil e comando `/cinema`. Configuração em `config/amcinematics.cfg`; se o mod antigo estiver instalado, as cinemáticas do AM2.5 ficam desligadas.
+- Primeira vitória sobre cada Guardião mostra uma cena curta com as cores e partículas daquele Guardião.
+- Modelos 3D remasterizados: Oculus (olho em lente que segue o jogador), Mesa de Inscrição e Livro Arcano dos Guardiões. A opção `Classic_Models` volta aos modelos originais.
+- Testado em jogo no teste-ars e no Forbidden Series - Teste 6.5; a carga do AM2.5 na abertura passou de cerca de 3,7 s para 4,2 s.
+
 ## CR-45 — 25 e 26/11/2026
 
 - Magia por voz: talento Ressonância Vocal (nível 90), Aura Vocal com cofre pessoal de 8 magias, reconhecimento de voz no próprio PC e integração opcional com o Akashic Voice (Silêncio também silencia o microfone).

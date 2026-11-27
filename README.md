@@ -1,7 +1,15 @@
 Ars Magica 2.5
 ==========
 
-## AM2.5 1.6.11-LE-CR-45
+## AM2.5 1.6.11-LE-CR-46
+
+- **Roda radial do Livro de Feitiços**: segure Alt esquerdo para escolher a magia.
+- **Cinemáticas** do primeiro livro, da Fusão com o Mundo, do ritual difícil e da primeira vitória sobre cada Guardião, agora dentro do próprio AM2.5.
+- **Modelos 3D novos** para o Oculus, a Mesa de Inscrição e o Livro Arcano; `Classic_Models` traz de volta os originais.
+- Mesa de Inscrição revisada, Grimório, Compêndio 3D e guia de rituais.
+- Mais conferências no servidor contra clientes modificados.
+
+### CR-45
 
 - Novos visuais para **Zone**, **AoE** e **magias canalizadas**, com modelos e círculos por afinidade.
 - **Bate-Estacas Arcano** com manequim de treino e medição de dano.
