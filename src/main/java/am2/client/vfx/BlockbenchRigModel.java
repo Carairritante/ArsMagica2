@@ -8,6 +8,7 @@ import com.google.gson.JsonParser;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.resources.IResource;
@@ -54,6 +55,7 @@ public final class BlockbenchRigModel {
 	private final ResourceLocation modelLocation;
 	private final String texturePrefix;
 	private final Set<String> translucentBoneNames = new HashSet<String>();
+	private final Set<String> emissiveBoneNames = new HashSet<String>();
 	private ResourceLocation[] textures = new ResourceLocation[0];
 	private final List<BoneNode> rootBones = new ArrayList<BoneNode>();
 	private final Map<String, AnimationClip> animations = new HashMap<String, AnimationClip>();
@@ -89,6 +91,7 @@ public final class BlockbenchRigModel {
 		String name;
 		String lowerName;
 		boolean translucent;
+		boolean emissive;
 		float ox, oy, oz;
 		float rx, ry, rz;
 		boolean hasRot;
@@ -176,6 +179,32 @@ public final class BlockbenchRigModel {
 		}
 	}
 
+	/**
+	 * Marks the named bones (case-insensitive) to render fullbright (emissive glow at night)
+	 * while preserving OpenGL lighting and lightmap state for the rest of the rig.
+	 */
+	public BlockbenchRigModel setEmissiveBones(String... boneNames) {
+		emissiveBoneNames.clear();
+		if (boneNames != null) {
+			for (String b : boneNames) {
+				if (b != null) {
+					emissiveBoneNames.add(b.toLowerCase(Locale.ROOT));
+				}
+			}
+		}
+		for (int i = 0; i < rootBones.size(); i++) {
+			applyEmissiveFlags(rootBones.get(i), false);
+		}
+		return this;
+	}
+
+	private void applyEmissiveFlags(BoneNode node, boolean parentEmissive) {
+		node.emissive = parentEmissive || emissiveBoneNames.contains(node.lowerName);
+		for (int i = 0; i < node.children.length; i++) {
+			applyEmissiveFlags(node.children[i], node.emissive);
+		}
+	}
+
 	public void unloadTextures() {
 		Minecraft mc = Minecraft.getMinecraft();
 		if (mc != null && mc.getTextureManager() != null && textures != null) {
@@ -214,7 +243,7 @@ public final class BlockbenchRigModel {
 			// Pass 1: Opaque geometry
 			GL11.glDepthMask(true);
 			for (int i = 0; i < rootBones.size(); i++) {
-				renderBoneRecursive(rootBones.get(i), clip, evalTime, overrides, false, r, g, b, alpha, mc, tess, boundTex);
+				renderBoneRecursive(rootBones.get(i), clip, evalTime, overrides, false, false, r, g, b, alpha, mc, tess, boundTex);
 			}
 
 			// Pass 2: Translucent bones (such as glass tubes) drawn after opaque core
@@ -223,7 +252,7 @@ public final class BlockbenchRigModel {
 				GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 				GL11.glDepthMask(false);
 				for (int i = 0; i < rootBones.size(); i++) {
-					renderBoneRecursive(rootBones.get(i), clip, evalTime, overrides, true, r, g, b, alpha, mc, tess, boundTex);
+					renderBoneRecursive(rootBones.get(i), clip, evalTime, overrides, true, false, r, g, b, alpha, mc, tess, boundTex);
 				}
 				GL11.glDepthMask(true);
 			}
@@ -239,6 +268,7 @@ public final class BlockbenchRigModel {
 			float animTime,
 			Map<String, BoneOverride> overrides,
 			boolean translucentPass,
+			boolean parentEmissive,
 			float r, float g, float b, float alpha,
 			Minecraft mc,
 			Tessellator tess,
@@ -286,13 +316,36 @@ public final class BlockbenchRigModel {
 			GL11.glTranslatef(-node.ox, -node.oy, -node.oz);
 		}
 
-		if (node.translucent == translucentPass) {
-			for (int c = 0; c < node.cubes.length; c++) {
-				drawCube(node.cubes[c], r, g, b, alpha, mc, tess, boundTex);
+		boolean enterEmissive = node.emissive && !parentEmissive;
+		boolean prevLighting = false;
+		float prevBx = 0.0f;
+		float prevBy = 0.0f;
+		if (enterEmissive) {
+			prevLighting = GL11.glIsEnabled(GL11.GL_LIGHTING);
+			prevBx = OpenGlHelper.lastBrightnessX;
+			prevBy = OpenGlHelper.lastBrightnessY;
+			if (prevLighting) {
+				GL11.glDisable(GL11.GL_LIGHTING);
 			}
+			OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, 240.0f, 240.0f);
 		}
-		for (int i = 0; i < node.children.length; i++) {
-			renderBoneRecursive(node.children[i], clip, animTime, overrides, translucentPass, r, g, b, alpha, mc, tess, boundTex);
+
+		try {
+			if (node.translucent == translucentPass) {
+				for (int c = 0; c < node.cubes.length; c++) {
+					drawCube(node.cubes[c], r, g, b, alpha, mc, tess, boundTex);
+				}
+			}
+			for (int i = 0; i < node.children.length; i++) {
+				renderBoneRecursive(node.children[i], clip, animTime, overrides, translucentPass, node.emissive, r, g, b, alpha, mc, tess, boundTex);
+			}
+		} finally {
+			if (enterEmissive) {
+				OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, prevBx, prevBy);
+				if (prevLighting) {
+					GL11.glEnable(GL11.GL_LIGHTING);
+				}
+			}
 		}
 
 		if (hasTransform) {
